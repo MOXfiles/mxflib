@@ -60,7 +60,7 @@ EssenceStreamDescriptorList MPEG2_VES_EssenceSubParser::IdentifyEssence(FileHand
 
 	// Read the first 512 bytes of the file to allow us to investigate it
 	FileSeek(InFile, 0);
-	BufferBytes = (Uint32)FileRead(InFile, Buffer, 512);
+	BufferBytes = (int)FileRead(InFile, Buffer, 512);
 	
 	// If the file is smaller than 16 bytes give up now!
 	if(BufferBytes < 16) return Ret;
