@@ -164,6 +164,10 @@ namespace mxflib
 	
 	//! Read 64-bit signed integer (casts from unsigned version)
 	inline Int64 ReadI64(FileHandle Handle) { return (Int64)ReadU64(Handle); }
+
+
+	// Is a given sequence of bytes a partition pack key?
+	bool IsPartitionKey(const Uint8 *Key);
 }
 
 #endif // MXFLIB__HELPER_H
