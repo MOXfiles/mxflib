@@ -169,11 +169,6 @@ namespace mxflib
 		return std::string(Buffer);
 	};
 
-// FIXME: What is a sensible default for MXFDATADIR under MSVC environment?
-#ifndef MXFDATADIR
-#define MXFDATADIR "."
-#endif
-
 #define UINT64_C(c)	c			// for defining 64bit constants
 #define INT64_C(c)	c			// for defining 64bit constants
 
