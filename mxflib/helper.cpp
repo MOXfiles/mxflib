@@ -216,16 +216,19 @@ UMIDPtr mxflib::MakeUMID(int Type, const UUIDPtr AssetID)
 	Buffer[14] = 0;
 	Buffer[15] = 0;
 
-	// Fill the material number with a UUID (no swapping)
-	Uint8 UUIDbuffer[16];
+	/* Fill the material number with a UUID (no swapping) */
 
-	// If a valid AssetID is provided, use that instead
-	if( ( AssetID == NULL ) || ( AssetID->Size() != 16 ) )
+	// If no valid AssetID is provided, create a new one
+	if( ( !AssetID ) || ( AssetID->Size() != 16 ) )
+	{
+		Uint8 UUIDbuffer[16];
 		MakeUUID(UUIDbuffer);
-	else		
-		memcpy( UUIDbuffer, AssetID->GetValue(), AssetID->Size() );
-
-	memcpy( &Buffer[16], &UUIDbuffer[0], 16 );
+		memcpy( &Buffer[16], &UUIDbuffer[0], 16 );
+	}
+	else
+	{
+		memcpy( &Buffer[16], AssetID->GetValue(), AssetID->Size() );
+	}
 
 	return new UMID(Buffer);
 }
