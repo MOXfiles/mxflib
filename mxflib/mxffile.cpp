@@ -61,6 +61,8 @@ bool mxflib::MXFFile::Open(std::string FileName, bool ReadOnly /* = false */ )
 
 	if(!FileValid(Handle)) return false;
 
+printf("%s open on %d\n", FileName.c_str(), Handle);
+
 	isOpen = true;
 
 	return ReadRunIn();
@@ -81,6 +83,8 @@ bool mxflib::MXFFile::OpenNew(std::string FileName)
 	Handle = FileOpenNew(FileName.c_str());
 
 	if(!FileValid(Handle)) return false;
+
+printf("%s open on %d\n", FileName.c_str(), Handle);
 
 	isOpen = true;
 
