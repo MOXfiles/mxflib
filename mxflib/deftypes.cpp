@@ -144,7 +144,7 @@ int mxflib::LoadTypes(char *TypesFile)
 	if (! result)
 	{
 		error("sopSAXParseFile failed for %s\n", TypesFile);
-		exit(1);
+		return -1;
 	}
 
 
