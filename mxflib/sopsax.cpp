@@ -1,4 +1,4 @@
-/*! \file	sopSAX.pp
+/*! \file	sopSAX.cpp
  *	\brief	'sopranino SAX' super-light SAX style XML Parsers
  *
  *	\version $Id$

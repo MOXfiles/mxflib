@@ -1,4 +1,4 @@
-/*! \file	esp_mpeg2ves.cpp
+/*! \file	esp_wavepcm.cpp
  *	\brief	Implementation of class that handles parsing of uncompressed pcm wave audio files
  *
  *	\version $Id$
