@@ -53,8 +53,6 @@ namespace mxflib {}
 #include <mxflib/mdtype.h>
 #include <mxflib/deftypes.h>
 
-#include <mxflib/klvobject.h>
-
 #include <mxflib/mdobject.h>
 
 #include <mxflib/metadata.h>
@@ -66,6 +64,10 @@ namespace mxflib {}
 #include <mxflib/index.h>
 
 #include <mxflib/essence.h>
+
+#include <mxflib/klvobject.h>
+
+#include <mxflib/crypto.h>
 
 #include <mxflib/esp_mpeg2ves.h>
 #include <mxflib/esp_wavepcm.h>
