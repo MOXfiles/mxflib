@@ -197,7 +197,12 @@ namespace mxflib
 		//! Get BytesPerEditUnit, if Constant
 		virtual Uint32 GetBytesPerEditUnit()
 		{
-			return SampleSize*ConstSamples;
+			if(SelectedWrapping == WrappingOption::WrapType::Frame) 
+			{
+				// FIXME: This assumes that 4-byte BER coding will be used - this needs to be adjusted or forced to be true!!
+				return SampleSize*ConstSamples + 16 + 4;
+			}
+			else return SampleSize*ConstSamples;
 		}
 
 		//! Get the current position in SetEditRate() sized edit units
