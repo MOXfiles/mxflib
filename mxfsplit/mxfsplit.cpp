@@ -347,7 +347,7 @@ static void DumpIndex( PartitionPtr ThisPartition )
 					IndexPosPtr Pos = Table->Lookup(Start + i,j);
 					printf("  EditUnit %3s for stream %d is at 0x%s", Int64toString(Start + i).c_str(), j, Int64toHexString(Pos->Location,8).c_str());
 					printf(", Flags=%02x", Pos->Flags);
-					printf(", Keyframe is at 0x%s", Int64toHexString(Pos->KeyLocation,8).c_str() );
+					if( Pos->KeyFrameOffset ) printf(", Keyframe is at 0x%s", Int64toHexString(Pos->KeyLocation,8).c_str() );
 
 					if(Pos->Exact) printf("  *Exact*\n");
 					else if(Pos->OtherPos) printf(" (Location of un-reordered position %s)\n", Int64toString(Pos->ThisPos).c_str());
