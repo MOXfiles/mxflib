@@ -845,8 +845,8 @@ Uint32 MDObject::ReadValue(const Uint8 *Buffer, Uint32 Size, PrimerPtr UsePrimer
 
 					Uint32 ThisBytes = (*it).second->ReadValue(Buffer, ValueSize);
 
-					debug("  at 0x%s Pack item %s = %s\n", Int64toHexString((*it).second->GetLocation(), 8).c_str(), 
-						  (*it).first.c_str(), (*it).second->GetString().c_str());
+//					debug("  at 0x%s Pack item %s = %s\n", Int64toHexString((*it).second->GetLocation(), 8).c_str(), 
+//						  (*it).first.c_str(), (*it).second->GetString().c_str());
 
 					Bytes += ThisBytes;
 
@@ -906,8 +906,8 @@ Uint32 MDObject::ReadValue(const Uint8 *Buffer, Uint32 Size, PrimerPtr UsePrimer
 
 						ThisBytes = (*it).second->ReadValue(Buffer, Length);
 
-						debug("  at 0x%s Pack item %s = %s\n", Int64toHexString((*it).second->GetLocation(), 8).c_str(), 
-							  (*it).first.c_str(), (*it).second->GetString().c_str());
+//						debug("  at 0x%s Variable Pack item %s = %s\n", Int64toHexString((*it).second->GetLocation(), 8).c_str(), 
+//							  (*it).first.c_str(), (*it).second->GetString().c_str());
 
 						Bytes += ThisBytes;
 					}
@@ -1010,7 +1010,7 @@ Uint32 MDObject::ReadValue(const Uint8 *Buffer, Uint32 Size, PrimerPtr UsePrimer
 
 					ThisBytes = NewItem->ReadValue(Buffer, Length);
 
-					debug("  at 0x%s Set item (%s) %s = %s\n", Int64toHexString(NewItem->GetLocation(), 8).c_str(), Key.GetString().c_str(), NewItem->Name().c_str(), NewItem->GetString().c_str());
+//					debug("  at 0x%s Set item (%s) %s = %s\n", Int64toHexString(NewItem->GetLocation(), 8).c_str(), Key.GetString().c_str(), NewItem->Name().c_str(), NewItem->GetString().c_str());
 
 					if(ThisBytes != Length)
 					{
