@@ -99,15 +99,10 @@ Uint32 Primer::ReadValue(const Uint8 *Buffer, Uint32 Size)
 }
 
 
-//! Primer for use when no primer is available (such as for index tables)
-PrimerPtr Primer::StaticPrimer;
-
 //! Determine the tag to use for a given UL - when no primer is availabe
 Tag Primer::StaticLookup(ULPtr ItemUL, Tag TryTag /*=0*/)
 {
-	if(!StaticPrimer) StaticPrimer = MDOType::MakePrimer();
-
-	return StaticPrimer->Lookup(ItemUL, TryTag);
+	return MDOType::GetStaticPrimer()->Lookup(ItemUL, TryTag);
 }
 
 

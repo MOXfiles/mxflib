@@ -330,7 +330,7 @@ protected:
 
 		//! Build a primer
 		static PrimerPtr MakePrimer(void);
-		static PrimerPtr GetStaticPrimer(void) { return StaticPrimer; };
+		static PrimerPtr GetStaticPrimer(void) { if( !StaticPrimer) return MakePrimer(); else return StaticPrimer; };
 
 		static MDOTypePtr Find(std::string BaseType);
 		static MDOTypePtr Find(const UL& BaseUL);

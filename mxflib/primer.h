@@ -63,8 +63,6 @@ namespace mxflib
 		Tag NextDynamic;						//! Next dynamic tag to try
 		std::map<UL, Tag> TagLookup;			//! Reverse lookup for locating a tag for a given UL
 
-		static PrimerPtr StaticPrimer;			//! Primer for use when no primer is available (such as for index tables)
-
 	public:
 		Primer() { NextDynamic = 0xffff; };
 		Uint32 ReadValue(const Uint8 *Buffer, Uint32 Size);

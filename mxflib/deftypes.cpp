@@ -813,12 +813,27 @@ void DefTypes_endElement(void *user_data, const char *name)
 }
 
 
+// Basic "internally required" class (enough to hold an "Unknown")
+namespace mxflib
+{
+	MXFLIB_CLASS_START(BasicInternalClasses)
+		MXFLIB_CLASS_ITEM("Unknown", "Unknown Set", ClassUsageOptional, "Unknown", 0, 0, 0x0000, "", NULL, NULL)
+	MXFLIB_CLASS_END
+}
+
 //! Load classes from the specified in-memory definitions
 /*! \return 0 if all OK
  *  \return -1 on error
  */
 int mxflib::LoadClasses(ClassRecordList &ClassesData)
 {
+	// Define the basic "internally required" classes (enough to hold an "Unknown")
+	static bool BasicClassesDefined = false;
+	if(!BasicClassesDefined)
+	{
+		BasicClassesDefined = true;
+		LoadClasses(BasicInternalClasses);
+	}
 	//! List to hold any entries that are not resolved during this pass (we will recurse to resolve them at the end of the pass)
 	ClassRecordList Unresolved;
 
@@ -848,6 +863,9 @@ int mxflib::LoadClasses(ClassRecordList &ClassesData)
 		// Recurse...
 		LoadClasses(Unresolved);
 	}
+
+	// Build a static primer (for use in index tables)
+	MDOType::MakePrimer();
 
 	return 0;
 }

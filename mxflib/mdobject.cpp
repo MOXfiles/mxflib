@@ -75,6 +75,10 @@ PrimerPtr MDOType::MakePrimer(void)
 		it++;
 	}
 
+	// Replace existing StaticPrimer
+	if( StaticPrimer ) delete StaticPrimer;
+	StaticPrimer = Ret;
+
 	return Ret;
 }
 
@@ -1683,7 +1687,7 @@ Uint32 MDObject::WriteKey(DataChunkPtr &Buffer, DictKeyFormat Format, PrimerPtr 
 
 			Tag UseTag;
 			if(UsePrimer) UseTag = UsePrimer->Lookup(TheUL, TheTag);
-			else UseTag = Primer::StaticLookup(TheUL, TheTag);
+			else UseTag = MDOType::GetStaticPrimer()->Lookup(TheUL, TheTag);
 
 			Uint8 Buff[2];
 			PutU16(UseTag, Buff);
@@ -1914,7 +1918,7 @@ void MDOType::LoadDict(const char *DictFile)
 	}
 
 	// Build a static primer (for use in index tables)
-	StaticPrimer = MakePrimer();
+	MakePrimer();
 }
 
 
