@@ -200,6 +200,12 @@ namespace mxflib
 		//! Ref access function
 		DictRefType GetRefType(void) const { return RefType; };
 
+		//! Accessor for Reference Target
+		MDOTypePtr GetRefTarget(void) const { return RefTarget; };
+
+		//! Accessor for Reference Target Name
+		std::string GetRefTargetName(void) const { return RefTargetName; };
+
 		//! Get the type name
 		std::string Name(void)
 		{
@@ -286,7 +292,7 @@ protected:
 		static PrimerPtr GetStaticPrimer(void) { return StaticPrimer; };
 
 		static MDOTypePtr Find(std::string BaseType);
-		static MDOTypePtr Find(ULPtr BaseUL);
+		static MDOTypePtr Find(const UL& BaseUL);
 		static MDOTypePtr Find(Tag BaseTag, PrimerPtr BasePrimer);
 
 	protected:
