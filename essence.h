@@ -629,7 +629,7 @@ namespace mxflib
 		typedef std::list<WrappingConfigPtr> WrappingConfigList;
 
 		// DRAGONS: Currently destroys PDList to preserve the essence handler
-		WrappingConfigPtr SelectWrappingOption(FileHandle InFile, ParserDescriptorListPtr PDList, Rational ForceEditRate, WrappingOption::WrapType ForceWrap = WrappingOption::WrapType::None)
+		WrappingConfigPtr SelectWrappingOption(FileHandle InFile, ParserDescriptorListPtr PDList, Rational ForceEditRate, WrappingOption::WrapType ForceWrap = WrappingOption::None)
 		{
 			WrappingConfigPtr Ret;
 
@@ -651,7 +651,7 @@ namespace mxflib
 						Ret = new WrappingConfig;
 
 						// Only accept wrappings of the specified type
-						if(ForceWrap != WrappingOption::WrapType::None)
+						if(ForceWrap != WrappingOption::None)
 						{
 							if((*it2)->ThisWrapType != ForceWrap)
 							{
