@@ -53,7 +53,7 @@ namespace mxflib
 		bool isOpen;				//! True when the file is open
 		bool isMemoryFile;			//! True is the file is a "memory file"
 		FileHandle Handle;			//! File hanlde
-		Uint64 RunInSize;			//! Size of run-in in physical file
+		Uint32 RunInSize;			//! Size of run-in in physical file
 
 		DataChunkPtr Buffer;		//! Memory file buffer pointer
 		Uint64 BufferOffset;		//! Offset of the start of the buffer from the start of the memory file
@@ -232,7 +232,7 @@ namespace mxflib
 					while(it != FileRIP.end())
 					{
 						PA->AddChild("BodySID", false)->SetUint((*it).second->BodySID);
-						PA->AddChild("ByteOffset", false)->SetUint((Uint32)(*it).second->ByteOffset);
+						PA->AddChild("ByteOffset", false)->SetUint64((*it).second->ByteOffset);
 						it++;
 					}
 				}
