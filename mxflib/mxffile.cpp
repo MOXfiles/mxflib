@@ -1153,7 +1153,7 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 		// If we are re-writing, but not writing an index, keep the old index settings
 		if(ReWrite)
 		{
-			ThisPartition->SetUint("IndexSID", OldPartition->GetUint("BodySID"));
+			ThisPartition->SetUint("IndexSID", OldPartition->GetUint("IndexSID"));
 			ThisPartition->SetUint64("IndexByteCount", OldPartition->GetUint64("IndexByteCount"));
 		}
 		else
