@@ -4,10 +4,11 @@
  *			The Primer class holds data about the mapping between local
  *          tags in a partition and the UL that gives access to the full
  *			definition
+ *
+ *	\version $Id$
+ *
  */
 /*
- *	$Id$
- *
  *	Copyright (c) 2003, Matt Beard
  *
  *	This software is provided 'as-is', without any express or implied warranty.

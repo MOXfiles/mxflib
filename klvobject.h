@@ -2,10 +2,11 @@
  *	\brief	Definition of classes that define basic KLV objects
  *
  *			Class KLVObject holds info about a KLV object
+ *
+ *	\version $Id$
+ *
  */
 /*
- *	$Id$
- *
  *	Copyright (c) 2003, Matt Beard
  *
  *	This software is provided 'as-is', without any express or implied warranty.

@@ -3,10 +3,11 @@
  *
  *  Converted from the version in "klvlib"
  *
+ *
+ *	\version $Id$
+ *
  */
 /*
- *	$Id$
- *
  *	Copyright (c) 2001 BBC R&D and 2003 Matt Beard
  *
  *	This software is provided 'as-is', without any express or implied warranty.
@@ -81,3 +82,5 @@ namespace mxflib
 	inline Int32 GetI32_LE(const unsigned char *src) { return (Int32)GetU32_LE(src); }
 	inline Int64 GetI64_LE(const unsigned char *src) { return (Int64)GetU64_LE(src); }
 }
+
+

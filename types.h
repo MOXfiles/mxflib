@@ -1,9 +1,10 @@
 /*! \file	types.h
  *	\brief	The main MXF data types
+ *
+ *	\version $Id$
+ *
  */
 /*
- *	$Id$
- *
  *	Copyright (c) 2003, Matt Beard
  *
  *	This software is provided 'as-is', without any express or implied warranty.
@@ -83,6 +84,12 @@ namespace mxflib
 		{
 			if(Other.Size() < SIZE ) return (memcmp(Ident, Other.Ident, Other.Size()) < 0);
 			                    else return (memcmp(Ident, Other.Ident, SIZE) < 0);
+		}
+
+		bool operator==(const Identifier& Other) const
+		{
+			if(Other.Size() != SIZE ) return false;
+								 else return (memcmp(Ident, Other.Ident, SIZE) == 0);
 		}
 
 		std::string GetString(void) const
@@ -177,6 +184,16 @@ namespace mxflib
 				Ident[11] = (Ident[11] & 0xf0) | Method;
 			}
 		}
+
+		//! Set the UMID's material number
+		void SetMaterial( ULPtr aUL )
+		{
+			// Set the instance number
+			memcpy(&Ident[16], aUL->GetValue(), 16);
+
+			// DRAGONS: Is this the right method for a UL?
+			Ident[11] = (Ident[11] & 0x0f) | 2<<4;
+		}
 	};
 
 	//! A smart pointer to a UMID object
@@ -194,4 +211,5 @@ namespace mxflib
 	};
 }
 
-#endif // MXFLIB__TYPES_H
+#endif MXFLIB__TYPES_H
+

@@ -3,15 +3,16 @@
  *
  *			This file contains the SmartPtr class (and helpers) originally
  *			written by Sandu Turcan and submitted to www.codeproject.com
+ *
+ *	\version $Id$
+ *
  */
 /*
  *	Important Note: 
  *	This code originally comes from www.codeproject.com
  *	and was written by Sandu Turcan (idlsoft@hotmail.com)
- *	The code has been modified and in this version is
- *	covered by the terms of the following licence:
- *
- *	$Id$
+ *	The code has been modified, with permission, and in this
+ *	version is covered by the terms of the following licence:
  *
  *	Copyright (c) 2003, Matt Beard
  *
