@@ -10,6 +10,8 @@
  *			These classes are currently wrappers around KLVLib structures
  */
 /*
+ *	$Id$
+ *
  *	Copyright (c) 2003, Matt Beard
  *
  *	This software is provided 'as-is', without any express or implied warranty.
@@ -39,7 +41,7 @@ using namespace mxflib;
 
 
 //! Default traits for types without special handling
-MDTraits DefaultTraits;
+static MDTraits DefaultTraits;
 
 
 //! Add a definition for a basic type
