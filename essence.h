@@ -73,9 +73,10 @@ namespace mxflib
 }
 
 
+
 namespace mxflib
 {
-	// Multiple Descriptor Generic Container Label
+	//! Default "Multiple Essence Types in the Generic Container" Label
 	const Uint8 MDGC_Data[16] = { 0x06, 0x0E, 0x2B, 0x34, 0x04, 0x01, 0x01, 0x03, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x7F, 0x01, 0x00 };
 }
 
