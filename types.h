@@ -211,5 +211,5 @@ namespace mxflib
 	};
 }
 
-#endif MXFLIB__TYPES_H
+#endif // MXFLIB__TYPES_H
 
