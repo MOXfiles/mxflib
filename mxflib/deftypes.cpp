@@ -112,6 +112,12 @@ static void DefineTraits(void)
 	TraitsMap.insert(TraitsMapType::value_type("UTF16String", new MDTraits_BasicStringArray));
 	TraitsMap.insert(TraitsMapType::value_type("Uint8Array", new MDTraits_RawArray));
 
+	TraitsMap.insert(TraitsMapType::value_type("UUID", new MDTraits_UUID));
+	TraitsMap.insert(TraitsMapType::value_type("Identifier16", new MDTraits_Identifier16));
+	TraitsMap.insert(TraitsMapType::value_type("Label", new MDTraits_Label));
+
+	TraitsMap.insert(TraitsMapType::value_type("UMID", new MDTraits_UMID));
+
 	TraitsMap.insert(TraitsMapType::value_type("LabelCollection", new MDTraits_RawArrayArray));
 
 	TraitsMap.insert(TraitsMapType::value_type("Rational", new MDTraits_Rational));
