@@ -99,7 +99,7 @@ WrappingOptionList mxflib::WAVE_PCM_EssenceSubParser::IdentifyWrappingOptions(Fi
 	ClipWrap->GCElementType = 0x02;						// Wave clip wrapped elemenet
 	ClipWrap->ThisWrapType = WrappingOption::Clip;		// Clip wrapping
 	ClipWrap->CanSlave = true;							// Can use non-native edit rate
-	ClipWrap->CanIndex = false;							// We CANNOT index this essence
+	ClipWrap->CanIndex = true;							// We CANNOT index this essence
 	ClipWrap->CBRIndex = true;							// This essence uses CBR indexing
 	ClipWrap->BERSize = 0;								// No BER size forcing
 
@@ -115,7 +115,7 @@ WrappingOptionList mxflib::WAVE_PCM_EssenceSubParser::IdentifyWrappingOptions(Fi
 	FrameWrap->GCElementType = 0x01;					// Wave frame wrapped elemenet
 	FrameWrap->ThisWrapType = WrappingOption::Frame;	// Frame wrapping
 	FrameWrap->CanSlave = true;							// Can use non-native edit rate
-	FrameWrap->CanIndex = false;						// We CANNOT index this essence
+	FrameWrap->CanIndex = true;						// We CANNOT index this essence
 	FrameWrap->CBRIndex = true;							// This essence uses CBR indexing
 	FrameWrap->BERSize = 0;								// No BER size forcing
 
