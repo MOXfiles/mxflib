@@ -106,7 +106,7 @@ namespace mxflib
 			if(isMemoryFile)
 			{
 				BufferCurrentPos = Position+RunInSize;
-				return Position;
+				return 0;
 			}
 
 			return mxflib::FileSeek(Handle, Position+RunInSize);
