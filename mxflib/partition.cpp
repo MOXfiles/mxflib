@@ -69,7 +69,7 @@ void mxflib::Partition::AddMetadata(MDObjectPtr NewObject)
 			{
 				has_target = true;
 
-				UUIDPtr ID = new UUID((*it).second->Value->PutData().Data);
+				UUIDPtr ID = new UUID((*it).second->Value->PutData()->Data);
 				RefTargets.insert(std::map<UUID, MDObjectPtr>::value_type(*ID, NewObject));
 			
 				// Try and satisfy all refs to this set
@@ -168,7 +168,7 @@ void mxflib::Partition::ProcessChildRefs(MDObjectPtr ThisObject)
 				}
 				else
 				{
-					UUIDPtr ID = new UUID((*it).second->Value->PutData().Data);
+					UUIDPtr ID = new UUID((*it).second->Value->PutData()->Data);
 					std::map<UUID, MDObjectPtr>::iterator mit = RefTargets.find(*ID);
 
 					if(mit == RefTargets.end())
@@ -752,5 +752,25 @@ MetadataPtr Partition::ParseMetadata(void)
 
 	// If we failed to find the preface (or to parse it) this will be NULL
 	return Ret;
+}
+
+
+//! Determine if the partition object is currently set as complete
+bool Partition::IsComplete(void)
+{
+	if(    Object->IsA("OpenCompleteHeader")        || Object->IsA("ClosedCompleteHeader") || Object->IsA("CompleteFooter")
+		|| Object->IsA("OpenCompleteBodyPartition") || Object->IsA("ClosedCompleteBodyPartition") ) return true;
+
+	return false;
+}
+
+//! Determine if the partition object is currently set as closed
+bool Partition::IsClosed(void)
+{
+	if(    Object->IsA("ClosedHeader")        || Object->IsA("ClosedCompleteHeader") 
+		|| Object->IsA("Footer")			  || Object->IsA("CompleteFooter")
+		|| Object->IsA("ClosedBodyPartition") || Object->IsA("ClosedCompleteBodyPartition") ) return true;
+
+	return false;
 }
 
