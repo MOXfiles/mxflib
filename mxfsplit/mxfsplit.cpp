@@ -411,7 +411,10 @@ static void DumpBody( PartitionPtr ThisPartition )
 				{
 					if( !Quiet ) printf( " NEW" );
 
-					fp = fopen( filename, "wb" );
+                    // @modif 20/01/2004 | replaced "wb" by "w+b" | marcvdb@users.sourceforge.net
+                    // This prevented the reloading of the files and thus always wrote the 
+                    // the default wave header
+					fp = fopen( filename, "w+b" );
 					if( !fp ) if( !Quiet ) printf( " ERROR");
 
 					StreamFile sf;
