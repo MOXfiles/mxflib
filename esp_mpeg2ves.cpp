@@ -236,7 +236,7 @@ Int64 MPEG2_VES_EssenceSubParser::GetCurrentPosition(void)
 	double Pos = iPictureNumber * SelectedEditRate.Numerator * NativeEditRate.Denominator;
 	Pos /= (SelectedEditRate.Denominator * NativeEditRate.Numerator);
 	
-	return floor(Pos + 0.5);
+	return (Int64)floor(Pos + 0.5);
 }
 
 
