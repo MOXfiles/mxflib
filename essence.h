@@ -648,8 +648,6 @@ namespace mxflib
 					WrappingOptionList::iterator it2 = WO.begin();
 					while(it2 != WO.end())
 					{
-						Ret = new WrappingConfig;
-
 						// Only accept wrappings of the specified type
 						if(ForceWrap != WrappingOption::None)
 						{
@@ -659,6 +657,8 @@ namespace mxflib
 								continue;
 							}
 						}
+
+						Ret = new WrappingConfig;
 
 						// DRAGONS: Default to the first valid option!
 						Ret->EssenceDescriptor = (*it).Descriptor;
