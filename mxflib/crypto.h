@@ -283,7 +283,7 @@ namespace mxflib
 		 */
 		virtual bool SetEncryptIV(Uint32 IVSize, const Uint8 *IV, bool Force = false)
 		{
-			Force;		// Unused parameter
+			Force = !(!Force);		// Unused parameter
 
 			EncryptionIV = new DataChunk(IVSize, IV);
 
