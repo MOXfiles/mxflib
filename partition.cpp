@@ -492,11 +492,12 @@ MDObjectListPtr mxflib::Partition::ReadIndex(MXFFilePtr File, Uint64 Size)
 // Sequential access to the Elements of the Body
 
 // goto start of body...set the member variables _BodyLocation, _NextBodyLocation
+// DRAGONS: Need to document return value!!
 bool mxflib::Partition::StartElements()
 {
 	_BodyLocation = 0;
 
-	if(!Object->GetParentFile()) { error("Call to Partition::StartElements() on a non-file partition\n"); return NULL; }
+	if(!Object->GetParentFile()) { error("Call to Partition::StartElements() on a non-file partition\n"); return false; }
 
 	MXFFilePtr PF = Object->GetParentFile();
 
@@ -516,7 +517,7 @@ bool mxflib::Partition::StartElements()
 	// skip over Index (and any leading Fill on Body)
 	_NextBodyLocation = SkipFill( _NextBodyLocation + IndexSize );
 
-	return NULL != _NextBodyLocation;
+	return _NextBodyLocation != 0;
 }
 
 // goto _NextBodyLocation
