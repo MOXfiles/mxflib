@@ -242,6 +242,48 @@ namespace mxflib
 
 			ExternalBuffer = true;
 		}
+
+		//! Transfer ownership of a data buffer from another DataChunk
+		/*! This is a very efficient way to set one DataChunk to the value of another.
+		 *  However it partially destroys the source DataChunk by stealing its buffer.
+		 *  \return true on success, false on failure
+		 */
+		bool TakeBuffer(DataChunk &OldOwner)
+		{
+			Uint32 BuffSize = OldOwner.Size;
+			Uint32 AllocatedSize = OldOwner.DataSize;
+
+			// Steal the old buffer
+			Uint8 *Buffer = OldOwner.StealBuffer();
+
+			// Fail if the old owner does not own its buffer!
+			if(!Buffer) return false;
+
+			SetBuffer(Buffer, BuffSize, AllocatedSize);
+
+			return true;
+		}
+
+		//! Transfer ownership of a data buffer from another DataChunk (via a smart pointer)
+		/*! This is a very efficient way to set one DataChunk to the value of another.
+		 *  However it partially destroys the source DataChunk by stealing its buffer.
+		 *  \return true on success, false on failure
+		 */
+		bool TakeBuffer(DataChunkPtr &OldOwner)
+		{
+			Uint32 BuffSize = OldOwner->Size;
+			Uint32 AllocatedSize = OldOwner->DataSize;
+
+			// Steal the old buffer
+			Uint8 *Buffer = OldOwner->StealBuffer();
+
+			// Fail if the old owner does not own its buffer!
+			if(!Buffer) return false;
+
+			SetBuffer(Buffer, BuffSize, AllocatedSize);
+
+			return true;
+		}
 	};
 }
 
