@@ -624,6 +624,16 @@ namespace mxflib
 		//! Build an essence parser with all known sub-parsers
 		EssenceParser();
 
+		//! Add a new EssenceSubParser type
+		/*! This adds an instance of a sub parser type that can be used to identify essence 
+		 *  and will act as a factory to build more instances of that sub parser type if required
+		 *  to parse an essence stream
+		 */
+		void AddSubParserType(EssenceSubParserBase *NewType)
+		{
+			EPList.push_back(NewType);
+		}
+
 		//! Build a list of parsers with their descriptors for a given essence file
 		ParserDescriptorListPtr IdentifyEssence(FileHandle InFile);
 
