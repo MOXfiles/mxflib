@@ -429,7 +429,7 @@ SourceClipPtr Track::AddSourceClip(Int64 Duration /*=-1*/)
 	Sequence["StructuralComponents"]->AddChild("StructuralComponent", false)->MakeLink(Ret->Object);
 
 	// Copy the data definition from the sequence
-	Ret->AddChild("DataDefinition")->ReadValue(Sequence["DataDefinition"]->PutData().Data, 16);
+	Ret->AddChild("DataDefinition")->ReadValue(Sequence["DataDefinition"]->PutData());
 
 	// Add this sequence to the list of "owned" components
 	Components.push_back(SmartPtr_Cast(Ret, Component));
@@ -481,7 +481,7 @@ TimecodeComponentPtr Track::AddTimecodeComponent(Uint16 FPS, bool DropFrame, Int
 	Sequence["StructuralComponents"]->AddChild("StructuralComponent", false)->MakeLink(Ret->Object);
 
 	// Copy the data definition from the sequence
-	Ret->AddChild("DataDefinition")->ReadValue(Sequence["DataDefinition"]->PutData().Data, 16);
+	Ret->AddChild("DataDefinition")->ReadValue(Sequence["DataDefinition"]->PutData());
 
 	// Record the track as the parent of the new Timecode Component
 	Ret->SetParent(this);
@@ -525,7 +525,7 @@ DMSegmentPtr Track::AddDMSegment(Int64 EventStart /*=-1*/,Int64 Duration /*=-1*/
 	Sequence["StructuralComponents"]->AddChild("StructuralComponent", false)->MakeLink(Ret->Object);
 
 	// Copy the data definition from the sequence
-	Ret->AddChild("DataDefinition")->ReadValue(Sequence["DataDefinition"]->PutData().Data, 16);
+	Ret->AddChild("DataDefinition")->ReadValue(Sequence["DataDefinition"]->PutData());
 
 	// Record the track as the parent of the new DMSegment
 	Ret->SetParent(this);
@@ -749,6 +749,39 @@ TrackPtr Package::AddTrack(ULPtr DataDef, Uint32 TrackNumber, std::string TrackN
 	Ret->SetParent(this);
 
 	return Ret;
+}
+
+
+//! Remove a track from this package
+void Package::RemoveTrack(TrackPtr &Track)
+{
+	TrackList::iterator it = Tracks.begin();
+	while(it != Tracks.end())
+	{
+		if((*it) == Track)
+		{
+			// Add this track to the package
+			MDObjectPtr TrackList = Child("Tracks");
+
+			// Remove the track from the list of tracks in this package
+			if(TrackList)
+			{
+				MDObject::iterator Track_it = TrackList->begin();
+				while(Track_it != TrackList->end())
+				{
+					if((*Track_it).second->GetLink() == (*it)->Object)
+					{
+						TrackList->RemoveChild((*Track_it).second);
+						break;
+					}
+					Track_it++;
+				}
+			}
+			Tracks.erase(it);
+			break;
+		}
+		it++;
+	}
 }
 
 
