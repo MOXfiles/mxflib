@@ -50,9 +50,11 @@ void KLVObject::Init(void)
 	SourceOffset = -1;
 	KLSize = 0;
 	SourceFile = NULL;
+	ValueLength = 0;
 
 //	ObjectName = "";
 }
+
 
 
 //! Get text that describes where this item came from
