@@ -226,7 +226,7 @@ ULPtr OP2bUL = new UL(OP2b_Data);
 
 int main(int argc, char *argv[])
 {
-	fprintf( stderr, "MXFlib File Wrapper\n" );
+	printf("MXFlib File Wrapper\n\n");
 
 	// Build an essence parser
 	EssenceParser EssParse;
