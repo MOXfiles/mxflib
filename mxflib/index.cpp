@@ -341,6 +341,14 @@ IndexSegmentPtr IndexTable::AddSegment(MDObjectPtr Segment)
 
 	EditUnitByteCount = Segment->GetUint("EditUnitByteCount");
 
+	// Set the index and body SIDs if not yet known
+	// DRAGONS: Should we check that they match when loading later segments?
+	if( IndexSID == 0 )
+	{
+		IndexSID = Segment->GetUint("IndexSID");
+		BodySID = Segment->GetUint("BodySID");
+	}
+
 	if( EditUnitByteCount ) // CBR
 	{
 		MDObjectPtr	pEditRate = Segment["IndexEditRate"];

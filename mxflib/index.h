@@ -193,7 +193,14 @@ namespace mxflib
 
 	public:
 		//! Construct an IndexTable with no CBRDeltaArray
-		IndexTable() : EditUnitByteCount(0) , BaseDeltaCount(0) { EditRate.Numerator=0; EditUnitByteCount=0; NSL=0; NPE=0; IndexEntrySize=11; };
+		IndexTable() : IndexSID(0), BodySID(0), EditUnitByteCount(0) , BaseDeltaCount(0) 
+		{ 
+			EditRate.Numerator=0; 
+			EditUnitByteCount=0; 
+			NSL=0; 
+			NPE=0; 
+			IndexEntrySize=11; 
+		};
 
 		//! Free any memory used by BaseDeltaArray when this IndexTable is destroyed
 		~IndexTable() 
