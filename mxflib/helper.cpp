@@ -376,6 +376,7 @@ std::string mxflib::SearchPath(const char *Path, const char *Filename)
 		{
 			// Copy the section until the next separator
 			strncpy(Buffer, p, sep - p);
+			Buffer[sep-p]='\0';
 
 			// Advance the pointer to the character following the separator
 			p = sep;
