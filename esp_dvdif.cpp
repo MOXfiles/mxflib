@@ -462,7 +462,7 @@ MDObjectPtr DV_DIF_EssenceSubParser::BuildCDCIEssenceDescriptor(FileHandle InFil
 		NativeEditRate.Denominator = 1;
 	}
 
-printf("Assumed interleaved...\n");
+//DRAGONS: printf("Assumed interleaved...\n");
 //	if(Progressive) Ret->SetInt("FrameLayout", 0); else Ret->SetInt("FrameLayout", 1);
 	Ret->SetInt("FrameLayout", 1);
 
@@ -477,7 +477,7 @@ printf("Assumed interleaved...\n");
 		Ret->SetUint("StoredHeight", 240);
 	}
 
-printf("Assumed 4:3...\n");
+//DRAGONS: printf("Assumed 4:3...\n");
 //	if(Aspect) Ret->SetString("AspectRatio", Aspect); else Ret->SetDValue("AspectRatio");
 	Ret->SetString("AspectRatio", "4/3");
 
