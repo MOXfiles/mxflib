@@ -135,13 +135,13 @@ int mxflib::LoadTypes(char *TypesFile)
 	State.CurrentCompound = NULL;
 	State.CompoundName[0] = '\0';
 
-	char *xmlFilePath = lookupDataFilePath(TypesFile);
+	std::string XMLFilePath = LookupDictionaryPath(TypesFile);
 
 	// Parse the file
-	bool result = sopSAXParseFile(&DefTypes_SAXHandler, &State, xmlFilePath);
-	if (xmlFilePath)
-		delete [] xmlFilePath;
-	if (! result)
+	bool result = false;
+	
+	if(XMLFilePath.size()) result = sopSAXParseFile(&DefTypes_SAXHandler, &State, XMLFilePath.c_str());
+	if (!result)
 	{
 		error("sopSAXParseFile failed for %s\n", TypesFile);
 		return -1;
