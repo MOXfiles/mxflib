@@ -199,7 +199,9 @@ namespace mxflib
 
 #define DIR_SEPARATOR		'\\'
 #define PATH_SEPARATOR		';'
+#ifndef DEFAULT_DICT_PATH
 #define DEFAULT_DICT_PATH	".\\"
+#endif //DEFAULT_DICT_PATH
 
 namespace mxflib
 {
@@ -348,8 +350,9 @@ namespace mxflib
 
 #define DIR_SEPARATOR		'/'
 #define PATH_SEPARATOR		':'
+#ifndef DEFAULT_DICT_PATH
 #define DEFAULT_DICT_PATH	"/usr/local/share/mxflib/"
-
+#endif //DEFAULT_DICT_PATH
 
 	/******** 64-bit file-I/O ********/
 #ifndef MXFLIB_NO_FILE_IO
