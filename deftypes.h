@@ -2,6 +2,8 @@
  *	\brief	Header file for deftypes.cpp which loads type definitions
  */
 /*
+ *	$Id$
+ *
  *	Copyright (c) 2003, Matt Beard
  *
  *	This software is provided 'as-is', without any express or implied warranty.

@@ -2,6 +2,8 @@
  *	\brief	Implementation of class that handles parsing of MPEG-2 video elementary streams
  */
 /*
+ *	$Id$
+ *
  *	Copyright (c) 2003, Matt Beard
  *
  *	This software is provided 'as-is', without any express or implied warranty.

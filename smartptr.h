@@ -11,6 +11,8 @@
  *	The code has been modified and in this version is
  *	covered by the terms of the following licence:
  *
+ *	$Id$
+ *
  *	Copyright (c) 2003, Matt Beard
  *
  *	This software is provided 'as-is', without any express or implied warranty.
