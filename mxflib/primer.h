@@ -70,7 +70,7 @@ namespace mxflib
 		Uint32 ReadValue(const Uint8 *Buffer, Uint32 Size);
 
 		//! Write this primer to a memory buffer
-		Uint32 WritePrimer(DataChunk &Buffer);
+		Uint32 WritePrimer(DataChunkPtr &Buffer);
 
 		//! Determine the tag to use for a given UL
 		Tag Lookup(ULPtr ItemUL, Tag TryTag = 0);
