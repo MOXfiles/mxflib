@@ -818,7 +818,7 @@ ULPtr mxflib::MXFFile::ReadKey(void)
 {
 	ULPtr Ret;
 
-	Uint64 Location = Tell();
+//	Uint64 Location = Tell();
 	DataChunkPtr Key = Read(16);
 
 	// If we couldn't read 16-bytes then bug out (this may be valid)
