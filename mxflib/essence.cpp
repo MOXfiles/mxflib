@@ -1360,18 +1360,17 @@ EssenceParser::WrappingConfigPtr EssenceParser::SelectWrappingOption(FileHandle 
 
 				// DRAGONS: Default to the first valid option!
 				Ret->EssenceDescriptor = (*it).Descriptor;
-				MDObjectPtr Ptr = Ret->EssenceDescriptor["SampleRate"];
+				MDObjectPtr SampleRate = Ret->EssenceDescriptor["SampleRate"];
 
-				if((!Ptr) || (ForceEditRate.Numerator != 0))
+				if((!SampleRate) || (ForceEditRate.Numerator != 0))
 				{
 					Ret->EditRate.Numerator = ForceEditRate.Numerator;
 					Ret->EditRate.Denominator = ForceEditRate.Denominator;
 				}
 				else
 				{
-					std::string Rate = Ptr->GetString();
-					Ret->EditRate.Numerator = Ptr->GetInt("Numerator");
-					Ret->EditRate.Denominator = Ptr->GetInt("Denominator");
+					Ret->EditRate.Numerator = SampleRate->GetInt("Numerator");
+					Ret->EditRate.Denominator = SampleRate->GetInt("Denominator");
 				}
 
 				Ret->WrapOpt = (*it2);
@@ -1381,7 +1380,11 @@ EssenceParser::WrappingConfigPtr EssenceParser::SelectWrappingOption(FileHandle 
 				if( Ret->WrapOpt->Handler->SetEditRate(0, Ret->EditRate) )
 				{
 					// All OK, including requested edit rate
-					
+
+					// Update the SampleRate in the Descriptor to the rate in use (which may be different than its native rate)
+					SampleRate->SetInt("Numerator", Ret->EditRate.Numerator);
+					SampleRate->SetInt("Denominator", Ret->EditRate.Denominator);
+
 					Ret->WrapOpt->BytesPerEditUnit = Ret->WrapOpt->Handler->GetBytesPerEditUnit();
 
 					// Remove all entries that index this handler to prevent it being deleted
