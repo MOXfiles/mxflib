@@ -81,7 +81,7 @@ static void DumpBody(PartitionPtr ThisPartition);
 
 int main(int argc, char *argv[])
 {
-	printf("MXFlib File Splitter\n");
+	fprintf( stderr,"MXFlib File Splitter\n" );
 
 	LoadTypes("types.xml");
 	MDOType::LoadDict("xmldict.xml");
@@ -101,6 +101,7 @@ int main(int argc, char *argv[])
 #ifdef DMStiny
 		fprintf( stderr,"                       [-td=filename] Use DMStiny dictionary \n" );
 #endif
+		if( !Quiet ) { fprintf( stderr,"press enter to continue..."); getchar(); }
 
 		return 1;
 	}
@@ -154,6 +155,7 @@ int main(int argc, char *argv[])
 	if (! TestFile->Open(argv[num_options+1], true))
 	{
 		perror(argv[num_options+1]);
+		if( !Quiet ) { fprintf( stderr,"press enter to continue..."); getchar(); }
 		exit(1);
 	}
 
@@ -226,6 +228,8 @@ int main(int argc, char *argv[])
 		itFile++;
 	}
 	theStreams.clear();
+
+	if( !Quiet ) { fprintf( stderr,"press enter to continue..."); getchar(); }
 
 	return 0;
 }
