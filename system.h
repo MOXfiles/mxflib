@@ -150,6 +150,14 @@ namespace mxflib
 		return std::string(Buffer);
 	};
 
+	inline std::string Uint64toHexString(Uint64 Val, int Digits = 0)
+	{
+		char Buffer[32];
+		if(Digits > 30) Digits = 30;
+		sprintf(Buffer,"%0*I64x", Digits, Val );
+		return std::string(Buffer);
+	};
+
 	/******** 64-bit file-I/O ********/
 
 #include <io.h>
