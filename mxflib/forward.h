@@ -40,11 +40,17 @@
 namespace mxflib 
 {
 	class DataChunk;
-	typedef SmartPtr<DataChunk> DataChunkPtr;				//! A smart pointer to a DataChunk object
-	typedef std::list<DataChunkPtr> DataChunkList;			//! A list of smart pointers to DataChunk objects
+	typedef SmartPtr<DataChunk> DataChunkPtr;				//!< A smart pointer to a DataChunk object
+	typedef std::list<DataChunkPtr> DataChunkList;			//!< A list of smart pointers to DataChunk objects
 
 	class MXFFile;
-	typedef SmartPtr<MXFFile> MXFFilePtr;					//! A smart pointer to an MXFFile object
+	typedef SmartPtr<MXFFile> MXFFilePtr;					//!< A smart pointer to an MXFFile object
+
+	// Forward declare so the class can include pointers to itself
+	class KLVObject;
+
+	//! A smart pointer to a KLVObject object
+	typedef SmartPtr<KLVObject> KLVObjectPtr;
 }
 
 
