@@ -412,7 +412,7 @@ static void DumpBody( PartitionPtr ThisPartition )
 			{
 				if( !Quiet ) printf( "EXTRANEOUS Element: K=%s L=0x%s\n", 
 															anElement->GetUL()->GetString().c_str(),
-															Int64toHexString( anElement->GetSize(), 8 ).c_str() );
+															Int64toHexString( anElement->GetLength(), 8 ).c_str() );
 			}
 			else
 			{
@@ -425,7 +425,7 @@ static void DumpBody( PartitionPtr ThisPartition )
 									kind.Number );
 
 				if( !Quiet ) printf( "GC Element: L=0x%s File=%s", 
-															Int64toHexString( anElement->GetSize(), 8 ).c_str(),
+															Int64toHexString( anElement->GetLength(), 8 ).c_str(),
 															filename );
 
 				itFile = theStreams.find( filename );
@@ -458,12 +458,15 @@ static void DumpBody( PartitionPtr ThisPartition )
 
 				if( !Quiet ) printf( "\n" );
 
-				DataChunkPtr theEss = anElement->GetData();
+				// Read entire essence KLV
+				// DRAGONS: This is likely to be messy with large KLVs such as clip-wrapped essence!
+				anElement->ReadData();
+				DataChunk &theEss = anElement->GetData();
 
 				//diagnostics
 				//printf( "  writing %x bytes to %s\n", theEss->Size, (*itFile).first.c_str() );
 
-				fwrite( theEss->Data, 1, theEss->Size, (*itFile).second.file );
+				fwrite( theEss.Data, 1, theEss.Size, (*itFile).second.file );
 
 			}
 		}

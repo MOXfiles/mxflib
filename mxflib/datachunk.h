@@ -81,6 +81,7 @@ namespace mxflib
 		{
 			if(Size == NewSize) return;
 
+			// Simple truncate or resize within the existing buffer size
 			if(DataSize >= NewSize) 
 			{
 				Size = NewSize;

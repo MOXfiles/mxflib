@@ -1,4 +1,4 @@
-/*! \file	esp_mpeg2ves.h
+/*! \file	esp_wavepcm.h
  *	\brief	Definition of class that handles parsing of uncompressed pcm wave audio files
  *
  *	\version $Id$
