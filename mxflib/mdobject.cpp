@@ -1829,6 +1829,7 @@ void MDOType::LoadDict(const char *DictFile)
 	bool result = false;
 	
 	if(XMLFilePath.size()) result = sopSAXParseFile(&SAXHandler, &State, XMLFilePath.c_str());
+	if(!result)
 	{
 		error("sopSAXParseFile failed for %s\n", DictFile);
 		return;
