@@ -267,7 +267,7 @@ namespace mxflib
 		Uint32 WriteBER(Uint64 Length, Uint32 Size = 0) { DataChunkPtr BER = MakeBER(Length, Size); Write(*BER); return BER->Size; };
 
 		//! Write raw data
-		Uint64 Write(Uint8 *Buffer, Uint32 Size) 
+		Uint64 Write(const Uint8 *Buffer, Uint32 Size) 
 		{ 
 			if(isMemoryFile) return MemoryWrite(Buffer, Size);
 
