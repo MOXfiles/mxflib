@@ -28,10 +28,10 @@
  */
 
 #include <mxflib/mxflib.h>
+#include <mxflib/helper.h>
 #include <mxflib/sopsax.h>
 
 #include <stdarg.h>
-#define PATH_MAX            512
 
 
 using namespace mxflib;
@@ -135,35 +135,17 @@ int mxflib::LoadTypes(char *TypesFile)
 	State.CurrentCompound = NULL;
 	State.CompoundName[0] = '\0';
 
-	// look for the file in well-known places
-	char path[PATH_MAX];
-	FILE* dict;
-	strcpy( path, TypesFile );
-	if( NULL!=(dict=fopen( path, "rb" ))) fclose( dict ); // found as given
-	else
-	{
-		strcpy( path, "/usr/share/mxflib/" );
-		strcat( path, TypesFile );
-		if( NULL!=(dict=fopen( path, "rb" ))) fclose( dict );	// found in /usr/share/mxflib
-																// Win32, will be on same drive as local
-		else
-		{
-			char* p=getenv("MXFLIB_DICT_PATH" );
-			if( NULL==p ) p="/";
-			strcpy( path, p );
-			char term = path[strlen(path)-1];
-			if( '/'!=term && '\\'!=term && ':'!=term ) strcat( path, "/" );
-			strcat( path, TypesFile );
-			if( NULL!=(dict=fopen( path, "rb" ))) fclose( dict );	// found in environment path
-
-			else { error( "Types Dictionary file ", TypesFile, " not found" ); }
-		}
-	}
+	char *xmlFilePath = lookupDataFilePath(TypesFile);
 
 	// Parse the file
-	sopSAXParseFile(&DefTypes_SAXHandler, &State, path);
-
-	// DRAGONS - we should test for an error condition!
+	bool result = sopSAXParseFile(&DefTypes_SAXHandler, &State, xmlFilePath);
+	if (xmlFilePath)
+		delete [] xmlFilePath;
+	if (! result)
+	{
+		error("sopSAXParseFile failed for %s\n", TypesFile);
+		exit(1);
+	}
 
 
 	// Finally ensure we have a valid "Unknown" type
