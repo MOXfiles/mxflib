@@ -51,7 +51,8 @@ static MDTraits DefaultTraits;
 MDTypePtr MDType::AddBasic(std::string TypeName, int TypeSize)
 {
 	// Can't have a zero length basic type!
-	ASSERT(TypeSize != 0);
+	// But we can have a variable size (==0)
+	// ASSERT(TypeSize != 0);
 
 	// Create a new MDType to manage
 	MDTypePtr NewType = new MDType(TypeName, BASIC, &DefaultTraits);

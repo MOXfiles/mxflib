@@ -94,6 +94,7 @@ static void DefineTraits(void)
 	// Not a real type, but the default for compound types
 	TraitsMap.insert(TraitsMapType::value_type("Default-Compound", new MDTraits_BasicCompound));
 
+	TraitsMap.insert(TraitsMapType::value_type("RAW", new MDTraits_Raw));
 
 	TraitsMap.insert(TraitsMapType::value_type("Int8", new MDTraits_Int8));
 	TraitsMap.insert(TraitsMapType::value_type("Uint8", new MDTraits_Uint8));
