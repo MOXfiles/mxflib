@@ -1703,7 +1703,7 @@ void MDOType::LoadDict(const char *DictFile)
 	if (! result)
 	{
 		error("sopSAXParseFile failed for %s\n", DictFile);
-		exit(1);
+		return;
 	}
 
 	// If "Unknown" is not yet defined - define it
