@@ -924,6 +924,7 @@ Uint32 MDObject::ReadValue(const Uint8 *Buffer, Uint32 Size, PrimerPtr UsePrimer
 						// Length == 0, so skip this item
 						//(*it).second->ReadValue(Buffer, 0);
 						(*it).second->ClearModified();
+						ThisBytes = 0;
 					}
 
 					it++;
