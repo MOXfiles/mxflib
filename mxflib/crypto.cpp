@@ -1404,7 +1404,7 @@ bool KLVEObject::WriteFooter(void)
 	}
 
 	// Resize the buffer to exactly the amount of data we built
-	ASSERT((p - Buffer->Data) == FooterLength);
+	ASSERT((Uint32)(p - Buffer->Data) == FooterLength);
 	Buffer->Resize((int)(p - Buffer->Data));
 
 	// Write the footer
