@@ -92,6 +92,44 @@ DataChunkPtr mxflib::MakeBER(Uint64 Length, Uint32 Size /*=0*/)
 }
 
 
+//! Read a BER length
+/*! \param Data is a pointer to a pointer to the data so that the pointer will be updated to point to the first byte <b>after</b> the length.
+ *  \param MaxSize is the maximum number of bytes available to read the BER length. This function never reads from more than 9 bytes as SMPTE 377M forbids vast BER lengths.
+ *  \return The length, or -1 if the data was not a valid BER length
+ *  \note MaxSize is signed to allow calling code to end up with -ve available bytes!
+ */
+Length ReadBER(Uint8 **Data, int MaxSize)
+{
+	if(MaxSize <= 0) return -1;
+
+	// Read the short-form length, or number of bytes for long-form
+	int Bytes = *((*Data)++);
+
+	// Return short-form length
+	if(Bytes < 128) return (Length)Bytes;
+
+	// 0x80 is not valid for MXF lengths (it is "length not specified" in BER)
+	if(Bytes == 128) return -1;
+
+	// Now we have the byte count
+	Bytes -= 128;
+
+	// Don't read passed the end of the available data!
+	// (We use >= not > as we have already processed one byte)
+	if(Bytes >= MaxSize) return -1;
+
+	// Read in each byte
+	Length Ret = 0;
+	while(Bytes--)
+	{
+		Ret <<= 8;
+		Ret += *((*Data)++);
+	}
+
+	return Ret;
+}
+
+
 //! Encode a Uint64 as a BER OID subid (7 bits per byte)
 //! length > 0: length is maximum length of subid
 //! length == 0: as long as necessary

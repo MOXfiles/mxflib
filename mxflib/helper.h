@@ -93,8 +93,10 @@ namespace mxflib
 	}
 
 	//! Build a BER length
-//	class DataChunkPtr;
 	DataChunkPtr MakeBER(Uint64 Length, Uint32 Size = 0);
+
+	//! Read a BER length
+	Length ReadBER(Uint8 **Data, int MaxSize);
 
 	//! Encode a Uint64 as a BER OID subid (7 bits per byte)
 	//! length > 0: length is maximum length of subid
