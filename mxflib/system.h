@@ -117,19 +117,13 @@ namespace mxflib
 	/******** ENDIAN SWAPPING ********/
 	inline Uint16 Swap(Uint16 Val) 
 	{
-		if (!littleEndian)
-			return Val;
-		else	
-			return ((Val & 0xff00) >> 8) | ((Val & 0x00ff) << 8); 
+		return ((Val & 0xff00) >> 8) | ((Val & 0x00ff) << 8); 
 	};
 
 	inline Int16 Swap(Int16 Val) { return (Int16)Swap((Uint16)Val); };
 	
 	inline Uint32 Swap(Uint32 Val) 
 	{ 
-		if (!littleEndian)
-			return Val;
-
 		return ( ((Val & 0xff000000) >> 24)
 			   | ((Val & 0x00ff0000) >> 8)
 			   | ((Val & 0x0000ff00) << 8)
@@ -139,9 +133,6 @@ namespace mxflib
 
 	inline Uint64 Swap(Uint64 Val) 
 	{ 
-		if (!littleEndian)
-			return Val;
-
 		Uint32 MSW = (Uint32)((Val & 0xffffffff00000000) >> 32);
 		Uint32 LSW = (Uint32)(Val & 0x00000000ffffffff);
 
