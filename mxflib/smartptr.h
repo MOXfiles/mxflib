@@ -550,7 +550,7 @@ namespace mxflib
 		}
 
 		//! Copy construct
-		ParentPtr(ParentPtr &rhs)
+		ParentPtr(const ParentPtr &rhs)
 		{
 			__m_refcount = NULL;
 			__Assign(rhs.GetRef());
