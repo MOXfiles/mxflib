@@ -789,6 +789,12 @@ namespace mxflib
 		void SetLink(MDObjectPtr NewLink) { Object->SetLink(NewLink); };
 		DictRefType GetRefType(void) const { return Object->GetRefType(); };
 
+		//! Determine if this object is derived from a specified type (directly or indirectly)
+		bool IsA(std::string BaseType) { return Object->IsA(BaseType); }
+
+		//! Determine if this object is derived from a specified type (directly or indirectly)
+		bool IsA(MDOTypePtr BaseType) { return Object->IsA(BaseType); }
+
 		//! Set the parent details when an object has been read from a file
 		void SetParent(MXFFilePtr File, Uint64 Location, Uint32 NewKLSize) { Object->SetParent(File, Location, NewKLSize); };
 
