@@ -136,6 +136,8 @@ namespace mxflib
 	//! Set a data chunk from a hex string
 	DataChunkPtr Hex2DataChunk(std::string Hex);
 
+	// File path utility functions
+	char *lookupDataFilePath(const char *filename);
 
 	// File read primitives
 
