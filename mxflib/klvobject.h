@@ -149,6 +149,7 @@ namespace mxflib
 			SourceOffset = Location;
 			KLSize = NewKLSize;
 			SourceFile = File;
+			ValueLength = ValueLen;
 		}
 
 		//! Set the source details when an object is build in memory
@@ -162,6 +163,7 @@ namespace mxflib
 			SourceOffset = Location;
 			KLSize = NewKLSize;
 			SourceFile = NULL;
+			ValueLength = ValueLen;
 		}
 
 		//! Get the object's UL
