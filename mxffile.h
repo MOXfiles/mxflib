@@ -52,7 +52,7 @@ namespace mxflib
 	protected:
 		bool isOpen;				//! True when the file is open
 		bool isMemoryFile;			//! True is the file is a "memory file"
-		KLVFile Handle;				//! File hanlde
+		FileHandle Handle;			//! File hanlde
 		Uint64 RunInSize;			//! Size of run-in in physical file
 
 		DataChunkPtr Buffer;		//! Memory file buffer pointer
