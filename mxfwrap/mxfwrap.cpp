@@ -1078,14 +1078,17 @@ int Process(	int OutFileNum,
 
 			// Set indexing options for this stream
 			// FIXME: This needs to be done only once based on CBR or VBR nature of combined group!!
-			if((*WrapCfgList_it)->WrapOpt->ThisWrapType == WrappingOption::Frame)
+			if(UseIndex || SparseIndex || SprinkledIndex)
 			{
-				if((*WrapCfgList_it)->WrapOpt->CBRIndex) SetStreamIndex(Stream[iTrack], true); 
-				else SetStreamIndex(Stream[iTrack], false);
-			}
-			else
-			{
-				warning("Indexing only currently supported for frame wrapping\n");
+				if((*WrapCfgList_it)->WrapOpt->ThisWrapType == WrappingOption::Frame)
+				{
+					if((*WrapCfgList_it)->WrapOpt->CBRIndex) SetStreamIndex(Stream[iTrack], true); 
+					else SetStreamIndex(Stream[iTrack], false);
+				}
+				else
+				{
+					warning("Indexing only currently supported for frame wrapping\n");
+				}
 			}
 
 			// Add this stream to the body writer (first pass only)
@@ -1116,14 +1119,17 @@ int Process(	int OutFileNum,
 			EssenceID[iTrack] = Source->GetStreamID();
 
 			// Set indexing options for this stream
-			if((*WrapCfgList_it)->WrapOpt->ThisWrapType == WrappingOption::Frame)
+			if(UseIndex || SparseIndex || SprinkledIndex)
 			{
-				if((*WrapCfgList_it)->WrapOpt->CBRIndex) SetStreamIndex(Stream[iTrack], true); 
-				else SetStreamIndex(Stream[iTrack], false);
-			}
-			else
-			{
-				warning("Indexing only currently supported for frame wrapping\n");
+				if((*WrapCfgList_it)->WrapOpt->ThisWrapType == WrappingOption::Frame)
+				{
+					if((*WrapCfgList_it)->WrapOpt->CBRIndex) SetStreamIndex(Stream[iTrack], true); 
+					else SetStreamIndex(Stream[iTrack], false);
+				}
+				else
+				{
+					warning("Indexing only currently supported for frame wrapping\n");
+				}
 			}
 
 			// Add this stream to the body writer
