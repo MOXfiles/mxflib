@@ -74,6 +74,10 @@ namespace mxflib
 	public:
 		MDTraits() {};
 
+		//! Does this trait take control of all sub-data and build values in the values own DataChunk?
+		/*! Normally any contained sub-types (such as array items or compound members) hold their own data */
+		virtual bool HandlesSubdata(void) const { return false; };
+
 	// Default implementations
 	protected:
 		virtual void SetInt(MDValuePtr Object, Int32 Val);
@@ -228,11 +232,21 @@ namespace mxflib
 
 	class MDTraits_UUID : public MDTraits_Raw
 	{
+	public:
+		//! Does this trait take control of all sub-data and build values in the values own DataChunk?
+		/*! The entire UUID is held locally */
+		virtual bool HandlesSubdata(void) const { return true; };
+
 	protected:
 		virtual std::string GetString(MDValuePtr Object);
 	};
 
 	class MDTraits_Label : public MDTraits_Raw
+	public:
+		//! Does this trait take control of all sub-data and build values in the values own DataChunk?
+		/*! The entire Label is held locally */
+		virtual bool HandlesSubdata(void) const { return true; };
+
 	{
 	protected:
 		virtual std::string GetString(MDValuePtr Object);
@@ -240,6 +254,11 @@ namespace mxflib
 
 	class MDTraits_UMID : public MDTraits_Raw
 	{
+	public:
+		//! Does this trait take control of all sub-data and build values in the values own DataChunk?
+		/*! The entire UMID is held locally */
+		virtual bool HandlesSubdata(void) const { return true; };
+
 	protected:
 		virtual std::string GetString(MDValuePtr Object);
 	};
