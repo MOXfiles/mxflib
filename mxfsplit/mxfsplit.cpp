@@ -328,7 +328,7 @@ static void DumpIndex( PartitionPtr ThisPartition )
 			printf( "\n Bytestream Order:\n" );
 			for(i=0; i<Duration; i++)
 			{
-				int j;
+				Uint32 j;
 				for(j=0; j<Streams; j++)
 				{
 					IndexPosPtr Pos = Table->Lookup(Start + i,j,false);
@@ -341,7 +341,7 @@ static void DumpIndex( PartitionPtr ThisPartition )
 			printf( "\n Presentation Order:\n" );
 			for(i=0; i<Duration; i++)
 			{
-				int j;
+				Uint32 j;
 				for(j=0; j<Streams; j++)
 				{
 					IndexPosPtr Pos = Table->Lookup(Start + i,j);
