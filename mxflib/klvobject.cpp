@@ -127,8 +127,8 @@ Length KLVObject::Base_ReadDataFrom(Position Offset, Length Size /*=-1*/)
 	// Initially plan to read all the bytes available
 	Length BytesToRead = Source.OuterLength - Offset;
 
-	// Limit to specified size if >= 0 and if < available
-	if( (Size >= 0) && (Size < BytesToRead)) BytesToRead = Size;
+	// Limit to specified size if > 0 and if < available
+	if( (Size > 0) && (Size < BytesToRead)) BytesToRead = Size;
 
 	// Don't do anything if nothing to read
 	if(BytesToRead <= 0) 
