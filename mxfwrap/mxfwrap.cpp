@@ -1000,8 +1000,8 @@ int Process(	int OutFileNum,
 	Writer->SetKAG(KAGSize);
 	Writer->SetForceBER4(true);
 
-	// Index data can't share with metadata if very-isolated and essence can't share with metadata in OP-Atom
-	Writer->SetMetadataSharing(!VeryIsolatedIndex, !OPAtom);
+	// Index data can't share with metadata if very-isolated but essence can always share with metadata
+	Writer->SetMetadataSharing(!VeryIsolatedIndex, true);
 
 
 	// Build the File Packages and all essence tracks
