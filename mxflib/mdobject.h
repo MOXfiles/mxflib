@@ -579,6 +579,12 @@ namespace mxflib
 		//! Type access function
 		MDOTypePtr GetType(void) const { return Type; };
 
+		//! Determine if this object is derived from a specified type (directly or indirectly)
+		bool IsA(std::string BaseType);
+
+		//! Determine if this object is derived from a specified type (directly or indirectly)
+		bool IsA(MDOTypePtr BaseType);
+		
 		//! Link access functions
 		MDObjectPtr GetLink(void) const { return Link; };
 
@@ -695,10 +701,15 @@ namespace mxflib
 	 */
 	class ObjectInterface
 	{
+	protected:
+		//! Protected constructor used to create from an existing MDObject
+		ObjectInterface(MDObjectPtr BaseObject) : Object(BaseObject) {}
+
 	public:
 		MDObjectPtr Object;					//!< The MDObject for this item
 
 	public:
+		ObjectInterface() {};				//!< Build a basic ObjectInterface
 		virtual ~ObjectInterface() {};		//!< Virtual destructor to allow polymorphism
 		
 		// ** MDObject Interface **

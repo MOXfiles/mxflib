@@ -2432,6 +2432,36 @@ void MDOType::Derive(MDOTypePtr BaseEntry)
 }
 
 
+//! Determine if this object is derived from a specified type (directly or indirectly)
+bool MDObject::IsA(std::string BaseType)
+{
+	MDOTypePtr TestType = Type;
+
+	while(TestType)
+	{
+		if(TestType->Name() == BaseType) return true;
+		TestType = TestType->Base;
+	}
+
+	return false;
+}
+
+
+//! Determine if this object is derived from a specified type (directly or indirectly)
+bool MDObject::IsA(MDOTypePtr BaseType)
+{
+	MDOTypePtr TestType = Type;
+
+	while(TestType)
+	{
+		if(TestType == BaseType) return true;
+		TestType = TestType->Base;
+	}
+
+	return false;
+}
+		
+
 //! Read hex values separated by any of 'Sep'
 /*! /ret number of values read */
 int MDOType::ReadHexString(const char **Source, int Max, Uint8 *Dest, char *Sep)

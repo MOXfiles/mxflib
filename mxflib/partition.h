@@ -124,6 +124,9 @@ namespace mxflib
 		//! Read a full set of header metadata from a file (including primer)
 		Length ReadMetadata(MXFFilePtr File, Length Size);
 
+		//! Parse the current metadata sets into higher-level sets
+		MetadataPtr ParseMetadata(void);
+
 		//! Read any index table segments from this partition's source file
 		MDObjectListPtr ReadIndex(void);
 
@@ -140,9 +143,6 @@ namespace mxflib
 			ASSERT(Ptr);
 			Ptr->SetUint64(KAG);
 		}
-
-		// Parse the metadata into higher level objects
-		MetadataPtr ParseMetadata(void);
 
 //		//! Read the partition from a buffer
 //		Uint32 ReadValue(const Uint8 *Buffer, Uint32 Size);

@@ -729,3 +729,28 @@ Uint64 mxflib::Partition::SkipFill( Uint64 start )
 
 	return ret;
 }
+
+
+//! Parse the current metadata sets into higher-level sets
+MetadataPtr Partition::ParseMetadata(void)
+{
+	MetadataPtr Ret;
+
+	// Locate the preface
+	MDObjectList::iterator it = TopLevelMetadata.begin();
+	while(it != TopLevelMetadata.end())
+	{
+		// If we find the preface, parse it
+		if((*it)->IsA("Preface"))
+		{
+			Ret = Metadata::Parse(*it);
+			break;
+		}
+
+		it++;
+	}
+
+	// If we failed to find the preface (or to parse it) this will be NULL
+	return Ret;
+}
+
