@@ -89,7 +89,7 @@ namespace mxflib
 
 		//! Reload the metadata tree - DRAGONS: not an ideal way of doing this
 		void UpdateMetadata(MDObjectPtr NewObject) { ClearMetadata(); AddMetadata(NewObject); };
-		
+
 		//! Add a metadata object to the header metadata belonging to a partition
 		/*! Note that any strongly linked objects are also added */
 		void AddMetadata(ObjectInterface *NewObject) { AddMetadata(NewObject->Object); };
@@ -125,13 +125,16 @@ namespace mxflib
 			Ptr->SetUint64(KAG);
 		}
 
+		// Parse the metadata into higher level objects
+		MetadataPtr ParseMetadata(void);
+
 //		//! Read the partition from a buffer
 //		Uint32 ReadValue(const Uint8 *Buffer, Uint32 Size);
 
 		// Access functions for the reference resolving properties
 		// DRAGONS: These should be const, but can't make it work!
 		std::map<UUID, MDObjectPtr>& GetRefTargets(void) { return RefTargets; };
-		std::multimap<UUID, MDObjectPtr>& GetUnmatchedRefs(void) { return UnmatchedRefs;	};
+		std::multimap<UUID, MDObjectPtr>& GetUnmatchedRefs(void) { return UnmatchedRefs; };
 
 
 		//! Locate start of Essence Container
