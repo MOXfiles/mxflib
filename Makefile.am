@@ -13,4 +13,4 @@ else
 DOC_DIR =
 endif
 
-SUBDIRS = mxflib mxfsplit mxfwrap mxfdump tests $(DOC_DIR)
+SUBDIRS = mxflib mxfsplit mxfwrap mxfdump mxfcrypt tests $(DOC_DIR)
