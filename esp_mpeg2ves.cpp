@@ -571,7 +571,7 @@ Uint64 MPEG2_VES_EssenceSubParser::ReadInternal(FileHandle InFile, Uint32 Stream
 						}
 
 						// Now we have determined if this is an anchor frame we can work out the anchor offset
-						int AnchorOffset = AnchorFrame - PictureNumber;
+						int AnchorOffset = PictureNumber - AnchorFrame;
 
 						//
 						// Offer this index table data to the index manager
@@ -579,6 +579,19 @@ Uint64 MPEG2_VES_EssenceSubParser::ReadInternal(FileHandle InFile, Uint32 Stream
 
 						Manager->OfferEditUnit(ManagedStreamID, PictureNumber, AnchorOffset, Flags);
 						Manager->OfferTemporalOffset(PictureNumber - (GOPOffset - TemporalReference), GOPOffset - TemporalReference);
+
+						// diagnostics
+						if(PictureNumber < 35)
+							printf( "  OfferEditUnit[%3d]: Tpres=%3d Aoff=%2d A=%3d 0x%02x. Reorder Toff[%2d]=%2d\n",
+											(int)PictureNumber,
+											(int)TemporalReference,
+											(int)AnchorOffset,
+											(int)AnchorFrame,
+											(int)Flags,
+                      (int)(PictureNumber - (GOPOffset - TemporalReference)),
+                      (int)(GOPOffset - TemporalReference)
+										 );
+
 					}
 
 					GOPOffset++;
@@ -590,7 +603,12 @@ Uint64 MPEG2_VES_EssenceSubParser::ReadInternal(FileHandle InFile, Uint32 Stream
 					BuffGetU8(InFile);
 					BuffGetU8(InFile);
 					BuffGetU8(InFile);
-					if(BuffGetU8(InFile) & 0x40) ClosedGOP = true; else ClosedGOP = false;
+
+					ClosedGOP = (BuffGetU8(InFile) & 0x40)? true:false;
+
+					//if( PictureNumber < 35 )
+					if( ClosedGOP ) printf( "Closed GOP\n" ); else printf( "Open GOP\n" );
+
 					CurrentPos += 4;
 				}
 				// Sequence header start code
