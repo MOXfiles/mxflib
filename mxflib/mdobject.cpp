@@ -416,6 +416,42 @@ void MDObject::Init(void)
 }
 
 
+#if 0 // WORK IN PROGRESS...
+//! Add an empty numbered child to an MDObject continer and return a pointer to it
+/*!	\return NULL if this object does not take numbered children
+ *	\note If a child with this index already exists it is returned rather than adding a new one
+ */
+MDObjectPtr MDObject::AddChild(Uint32 ChildIndex)
+{
+	MDObjectPtr Ret;
+
+	SetModified(true); 
+
+	// Try and find an existing child (if replacing)
+	Ret = Child(ChildIndex);
+
+	// Only add a new one if we didn't find it
+	if(!Ret)
+	{
+		// Find the child definition
+		MDOType::iterator it = Type->begin();
+
+		// Return NULL if not found
+		if(it == Type->end()) return Ret;
+
+		// Build a new item of the correct type
+		Ret = new MDObject((*it).second);
+
+		// Add the new child
+		AddChildInternal(Ret, false);
+	}
+
+	// Return smart pointer to the new object
+	return Ret;
+}
+#endif // 0
+
+
 //! Add an empty named child to an MDObject continer and return a pointer to it
 /*! If Replace is true (or not supplied) and a child of this name already 
  *	exists a pointer to that child is returned but the value is not changed.
@@ -1105,7 +1141,6 @@ bool MDObject::SetGenerationUID(UUIDPtr NewGen)
 	MDObjectPtr GenUID = Child("GenerationUID");
 	if(!GenUID) GenUID = AddChild("GenerationUID");
 
-//printf("Setting GenerationUID id %s to %s\n", FullName().c_str(), NewGen->GetString().c_str());
 	ASSERT(GenUID);
 
 	// Set the actual UID

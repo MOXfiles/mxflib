@@ -41,6 +41,7 @@ namespace mxflib
 {
 	class MXFFile;
 	typedef SmartPtr<MXFFile> MXFFilePtr;					//!< A smart pointer to an MXFFile object
+	typedef ParentPtr<MXFFile> MXFFileParent;				//!< A parent pointer to an MXFFile object
 
 	// Forward declare so the class can include pointers to itself
 	class KLVObject;

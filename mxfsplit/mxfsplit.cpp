@@ -63,7 +63,7 @@ static bool SplitParts = false;		// -p
 static bool FullIndex = false;		// -f dump full index
 static bool DumpExtraneous = false;		// -x dump extraneous body elements
 
-static unsigned long SplitWaveChannels = 2;	// -w=n
+static unsigned int SplitWaveChannels = 2;	// -w=n
 
 #ifdef DMStiny
 static char* DMStinyDict = NULL;						//!< Set to name of DMStiny xmldict
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 				SplitWave = true;
 				if( argv[i][2]==':' || argv[i][2]=='=' )
 				{
-					SplitWaveChannels = strtoul( argv[i]+3, NULL, 0 );
+					SplitWaveChannels = (unsigned int)strtoul( argv[i]+3, NULL, 0 );
 				}
 			}
 			else if(Opt == 'x') DumpExtraneous = true;

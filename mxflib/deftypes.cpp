@@ -383,7 +383,7 @@ void DefTypes_startElement(void *user_data, const char *name, const char **attrs
 					}
 					else if(strcmp(attr, "type") == 0)
 					{
-						if(strcasecmp(val, "Collection") == 0) Class = ARRAYCOLLECTION;
+						if(strcasecmp(val, "Batch") == 0) Class = ARRAYBATCH;
 					}
 					else if(strcmp(attr, "ref") == 0)
 					{
@@ -404,7 +404,7 @@ void DefTypes_startElement(void *user_data, const char *name, const char **attrs
 			else
 			{
 				MDTypePtr Ptr = MDType::AddArray(name, BaseType, Size);
-				if(Class == ARRAYCOLLECTION) Ptr->SetArrayClass(ARRAYCOLLECTION);
+				if(Class == ARRAYBATCH) Ptr->SetArrayClass(ARRAYBATCH);
 
 				MDTraitsPtr Traits = TraitsMap[name];
 				if(!Traits) Traits = TraitsMap["Default-Array"];

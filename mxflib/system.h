@@ -46,7 +46,7 @@
 
 // Required headers for non-system specific bits
 #include <time.h>
-#include <stdlib.h>						//!< Required for integer conversions
+#include <stdlib.h>						// Required for integer conversions
 
 /************************************************/
 /*           (Hopefully) Common types           */

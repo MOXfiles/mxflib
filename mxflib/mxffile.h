@@ -212,7 +212,7 @@ namespace mxflib
 
 	protected:
 		//! Write or re-write a partition pack and associated metadata (and index table segments?)
-		bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, bool IncludeMetadata, DataChunkPtr IndexData, PrimerPtr UsePrimer, Uint32 Padding, Uint32 MinPartitionSize);
+		bool WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, bool IncludeMetadata, DataChunkPtr IndexData, PrimerPtr UsePrimer, Uint32 Padding, Uint32 MinPartitionSize);
 
 	public:
 		//! Write the RIP
