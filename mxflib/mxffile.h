@@ -152,6 +152,9 @@ namespace mxflib
 		MDObjectPtr ReadObject(PrimerPtr UsePrimer = NULL) { return MXFFile__ReadObjectBase<MDObjectPtr, MDObject>(this, UsePrimer); };
 		PartitionPtr ReadPartition(void) { return MXFFile__ReadObjectBase<PartitionPtr, Partition>(this); };
 
+		//! Read a KLVObject from the file
+		KLVObjectPtr ReadKLV(void);
+
 /*		void WriteObject(MDObjectPtr Object, PrimerPtr UsePrimer = NULL) 
 		{ 
 			DataChunk Buffer;
@@ -253,7 +256,7 @@ namespace mxflib
 		Uint64 Align(bool ForceBER4, Uint32 KAGSize, Uint32 MinSize = 0);
 
 		ULPtr ReadKey(void);
-		Uint64 ReadBER(void);
+		Length ReadBER(void);
 
 		//! Write a BER length
 		/*! \param Length	The length to be written
@@ -354,7 +357,7 @@ template<class TP, class T> /*inline*/ TP mxflib::MXFFile__ReadObjectBase(MXFFil
 
 	ASSERT(Ret);
 
-	Uint64 Length = This->ReadBER();
+	Length Length = This->ReadBER();
 	if(Length > 0)
 	{
 		// Work out how big the key and length are in the file
