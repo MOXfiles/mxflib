@@ -197,8 +197,8 @@ void mxflib::Partition::ProcessChildRefs(MDObjectPtr ThisObject)
 
 
 //! Read a full set of header metadata from this partition's source file (including primer)
-/*!  \ret The number of bytes read (<b>including</b> any preceeding filler)
- *   \ret 0 if no header metadata in this partition
+/*!  \return The number of bytes read (<b>including</b> any preceeding filler)
+ *   \return 0 if no header metadata in this partition
  */
 Length mxflib::Partition::ReadMetadata(void)
 {
@@ -226,7 +226,7 @@ Length mxflib::Partition::ReadMetadata(void)
 //! Read a full set of header metadata from a file (including primer)
 /*! \note The value of "Size" does not include the size of any filler before
  *        the primer, but the return value does
- *  \ret The number of bytes read (<b>including</b> any preceeding filler)
+ *  \return The number of bytes read (<b>including</b> any preceeding filler)
  */
 Length mxflib::Partition::ReadMetadata(MXFFilePtr File, Length Size)
 {
