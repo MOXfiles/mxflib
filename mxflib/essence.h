@@ -401,7 +401,7 @@ namespace mxflib
 						if((MaxSize) && (Data->Size > MaxSize))
 						{
 							RemainingData = new DataChunk(Data->Size - MaxSize, &Data->Data[MaxSize]);
-							Data->Resize(MaxSize);
+							Data->Resize((Uint32)MaxSize);
 						}
 					}
 				}
