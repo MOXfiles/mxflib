@@ -6,6 +6,8 @@
  *			definition
  */
 /*
+ *	$Id$
+ *
  *	Copyright (c) 2003, Matt Beard
  *
  *	This software is provided 'as-is', without any express or implied warranty.
@@ -29,11 +31,6 @@
  */
 
 #include <mxflib/mxflib.h>
-
-extern "C"
-{
-#include "Endian.h"
-}
 
 using namespace mxflib;
 
