@@ -152,7 +152,7 @@ MDTypePtr MDType::AddCompound(std::string TypeName)
 	// Set no base type
 	NewType->Base = NULL;
 
-	// Compounds have no type
+	// Compounds have no size of thier own
 	NewType->Size = 0;
 
 	// Add to the list of types

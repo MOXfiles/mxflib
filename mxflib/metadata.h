@@ -247,7 +247,7 @@ namespace mxflib
 
 namespace mxflib
 {
-	//! Distinguished values of DefaultDuration for event tracks
+	//! Special values of DefaultDuration for event tracks
     enum
     {
         DurationUnspecified = -1,      //!< Item is of an unspecified duration (unknown or not a timeline item)
