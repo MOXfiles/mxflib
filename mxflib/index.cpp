@@ -1029,7 +1029,7 @@ IndexManager::IndexManager(int PosTableIndex, Uint32 ElementSize)
 
 
 //! Add a sub-stream
-/*! \ret Sub-stream ID or 0 if error */
+/*! \return Sub-stream ID or 0 if error */
 int IndexManager::AddSubStream(int PosTableIndex, Uint32 ElementSize)
 {
 	// If we have finalised the format we can't add a new stream
