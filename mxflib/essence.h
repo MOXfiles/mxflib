@@ -668,7 +668,8 @@ namespace mxflib
 		}
 
 		//! Get BytesPerEditUnit, if Constant
-		virtual Uint32 GetBytesPerEditUnit(Uint32 KAGSize = 1) { KAGSize; return 0; }
+		/*! Note that we use KAGSize to prevent compiler warnings (we cannot omit it as it has a default value) */
+		virtual Uint32 GetBytesPerEditUnit(Uint32 KAGSize = 1) { return KAGSize * 0; }
 
 		//! Get the current position in SetEditRate() sized edit units
 		/*! This is relative to the start of the stream, so the first edit unit is always 0.
