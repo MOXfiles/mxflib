@@ -197,7 +197,7 @@ namespace mxflib
 		//! Get BytesPerEditUnit, if Constant
 		virtual Uint32 GetBytesPerEditUnit()
 		{
-			if(SelectedWrapping == WrappingOption::WrapType::Frame) 
+			if(SelectedWrapping == WrappingOption::Frame) 
 			{
 				// FIXME: This assumes that 4-byte BER coding will be used - this needs to be adjusted or forced to be true!!
 				return SampleSize*ConstSamples + 16 + 4;
