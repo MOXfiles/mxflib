@@ -48,6 +48,29 @@ namespace mxflib
 
 	//! A smart pointer to a KLVObject object
 	typedef SmartPtr<KLVObject> KLVObjectPtr;
+
+	// We need access to the MDValue class
+	class MDValue;
+//
+//	//! A smart pointer to an MDValue object
+//	typedef SmartPtr<MDValue> MDValuePtr;
+
+	//! A smart pointer to an MDValue object (with operator[] overloads)
+	class MDValuePtr : public SmartPtr<MDValue>
+	{
+	public:
+		MDValuePtr() : SmartPtr<MDValue>() {};
+		MDValuePtr(IRefCount<MDValue> * ptr) : SmartPtr<MDValue>(ptr) {};
+
+		//! Child access operator that overcomes dereferencing problems with SmartPtrs
+		MDValuePtr operator[](int Index);
+
+		//! Child access operator that overcomes dereferencing problems with SmartPtrs
+		MDValuePtr operator[](const std::string ChildName);
+	};
+
+	//! A list of smart pointers to MDValue objects
+	typedef std::list<MDValuePtr> MDValueList;
 }
 
 

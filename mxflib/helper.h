@@ -221,6 +221,24 @@ namespace mxflib
 
 	//! Is a given sequence of bytes a partition pack key?
 	bool IsPartitionKey(const Uint8 *Key);
+
+	//! Does a given std::string contain a "wide" string in UTF8?
+	/*! /note This currently only checks if any bytes contain >127 so it is only safe to test strings that are either 7-bit ASCII or UTF-8 */
+	bool IsWideString(std::string &String);
+
+	//! Read hex values separated by any of 'Sep'
+	/*! /note Modifies the value of Source to point to the following byte
+	 *  /ret number of values read */
+	int ReadHexString(const char **Source, int Max, Uint8 *Dest, const char *Sep);
+
+	//! Read hex values separated by any of 'Sep'
+	/*! /note This version does not modify the value of parameter Source
+	 *  /ret number of values read */
+	inline int ReadHexString(const char *Source, int Max, Uint8 *Dest, const char *Sep)
+	{
+		const char *p = Source;
+		return ReadHexString(&p, Max, Dest, Sep);
+	}
 }
 
 #endif // MXFLIB__HELPER_H
