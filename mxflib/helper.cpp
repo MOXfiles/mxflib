@@ -252,20 +252,18 @@ char *mxflib::lookupDataFilePath(const char *filename)
 			return buf;
 	}
 
-	// Try under the legacy MXFLIB_DICT_PATH env variable (if set)
-	if (getenv("MXFLIB_DICT_PATH"))
-	{
-		sprintf(buf, "%s%c%s", getenv("MXFLIB_DICT_PATH"), DIR_SEPARATOR, filename);
-
-		if (FileExists(buf))
-			return buf;
-	}
-
 	// Try under MXFDATADIR compile-time macro
 	sprintf(buf, "%s%c%s", MXFDATADIR, DIR_SEPARATOR, filename);
 
 	if (FileExists(buf))
 		return buf;
 
+	// Finally, try as given
+	sprintf(buf, "%s", filename);
+
+	if (FileExists(buf))
+		return buf;
+
+	delete [] buf;
 	return NULL;
 }
