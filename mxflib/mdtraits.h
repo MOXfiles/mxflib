@@ -226,6 +226,30 @@ namespace mxflib
 		virtual std::string GetString(MDValuePtr Object);
 	};
 
+	class MDTraits_UUID : public MDTraits_Raw
+	{
+	protected:
+		virtual std::string GetString(MDValuePtr Object);
+	};
+
+	class MDTraits_Identifier16 : public MDTraits_Raw
+	{
+	protected:
+		virtual std::string GetString(MDValuePtr Object);
+	};
+
+	class MDTraits_Label : public MDTraits_Identifier16
+	{
+	protected:
+		virtual std::string GetString(MDValuePtr Object);
+	};
+
+	class MDTraits_UMID : public MDTraits_Raw
+	{
+	protected:
+		virtual std::string GetString(MDValuePtr Object);
+	};
+
 	class MDTraits_RawArrayArray : public MDTraits_BasicArray
 	{
 	protected:
