@@ -1241,7 +1241,7 @@ std::string MDTraits_Rational::GetString(MDValuePtr Object)
 	MDValuePtr Denominator = Object["Denominator"];
 
 	Uint32 Num = 0;
-	Uint32 Den = 0;
+	Uint32 Den = 1;
 	if(Numerator) Num = Numerator->GetUint();
 	if(Denominator) Den = Denominator->GetUint();
 
@@ -1256,7 +1256,7 @@ void MDTraits_Rational::SetString(MDValuePtr Object, std::string Val)
 
 	Uint32 Num = atoi(Val.c_str());
 
-	Uint32 Den = 0;
+	Uint32 Den = 1;
 	std::string::size_type Slash = Val.find("/");
 	if(Slash != std::string::npos) Den = atoi(&(Val.c_str()[Slash+1]));
 
