@@ -81,17 +81,5 @@ GCElementKind KLVObject::GetGCElementKind(void)
 	return ret;
 }
 
-//! Get a reference to the data chunk (const to prevent setting!!)
-DataChunkPtr& KLVObject::GetData(void)
-{
-	if( Data ) return Data;
-	else
-	{
-		Data = new DataChunk( KLSize );
-		SourceFile->Seek( SourceOffset );
-		SourceFile->Read( Data->Data, KLSize );
-		return Data;
-	}
-};
 
 
