@@ -35,7 +35,7 @@ using namespace mxflib;
 #include <stdlib.h>
 
 // Include AES encryption from OpenSSL
-#include "openssl\aes.h"
+#include "openssl/aes.h"
 
 
 using namespace std;
