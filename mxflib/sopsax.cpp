@@ -34,6 +34,9 @@
 #include "sopsax.h"
 #include <mxflib/mxflib.h>
 
+using namespace mxflib;
+
+
 /* Local Prototypes */
 static int sopSkipToClose(FILE *xmlFile);
 static int sopGetCharNonQ(FILE *xmlFile);
@@ -51,7 +54,7 @@ static void sopGetItem(FILE *xmlFile, char *Buffer, int Max);
 ** sopSAXParseFile() - Parse an XML file (not re-entrant due to static data)
 */
 
-bool sopSAXParseFile(sopSAXHandlerPtr sax, void *UserData, const char *filename)
+bool mxflib::sopSAXParseFile(sopSAXHandlerPtr sax, void *UserData, const char *filename)
 {
 	FILE *xmlFile;
 	int ElementNesting;
