@@ -694,6 +694,26 @@ DMSegmentPtr DMSegment::GetDMSegment(MDObjectPtr Object)
 }
 
 
+bool DMSegment::MakeLink(MDObjectPtr DMFramework)
+{
+	MDObjectPtr SourceFramework=Child("DMFramework");
+
+	if(!SourceFramework)
+	{
+		SourceFramework = AddChild("DMFramework");
+		// If this failed then exit with an error
+		if(!SourceFramework)
+		{
+			error("Attempt to reference %s from %s failed\n", FullName().c_str(), DMFramework->FullName().c_str());
+			return false;
+		}
+	}
+
+
+	return SourceFramework->MakeLink(DMFramework);
+}
+
+
 //! Return the containing "Track" object for this MDObject
 /*! \return NULL if MDObject is not contained in a Track object
  */
