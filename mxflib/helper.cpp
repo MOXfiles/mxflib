@@ -44,7 +44,7 @@ using namespace mxflib;
 Uint32 mxflib::MakeBER(Uint8 *Data, int MaxSize, Uint64 Length, Uint32 Size /*=0*/)
 {
 	// Mask showing forbidden bits for various sizes
-	static const Uint64 Masks[9] = { UINT64_C(0xffffffffffffffff), UINT64_C(0xffffffffffffff00), 
+	static const Uint64 Masks[9] = { UINT64_C(0xffffffffffffff80), UINT64_C(0xffffffffffffff00), 
 									 UINT64_C(0xffffffffffff0000), UINT64_C(0xffffffffff000000),
 									 UINT64_C(0xffffffff00000000), UINT64_C(0xffffff0000000000),
 									 UINT64_C(0xffff000000000000), UINT64_C(0xff00000000000000), 0 };
