@@ -1480,6 +1480,7 @@ int Process(	int OutFileNum,
 		// Now update the partition we are about to write (the one with the metadata)
 		ThisPartition->ChangeType("ClosedCompleteHeader");
 		ThisPartition->SetUint64("FooterPartition", FooterPos);
+		ThisPartition->SetKAG(OldHeader->GetUint("KAGSize"));
 		ThisPartition->SetUint("IndexSID", OldHeader->GetUint("IndexSID"));
 		ThisPartition->SetUint64("BodySID", OldHeader->GetUint("BodySID"));
 
