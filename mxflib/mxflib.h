@@ -33,21 +33,35 @@
 //! Namespace for all MXFLib items
 namespace mxflib {}
 
+
+//! Include system specifics first to allow any required compiler set-up
 #include <mxflib/system.h>
+
+
+// Required std::headers
+
+#include <list>
+#include <map>
+
+
 
 #include <mxflib/debug.h>
 
-#include <mxflib/forward.h>
+#include <mxflib/smartptr.h>
 
 #include <mxflib/endian.h>
 
-#include <mxflib/smartptr.h>
-
 #include <mxflib/types.h>
+
+#include <mxflib/datachunk.h>
+
+#include <mxflib/forward.h>
+
+
+
 
 #include <mxflib/helper.h>
 
-#include <mxflib/datachunk.h>
 
 #include <mxflib/mdtraits.h>
 #include <mxflib/mdtype.h>
