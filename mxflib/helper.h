@@ -133,7 +133,7 @@ namespace mxflib
 	int EncodeOID( Uint8* presult, Uint64 subid, int length );
 
 	//! Build a new UMID
-	UMIDPtr MakeUMID(int Type);
+	UMIDPtr MakeUMID(int Type, const UUIDPtr AssetID = NULL);
 
 	//! Read a "Chunk" from a non-MXF file
 	DataChunkPtr FileReadChunk(FileHandle InFile, Uint64 Size);
