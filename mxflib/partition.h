@@ -133,6 +133,11 @@ namespace mxflib
 		std::map<UUID, MDObjectPtr>& GetRefTargets(void) { return RefTargets; };
 		std::multimap<UUID, MDObjectPtr>& GetUnmatchedRefs(void) { return UnmatchedRefs;	};
 
+
+		//! Locate start of Essence Container
+		bool SeekEssence(void);
+
+
 // Sequential access to the Elements of the Body
 
 	public:
