@@ -178,6 +178,13 @@ namespace mxflib
 //! Allow command-line switches to be prefixed with '/' or '-'
 #define IsCommandLineSwitchPrefix(x) ( (x == '/') || (x == '-'))
 
+	//! Pause for user input (with prompt) e.g. for debugging purposes
+	inline void PauseForInput(void)
+	{
+		printf("Press enter key...");
+		getchar();
+		printf("\n");
+	}
 }
 #else // _MSC_VER
 namespace mxflib
@@ -344,6 +351,14 @@ namespace mxflib
 		if(Digits > 30) Digits = 30;
 		sprintf(Buffer,"%0*llx", Digits, Val );
 		return std::string(Buffer);
+	}
+
+	//! Pause for user input (with prompt) e.g. for debugging purposes
+	inline void PauseForInput(void)
+	{
+		printf("Press enter key...");
+		getchar();
+		printf("\n");
 	}
 
 #ifndef _WIN32
