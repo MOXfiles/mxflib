@@ -200,6 +200,8 @@ MDObject::MDObject(std::string BaseType)
 	TheUL = Type->GetUL();
 	TheTag = 0;
 
+	Outer = NULL;
+
 	// Initialise the new object
 	Init();
 }
@@ -220,6 +222,8 @@ MDObject::MDObject(MDOTypePtr BaseType) : Type(BaseType)
 	ParentFile = NULL;
 	TheUL = Type->GetUL();
 	TheTag = 0;
+
+	Outer = NULL;
 
 	// Initialise the new object
 	Init();
@@ -269,6 +273,8 @@ MDObject::MDObject(ULPtr UL)
 	ParentFile = NULL;
 	TheUL = UL;
 	TheTag = 0;
+
+	Outer = NULL;
 
 	// Initialise the new object
 	Init();
@@ -341,6 +347,8 @@ MDObject::MDObject(Tag BaseTag, PrimerPtr BasePrimer)
 	Parent = NULL;
 	ParentFile = NULL;
 	TheTag = BaseTag;
+
+	Outer = NULL;
 
 	// Initialise the new object
 	Init();
