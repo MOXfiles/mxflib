@@ -437,7 +437,7 @@ namespace mxflib
 		Buffer[8] &= 0x3f;
 		Buffer[8] |= 0x80;
 
-		// Set version bits (varsion "0100" = random or pseudo-random)
+		// Set version bits (version "0100" = random or pseudo-random)
 		Buffer[7] &= 0x0f;
 		Buffer[7] |= 0x40;
 	}
