@@ -216,8 +216,11 @@ UMIDPtr mxflib::MakeUMID(int Type)
 	Buffer[14] = 0;
 	Buffer[15] = 0;
 
-	// Fill the material number with a GUID
-	MakeUUID(&Buffer[16]);
+	// Fill the material number with a half-swapped UUID
+	Uint8 UUIDbuffer[16];
+	MakeUUID(UUIDbuffer);
+	memcpy( &Buffer[16], &UUIDbuffer[8], 8 );
+	memcpy( &Buffer[16+8], &UUIDbuffer[0], 8 );
 
 	return new UMID(Buffer);
 }
