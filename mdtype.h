@@ -175,7 +175,7 @@ namespace mxflib
 		std::string Name;				//!< Name of this MDType
 		MDTypeClass Class;				//!< Class of this MDType
 		MDArrayClass ArrayClass;		//!< Sub-class of array
-		MDTraits *Traits;
+		MDTraits *Traits;				//!< Traints for this MDType
 		bool Endian;					//!< Flag set to 'true' if this basic type should ever be byte-swapped
 
 	public:
@@ -204,10 +204,10 @@ namespace mxflib
 		MDTypePtr EffectiveType(void);
 
 		//! Report the effective class of this type
-		MDTypeClass EffectiveClass(void);
+		MDTypeClass EffectiveClass(void) const;
 
 		//! Report the effective base type of this type
-		MDTypePtr EffectiveBase(void);
+		MDTypePtr EffectiveBase(void) const;
 
 		//! Endian access function (set)
 		void SetEndian(bool Val) { Endian = Val; };

@@ -205,7 +205,7 @@ MDTypePtr MDType::EffectiveType(void)
 
 
 //! Report the effective class of this type
-MDTypeClass MDType::EffectiveClass(void)
+MDTypeClass MDType::EffectiveClass(void) const
 {
 	// If we are an interpretation then see what of
 	if(Class == INTERPRETATION)
@@ -219,7 +219,7 @@ MDTypeClass MDType::EffectiveClass(void)
 
 
 //! Report the effective base type of this type
-MDTypePtr MDType::EffectiveBase(void)
+MDTypePtr MDType::EffectiveBase(void) const
 {
 	// If we are an interpretation then see what of
 	if(Class == INTERPRETATION)

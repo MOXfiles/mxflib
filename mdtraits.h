@@ -49,7 +49,7 @@ namespace mxflib
 	//! A smart pointer to an MDValue object
 	class MDValuePtr;
 
-	class MDTraits
+	class MDTraits : public RefCount<MDTraits>
 	{
 	public:
 		MDTraits() {};

@@ -138,7 +138,7 @@ namespace mxflib
 namespace mxflib
 {
 	typedef Identifier<16> Identifier16;
-	class UUID : public Identifier16
+	class UUID : public RefCount<UUID>, public Identifier16
 	{
 	public:
 		UUID() { MakeUUID(Ident); };
@@ -154,7 +154,7 @@ namespace mxflib
 namespace mxflib
 {
 	typedef Identifier<32> Identifier32;
-	class UMID : public Identifier32
+	class UMID : public RefCount<UMID>,  public Identifier32
 	{
 	public:
 		UMID(const Uint8 *ID = NULL) : Identifier32(ID) {};

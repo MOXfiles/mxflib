@@ -255,8 +255,9 @@ namespace mxflib
 {
 	class EssenceSubParserBase;
 
-	struct WrappingOption
+	class WrappingOption : public RefCount<WrappingOption>
 	{
+	public:
 		//! Wrapping type
 		/*! \note "None" is only for use as a default condition */
 		enum WrapType { None, Frame, Clip, Line, Other } ;
@@ -538,7 +539,7 @@ namespace mxflib
 	 *        taken that will out-last the list it 
 	 *		  must be removed from the list 
 	 */
-	class ParserDescriptorList : public std::list<ParserDescriptorPair>
+	class ParserDescriptorList : public RefCount<ParserDescriptorList>, public std::list<ParserDescriptorPair>
 	{
 	public:
 		// Destructor deletes all owned parsers
@@ -618,8 +619,9 @@ namespace mxflib
 			return Ret;
 		}
 
-		struct WrappingConfig
+		class WrappingConfig : public RefCount<WrappingConfig>
 		{
+		public:
 			WrappingOptionPtr WrapOpt;
 			MDObjectPtr EssenceDescriptor;
 			Uint32 Stream;

@@ -40,7 +40,7 @@
 namespace mxflib
 {
 	//! Holds RIP data relating to a single partition
-	class PartitionInfo
+	class PartitionInfo : public RefCount<PartitionInfo>
 	{
 	public:
 		PartitionPtr ThePartition;	//!< The actual partition

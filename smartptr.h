@@ -232,6 +232,7 @@ namespace mxflib
 		/*!	This method is called if T does not implement IRefCount.
 		 *	A default counter is instanciated and used for all referencing
 		 */
+/*	DRAGONS: Removed to allow kludge to fix gcc 3.3.x bug
 		void __Assign(void *ptr)
 		{
 			if(ptr==NULL)
@@ -241,6 +242,14 @@ namespace mxflib
 				__Assign(new __RefCounter(static_cast<T *>(ptr)));
 			}
 		}
+*/
+
+/*	DRAGONS:  KLUDGE to fix gcc 3.3.x bug */
+void __Assign(void *ptr)
+{
+	// Always use the smart version... this won't work with classes not derived from RefCount<>
+	__Assign((IRefCount<T>*)ptr);
+};
 
 		//!	Assign a 'smart' object to this smart pointer
 		/*!	This method is picked over __Assign(void *ptr)

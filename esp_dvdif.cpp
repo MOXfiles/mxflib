@@ -94,7 +94,7 @@ EssenceStreamDescriptorList DV_DIF_EssenceSubParser::IdentifyEssence(FileHandle 
 					ListSize -= 8;
 
 					ReadU32(InFile);
-					U32 MediaType = ReadU32(InFile);
+					Uint32 MediaType = ReadU32(InFile);
 					ListSize -= 4;
 
 					if(

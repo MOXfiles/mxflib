@@ -272,7 +272,7 @@ namespace mxflib
 		};
 
 		//! Write the contents of a DataChunk by reference
-		Uint64 Write(DataChunk &Data) 
+		Uint64 Write(const DataChunk &Data) 
 		{ 
 			if(isMemoryFile) return MemoryWrite(Data.Data, Data.Size);
 

@@ -105,7 +105,7 @@ namespace mxflib
 	 *  Once the entries have been written including their temporal offsets they can
 	 *  be added to a proper index table
 	 */
-	class ReorderIndex
+	class ReorderIndex : public RefCount<ReorderIndex>
 	{
 	protected:
 		DataChunk IndexEntries;				//!< Data chunk holding the actual entries
@@ -482,9 +482,11 @@ namespace mxflib
 			delete[] ElementSizeList;
 			
 			std::map<Position, IndexData*>::iterator it = ManagedData.begin();
-			while(it != ManagedData.end())
+			while ( ! ManagedData.empty() )
 			{
 				delete[] (Uint8*)(*it).second;
+				ManagedData.erase(it);
+				it = ManagedData.begin();
 			}
 			
 			if(ProvisionalEntry) delete[] ProvisionalEntry;

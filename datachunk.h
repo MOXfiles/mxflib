@@ -45,7 +45,7 @@ namespace mxflib
 
 namespace mxflib
 {
-	class DataChunk
+	class DataChunk : public RefCount<DataChunk>
 	{
 	private:
 		Uint32 DataSize;
@@ -151,7 +151,7 @@ namespace mxflib
 		}
 
 		//! Set some data into a data chunk (expanding it if required)
-		void Set(DataChunk &Buffer, Uint32 Start = 0)
+		void Set(const DataChunk &Buffer, Uint32 Start = 0)
 		{
 			Set(Buffer.Size, Buffer.Data, Start);
 		}
@@ -166,7 +166,7 @@ namespace mxflib
 		}
 
 		//! Append some data to a data chunk
-		void Append(DataChunk &Buffer)
+		void Append(const DataChunk &Buffer)
 		{
 			Set(Buffer.Size, Buffer.Data, Size);
 		}
