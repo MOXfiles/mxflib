@@ -46,7 +46,6 @@
 
 // Required headers for non-system specific bits
 #include <time.h>
-#include "config.h"
 
 /************************************************/
 /*           (Hopefully) Common types           */
@@ -207,6 +206,7 @@ namespace mxflib
 
 #else	/* for ISO C++ compilers */
 
+#include "config.h"
 #include <stdlib.h>
 #include <string>
 #include <sys/time.h>
