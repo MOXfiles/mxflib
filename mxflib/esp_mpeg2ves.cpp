@@ -616,7 +616,7 @@ Uint64 MPEG2_VES_EssenceSubParser::ReadInternal(FileHandle InFile, Uint32 Stream
 					ClosedGOP = (BuffGetU8(InFile) & 0x40)? true:false;
 
 					//if( PictureNumber < 35 )
-					if( ClosedGOP ) debug( "Closed GOP\n" ); else printf( "Open GOP\n" );
+					if( ClosedGOP ) debug( "Closed GOP\n" ); else debug( "Open GOP\n" );
 
 					CurrentPos += 4;
 				}
