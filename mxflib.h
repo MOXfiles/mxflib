@@ -71,5 +71,7 @@ namespace mxflib {}
 #include <mxflib/esp_wavepcm.h>
 #include <mxflib/esp_dvdif.h>
 
+#include <mxflib/waveheader.h>
+
 #endif // MXFLIB__MXFLIB_H
 
