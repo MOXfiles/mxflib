@@ -29,6 +29,7 @@
  */
 
 #include <mxflib/mxflib.h>
+#include <mxflib/waveheader.h>
 
 using namespace mxflib;
 
