@@ -335,7 +335,7 @@ namespace mxflib
 	{
 	public:
 		MDObjectParent() : ParentPtr<MDObject>() {};
-		MDObjectParent(MDObject * ptr) : ParentPtr<MDObject>(ptr) {};
+		MDObjectParent(IRefCount<MDObject> * ptr) : ParentPtr<MDObject>(ptr) {};
 
 		//! Set value from a smart pointer
 		/*! \note Not a perfect operator= as no return value is created (too inefficient) */

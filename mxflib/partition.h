@@ -62,7 +62,7 @@ namespace mxflib
 	{
 	public:
 		PartitionParent() : ParentPtr<Partition>() {};
-		PartitionParent(Partition * ptr) : ParentPtr<Partition>(ptr) {};
+		PartitionParent(IRefCount<Partition> * ptr) : ParentPtr<Partition>(ptr) {};
 		
 		//! Child access operators that overcome dereferencing problems with SmartPtrs
 		MDObjectPtr operator[](const char *ChildName);
