@@ -9,6 +9,7 @@
  */
 /*
  *	Copyright (c) 2003, Matt Beard
+ *	Portions Copyright (c) 2003, Metaglue Corporation
  *
  *	This software is provided 'as-is', without any express or implied warranty.
  *	In no event will the authors be held liable for any damages arising from
@@ -131,6 +132,25 @@ namespace mxflib
 		// DRAGONS: These should be const, but can't make it work!
 		std::map<UUID, MDObjectPtr>& GetRefTargets(void) { return RefTargets; };
 		std::multimap<UUID, MDObjectPtr>& GetUnmatchedRefs(void) { return UnmatchedRefs;	};
+
+// Sequential access to the Elements of the Body
+
+	public:
+		// goto start of body...set the member variables _BodyLocation, _NextBodyLocation
+		bool StartElements();
+		// goto _NextBodyLocation
+		KLVObjectPtr NextElement();
+		// skip over a KLV packet
+
+	protected:
+		Uint64 Skip( Uint64 start );
+		// skip over any KLVFill
+		// DRAGONS: does not iterate - only copes with single KLVFill
+		Uint64 SkipFill( Uint64 start );
+
+	private:
+		Uint64 _BodyLocation;				// file position for current Element
+		Uint64 _NextBodyLocation;		// file position for Element after this
 
 	private:
 		void ProcessChildRefs(MDObjectPtr ThisObject);
