@@ -73,7 +73,7 @@ namespace mxflib
 
 
 	// Runtime detection of endian-ness using detection code that executes once.
-	// The variable littleEndian is then used to check if bytes read/written to 
+	// The variable littleEndian is then used to check if bytes read/written to
 	// files need to be swapped.
 	static bool IsLittleEndian()
 	{
@@ -350,7 +350,7 @@ namespace mxflib
 
 #define DIR_SEPARATOR		'/'
 #define PATH_SEPARATOR		':'
-#define #DEFAULT_DICT_PATH	"/usr/local/share/mxflib/"
+#define DEFAULT_DICT_PATH	"/usr/local/share/mxflib/"
 
 
 	/******** 64-bit file-I/O ********/
