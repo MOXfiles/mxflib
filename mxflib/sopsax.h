@@ -54,6 +54,6 @@ struct sopSAXHandlerStruct
 
 
 /* Function Prototypes */
-void sopSAXParseFile(sopSAXHandlerPtr sax, void *UserData, const char *filename);
+bool sopSAXParseFile(sopSAXHandlerPtr sax, void *UserData, const char *filename);
 
 #endif /* _SOPSAX_H */
