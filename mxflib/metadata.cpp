@@ -56,43 +56,13 @@ mxflib::Metadata::Metadata(std::string TimeStamp)
 void Metadata::Init(void)
 {
 	Object = new MDObject("Preface");
-	
+
 	// Even though it isn't used the preface needs an InstanceUID
-	// as it is defivef from GenerationInterchangeObject
+	// as it is defived from GenerationInterchangeObject
 	Object->AddChild("InstanceUID")->ReadValue(DataChunk(new UUID));
 
-	timestmp ts;
-
-	struct tm * now;
-	time_t tmp=time(NULL);
-	now=gmtime(&tmp);
-
-	ts.yr=now->tm_year;
-	mxflib::Swap(ts.yr);
-	ts.month=now->tm_mon;
-	ts.day=now->tm_mday;
-	ts.hour=now->tm_hour;
-	ts.min=now->tm_min;
-	ts.sec=now->tm_sec;
-
-
-	DataChunk TimeStamp(sizeof(timestmp),reinterpret_cast<const Uint8 *>(&ts));
-	Uint8 * p1, d1,d2;
-	p1=TimeStamp.Data;
-
-	d1=*p1;   //Endian problem with the year between  MXF and AAF
-	d2=*(p1+1);
-	*(p1+1)=d1;
-	*p1=d2;
-
-	Object->AddChild("LastModified")->SetValue(TimeStamp);
-
-	version_t ver;
-	ver.major=1;
-	ver.minor=2;
-	DataChunk Version(sizeof(version_t),reinterpret_cast<const Uint8 *>(&ver));
-	
-	Object->AddChild("Version")->SetValue(Version);
+	Object->AddChild("LastModifiedDate")->SetString(ModificationTime);
+	Object->AddChild("Version")->SetInt(258);
 
 	Object->AddChild("Identifications");
 	// To set later: OperationalPattern
