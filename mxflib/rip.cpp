@@ -43,8 +43,6 @@ mxflib::RIP::RIP()
 
 
 //! Random Index Pack destructor
-/*! <this space for rent>
-*/
 mxflib::RIP::~RIP()
 {
 	debug("~RIP()\n");

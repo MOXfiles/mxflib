@@ -188,7 +188,7 @@ Uint32 Primer::WritePrimer(DataChunk &Buffer)
 	Uint64 PrimerLen = Uint64(size()) * 18 + 8;
 
 	// Re-size buffer to the probable final size
-	Buffer.ResizeBuffer(Buffer.Size + 16 + 4 + PrimerLen);
+	Buffer.ResizeBuffer((Uint32)(Buffer.Size + 16 + 4 + PrimerLen));
 
 	// Lookup the type to get the key - Static so only need to lookup once
 	static MDOTypePtr PrimerType = MDOType::Find("Primer");
