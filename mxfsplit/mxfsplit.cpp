@@ -431,6 +431,8 @@ static void DumpBody( PartitionPtr ThisPartition )
 		FileMap::iterator itFile;
 		FILE* fp;
 
+		int limit=0;
+
 		KLVObjectPtr anElement;
 		ThisPartition->StartElements();
 		while( anElement = ThisPartition->NextElement() )
@@ -449,16 +451,21 @@ static void DumpBody( PartitionPtr ThisPartition )
 					// anElement isa KLVObject
 					MDObjectPtr anObj = new MDObject( anElement->GetUL() );
 
+					// this may take a long time if we only want to report the size of a mystery KLV
+					anElement->ReadData();
+
 					DataChunk& theChunk = anElement->GetData();
-
-					Uint64 theSize = theChunk.Size;
-					Uint8 *Data = theChunk.Data;
-
 					anObj->ReadValue( theChunk );
 
-					DumpObject( anObj, "   " );
+					DumpObject( anObj, "  " );
 					printf( "\n" );
 
+				}
+
+				if( ++limit >= 35 )
+				{
+					printf( "Excessive Extraneous Elements in this Partition...skipping the rest\n" );
+					break;
 				}
 			}
 			else
@@ -511,7 +518,7 @@ static void DumpBody( PartitionPtr ThisPartition )
 				DataChunk &theEss = anElement->GetData();
 
 				//diagnostics
-				//printf( "  writing %x bytes to %s\n", theEss->Size, (*itFile).first.c_str() );
+				// printf( "  writing %x bytes to %s\n", theEss.Size, (*itFile).first.c_str() );
 
 				fwrite( theEss.Data, 1, theEss.Size, (*itFile).second.file );
 
