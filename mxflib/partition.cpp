@@ -557,7 +557,7 @@ DataChunkPtr mxflib::Partition::ReadIndexChunk(void)
 					break;
 				}
 			}
-			p++;
+			p--;
 		}
 	}
 
