@@ -34,15 +34,6 @@
 #include <time.h>
 #include <string>
 
-/** Helper macros **/
-/*******************/
-
-// STRINGIZE_GETENV - allows getenv to be called on a macro which has no quotes
-#ifndef STRINGIZE_GETENV
-#define STRINGIZE_GETENV( x ) getenv( #x )
-#endif // STRINGIZE_GETENV
-
-
 namespace mxflib
 {
 	//! Make a string containing a number

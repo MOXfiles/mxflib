@@ -301,13 +301,6 @@ void mxflib::SetDictionaryPath(std::string NewPath)
 	DictionaryPath = NewPath;
 }
 
-#define MXF_DATA_DIR PATH
-
-#ifndef DICT_DIR_ENV 
-#define DICT_DIR_ENV MXF_DATA_DIR
-#endif
-
-
 //! Search for a file of a specified name in the current dictionary search path
 /*! If the filname is either absolute, or relative to "." or ".." then the 
  *  paths are not searched - just the location specified by that filename.
@@ -315,19 +308,21 @@ void mxflib::SetDictionaryPath(std::string NewPath)
  */
 std::string mxflib::LookupDictionaryPath(const char *Filename)
 {
-	/*
-	//Ian Baker - temporarily removed until STRINGIZE is fixed
-	// line beneath need to be removed when it is fixed.
 	if(DictionaryPath == "~")
 	{
-		char *env = STRINGIZE_GETENV(DICT_DIR_ENV);
-		
-		if(env) DictionaryPath = std::string(env);
-		else DictionaryPath = std::string( DEFAULT_DICT_PATH );
-	}
-	*/
 
-	DictionaryPath = std::string(".");
+#ifdef MXFDATADIR
+		// environment variable name may be specified at build time
+		char *env = getenv( MXFDATADIR );
+#else
+		// default environment variable name is MXFLIB_DATA_DIR
+		char *env = getenv( "MXFLIB_DATA_DIR" );
+#endif
+
+		// if environment variable not specified, use the platform default
+		if( !env ) DictionaryPath = std::string( DEFAULT_DICT_PATH );
+		else DictionaryPath = std::string(env);
+	}
 
 	return SearchPath(DictionaryPath, Filename);
 }
