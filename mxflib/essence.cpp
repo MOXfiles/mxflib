@@ -1382,8 +1382,12 @@ EssenceParser::WrappingConfigPtr EssenceParser::SelectWrappingOption(FileHandle 
 					// All OK, including requested edit rate
 
 					// Update the SampleRate in the Descriptor to the rate in use (which may be different than its native rate)
-					SampleRate->SetInt("Numerator", Ret->EditRate.Numerator);
-					SampleRate->SetInt("Denominator", Ret->EditRate.Denominator);
+					if(!SampleRate) SampleRate = Ret->EssenceDescriptor->AddChild("SampleRate");
+					if(SampleRate)
+					{
+						SampleRate->SetInt("Numerator", Ret->EditRate.Numerator);
+						SampleRate->SetInt("Denominator", Ret->EditRate.Denominator);
+					}
 
 					Ret->WrapOpt->BytesPerEditUnit = Ret->WrapOpt->Handler->GetBytesPerEditUnit();
 
