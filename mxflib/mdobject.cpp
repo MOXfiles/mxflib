@@ -47,8 +47,9 @@ PrimerPtr MDOType::StaticPrimer;
 
 //! Build a Primer object for the current dictionary
 /*! This primer has the mappings of tag to UL from the dictionary
+ *  /param SetStatic - If true the StaticPrimer will be set to this new primer
  */
-PrimerPtr MDOType::MakePrimer(void)
+PrimerPtr MDOType::MakePrimer(bool SetStatic /*=false*/)
 {
 	PrimerPtr Ret = new Primer;
 
@@ -75,9 +76,8 @@ PrimerPtr MDOType::MakePrimer(void)
 		it++;
 	}
 
-	// Replace existing StaticPrimer
-//	if( StaticPrimer ) delete StaticPrimer;
-	StaticPrimer = Ret;
+	// Replace existing StaticPrimer if requested
+	if(SetStatic) StaticPrimer = Ret;
 
 	return Ret;
 }
@@ -1918,7 +1918,7 @@ void MDOType::LoadDict(const char *DictFile)
 	}
 
 	// Build a static primer (for use in index tables)
-	MakePrimer();
+	MakePrimer(true);
 }
 
 

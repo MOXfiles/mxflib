@@ -865,7 +865,7 @@ int mxflib::LoadClasses(ClassRecordList &ClassesData)
 	}
 
 	// Build a static primer (for use in index tables)
-	MDOType::MakePrimer();
+	MDOType::MakePrimer(true);
 
 	return 0;
 }

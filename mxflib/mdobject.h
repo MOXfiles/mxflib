@@ -329,12 +329,14 @@ protected:
 		static void LoadDict(const char *DictFile);
 
 		//! Build a primer
-		static PrimerPtr MakePrimer(void);
+		static PrimerPtr MakePrimer(bool SetStatic = false);
+		
+		//! Get the static primer (make one if required)
 		static PrimerPtr GetStaticPrimer(void) 
 		{ 
-			if( !StaticPrimer) return StaticPrimer = MakePrimer(); 
-			return StaticPrimer; 
-		};
+			if( !StaticPrimer) MakePrimer(true); 
+			return StaticPrimer;
+		}
 
 		static MDOTypePtr Find(std::string BaseType);
 		static MDOTypePtr Find(const UL& BaseUL);
