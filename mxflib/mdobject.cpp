@@ -76,7 +76,7 @@ PrimerPtr MDOType::MakePrimer(void)
 	}
 
 	// Replace existing StaticPrimer
-	if( StaticPrimer ) delete StaticPrimer;
+//	if( StaticPrimer ) delete StaticPrimer;
 	StaticPrimer = Ret;
 
 	return Ret;
