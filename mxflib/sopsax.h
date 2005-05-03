@@ -47,11 +47,11 @@ namespace mxflib
 	/* Handler structure */
 	struct sopSAXHandlerStruct
 	{
-	startElementSAXFunc startElement;		/* startElement */
-	endElementSAXFunc endElement;			/* endElement */
-    warningSAXFunc warning;					/* warning */
-    errorSAXFunc error;						/* error */
-    fatalErrorSAXFunc fatalError;			/* fatalError */
+		startElementSAXFunc startElement;		/* startElement */
+		endElementSAXFunc endElement;			/* endElement */
+		warningSAXFunc warning;					/* warning */
+		errorSAXFunc error;						/* error */
+		fatalErrorSAXFunc fatalError;			/* fatalError */
 	};
 
 
