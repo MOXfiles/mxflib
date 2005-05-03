@@ -651,7 +651,7 @@ void Package::UpdateDurations(void)
 
 //! Add an event track to the package
 /*! \note If the TrackID is set manually it is the responsibility of the caller to prevent clashes */
-TrackPtr Package::AddTrack(ULPtr DataDef, Uint32 TrackNumber, Rational EditRate, Int64 DefaultDuration, std::string TrackName /* = "" */ , Uint32 TrackID /* = 0 */)
+TrackPtr Package::AddTrack(ULPtr DataDef, Uint32 TrackNumber, Rational EditRate, Length DefaultDuration, std::string TrackName /* = "" */ , Uint32 TrackID /* = 0 */)
 {
 	TrackPtr Ret = new Track("EventTrack");
 	if(!Ret) return Ret;
