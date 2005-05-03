@@ -296,7 +296,8 @@ Length mxflib::Partition::ReadMetadata(MXFFilePtr File, Length Size)
 		}
 */
 		// Build an object (it may come back as an "unknown")
-		MDObjectPtr NewItem = new MDObject(new UL(BuffPtr));
+		ULPtr NewUL = new UL(BuffPtr);
+		MDObjectPtr NewItem = new MDObject(NewUL);
 		ASSERT(NewItem);
 
 		BuffPtr += 16;
