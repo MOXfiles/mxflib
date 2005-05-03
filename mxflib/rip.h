@@ -72,7 +72,7 @@ namespace mxflib
 	typedef SmartPtr<PartitionInfo> PartitionInfoPtr;
 
 	//! A map of file location against smart pointers to PartitionInfo objects
-	typedef std::map<Int64, PartitionInfoPtr> PartitionInfoMap;
+	typedef std::map<Position, PartitionInfoPtr> PartitionInfoMap;
 }
 
 
