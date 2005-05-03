@@ -602,7 +602,7 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 
 			char TypeBuff[32];
 			strncpy(TypeBuff, Type.c_str(), 32);
-			TypeBuff[32] = '\0';
+			TypeBuff[31] = '\0';
 
 			if(   (strcasecmp(TypeBuff,"universalSet") == 0) 
 			   || (strcasecmp(TypeBuff,"variablePack") == 0)
