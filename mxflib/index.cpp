@@ -312,13 +312,14 @@ IndexPosPtr IndexTable::Lookup(Position EditUnit, int SubItem /* =0 */, bool Reo
 	}
 
 	// Sort the PosOffset if one is required
-	if(TemporalOffset > 0)
+	int PosTableIndex = (int)Segment->DeltaArray[SubItem].PosTableIndex;
+	if(PosTableIndex > 0)
 	{
 		// Index the correct PosTable entry for this sub-item
-		Uint8 *PosPtr = Ptr + (NSL * sizeof(Uint32)) + ((TemporalOffset - 1) * (sizeof(Uint32)*2) );
+		Uint8 *PosPtr = Ptr + (NSL * sizeof(Uint32)) + ((PosTableIndex - 1) * (sizeof(Uint32)*2) );
 
 		Ret->PosOffset.Numerator = GetI32(PosPtr);
-		PosPtr += sizeof(Uint32);
+		PosPtr += 4;
 		Ret->PosOffset.Denominator = GetI32(PosPtr);
 		Ret->Offset = true;
 	}
