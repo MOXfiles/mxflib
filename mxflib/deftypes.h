@@ -470,6 +470,12 @@ namespace mxflib
 	 */
 	int LoadDictionary(const ConstDictionaryRecord *DictionaryData, bool FastFail = false);
 
+	//! Load dictionary from the specified XML definitions
+	/*! \return 0 if all OK
+	 *  \return -1 on error
+	 */
+	int LoadDictionary(char *DictFile, bool FastFail = false);
+
 
 //! MXFLIB_DICTIONARY_START - Use to start a type definition block
 #define MXFLIB_DICTIONARY_START(Name)		const ConstDictionaryRecord Name[] = {
