@@ -311,8 +311,8 @@ void MDValue::Init(void)
 {
 	ASSERT(Type);
 	
-	// If it's a basic type build an empty one
-	if(Type->EffectiveClass() == BASIC)
+	// If it's a basic type (or handles its sub data) build an empty item
+	if(Type->HandlesSubdata() || (Type->EffectiveClass() == BASIC))
 	{
 		if(Type->Size)
 		{
