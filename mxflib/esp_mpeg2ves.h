@@ -68,6 +68,9 @@ namespace mxflib
 
 		bool EndOfStream;									//!< True once the end of the stream has been read
 
+		MDObjectParent CurrentDescriptor;					//!< Pointer to the last essence descriptor we built
+															/*!< This is used as a quick-and-dirty check that we know how to process this source */
+
 	public:
 		//! Class for EssenceSource objects for parsing/sourcing MPEG-VES essence
 		class ESP_EssenceSource : public EssenceSubParserBase::ESP_EssenceSource
@@ -80,8 +83,8 @@ namespace mxflib
 
 		public:
 			//! Construct and initialise for essence parsing/sourcing
-			ESP_EssenceSource(EssenceSubParserPtr TheCaller, FileHandle InFile, Uint32 UseStream, Uint64 Count = 1/*, IndexTablePtr UseIndex = NULL*/)
-				: EssenceSubParserBase::ESP_EssenceSource(TheCaller, InFile, UseStream, Count/*, UseIndex*/) 
+			ESP_EssenceSource(EssenceSubParserPtr TheCaller, FileHandle InFile, Uint32 UseStream, Uint64 Count = 1)
+				: EssenceSubParserBase::ESP_EssenceSource(TheCaller, InFile, UseStream, Count) 
 			{
 				MPEG2_VES_EssenceSubParser *pCaller = SmartPtr_Cast(Caller, MPEG2_VES_EssenceSubParser);
 				EssencePos = pCaller->PictureNumber;
@@ -153,7 +156,7 @@ namespace mxflib
 		virtual EssenceStreamDescriptorList IdentifyEssence(FileHandle InFile);
 
 		//! Examine the open file and return the wrapping options known by this parser
-		virtual WrappingOptionList IdentifyWrappingOptions(FileHandle InFile, EssenceStreamDescriptor Descriptor);
+		virtual WrappingOptionList IdentifyWrappingOptions(FileHandle InFile, EssenceStreamDescriptor &Descriptor);
 
 		//! Set a wrapping option for future Read and Write calls
 		virtual void Use(Uint32 Stream, WrappingOptionPtr &UseWrapping);

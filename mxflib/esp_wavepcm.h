@@ -56,6 +56,9 @@ namespace mxflib
 		Uint32 *SampleSequence;								//!< Array of counts of samples per edit unit for non integer relationships between edit rate and sample rate
 		int SequencePos;									//!< Current position in the sequence (i.e. next entry to use)
 
+		MDObjectParent CurrentDescriptor;					//!< Pointer to the last essence descriptor we built
+															/*!< This is used as a quick-and-dirty check that we know how to process this source */
+
 	public:
 		//! Class for EssenceSource objects for parsing/sourcing MPEG-VES essence
 		class ESP_EssenceSource : public EssenceSubParserBase::ESP_EssenceSource
@@ -152,7 +155,7 @@ namespace mxflib
 		virtual EssenceStreamDescriptorList IdentifyEssence(FileHandle InFile);
 
 		//! Examine the open file and return the wrapping options known by this parser
-		virtual WrappingOptionList IdentifyWrappingOptions(FileHandle InFile, EssenceStreamDescriptor Descriptor);
+		virtual WrappingOptionList IdentifyWrappingOptions(FileHandle InFile, EssenceStreamDescriptor &Descriptor);
 
 		//! Set a wrapping option for future Read and Write calls
 		/*! \return true if this EditRate is acceptable with this wrapping */
