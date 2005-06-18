@@ -247,8 +247,7 @@ int main_process(int argc, char *argv[])
 	EssenceParser EssParse;
 
 	// Load the dictionaries
-	LoadTypes("types.xml");
-	MDOType::LoadDict("xmldict.xml");
+	LoadDictionary("dict.xml");
 
 	// Parse command line options and exit on error
 	ForceEditRate.Numerator = 0;
