@@ -906,6 +906,7 @@ EssenceParser::EssenceParser()
 		EPList.push_back(new MPEG2_VES_EssenceSubParser);
 		EPList.push_back(new WAVE_PCM_EssenceSubParser);
 		EPList.push_back(new DV_DIF_EssenceSubParser);
+		EPList.push_back(new JP2K_EssenceSubParser);
 
 		EPListInited = true;
 	}
