@@ -98,7 +98,12 @@ namespace mxflib
 			{
 				Offset = 0;
 				MPEG2_VES_EssenceSubParser *pCaller = SmartPtr_Cast(Caller, MPEG2_VES_EssenceSubParser);
-				ByteCount = pCaller->ReadInternal(File, Stream, RequestedCount);
+				
+				if(pCaller->SelectedWrapping->ThisWrapType == WrappingOption::Clip)
+					ByteCount = pCaller->ReadInternal(File, Stream, 0);
+				else
+					ByteCount = pCaller->ReadInternal(File, Stream, RequestedCount);
+				
 				return ByteCount;
 			};
 
