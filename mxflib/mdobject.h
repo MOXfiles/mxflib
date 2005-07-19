@@ -725,8 +725,8 @@ namespace mxflib
 		MDObjectPtr GetLink(void) const { return Link; };
 
 		//! Make a link from this reference source to the specified target set
-		bool MakeLink(MDObjectPtr TargetSet);
-		
+		bool MakeLink(MDObjectPtr &TargetSet, bool ForceLink = false);
+	
 		//! Record that a link exists (not the same as making a link - see MakeLink)
 		void SetLink(MDObjectPtr NewLink) { Link = NewLink; };
 

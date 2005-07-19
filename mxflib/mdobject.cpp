@@ -1710,13 +1710,15 @@ Uint32 MDObject::WriteKey(DataChunkPtr &Buffer, DictKeyFormat Format, PrimerPtr 
 //! Make a link from this reference source to the specified target set
 /*! If the target set already has an instanceUID it will be used, otherwise
  *	one will be added.
+ *  \param TargetSet A pointer to the set to be the target of this reference
+ *  \param ForceLink True if the link is to be made even if not a valid reference source/target pair
  *	\return true on success, else false
  *	\note The link will be made from the source <b>property</b> to the target <b>set</b>
  *		  so be aware that "this" must be a reference source property and "TargetSet"
  *		  must be a set (or pack) containing an InstanceUID property which is a
  *		  reference target
  */
-bool MDObject::MakeLink(MDObjectPtr TargetSet)
+bool MDObject::MakeLink(MDObjectPtr &TargetSet, bool ForceLink /*=false*/)
 {
 	Uint8 TheUID[16];
 
@@ -1751,8 +1753,11 @@ bool MDObject::MakeLink(MDObjectPtr TargetSet)
 	DictRefType RType = Type->GetRefType();
 	if((RType != DICT_REF_STRONG) && (RType != DICT_REF_WEAK))
 	{
-		error("Attempting to reference %s from %s (which is not a reference source)\n",
-			   TargetSet->FullName().c_str(), FullName().c_str() );
+		if(!ForceLink)
+		{
+			error("Attempting to reference %s from %s (which is not a reference source)\n",
+				   TargetSet->FullName().c_str(), FullName().c_str() );
+		}
 	}
 
 	// Make the link
