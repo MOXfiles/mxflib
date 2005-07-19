@@ -118,6 +118,7 @@ namespace mxflib
 #include <mxflib/esp_mpeg2ves.h>
 #include <mxflib/esp_wavepcm.h>
 #include <mxflib/esp_dvdif.h>
+#include <mxflib/esp_jp2k.h>
 #include <mxflib/sopsax.h>
 #include <mxflib/xmlparse.h>
 
