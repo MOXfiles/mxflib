@@ -1310,6 +1310,7 @@ namespace mxflib
 			NextSprinkled = 0;
 			EssencePendingData = false;
 			EndOfStream = false;
+			FreeSpaceIndex = false;
 
 			KAG = 0;
 			ForceBER4 = false;
