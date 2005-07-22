@@ -565,13 +565,6 @@ Length mxflib::JP2K_EssenceSubParser::ReadInternal(FileHandle InFile, Uint32 Str
 	if(CurrentPos == 0) CurrentPos = DataStart;
 	FileSeek(InFile, CurrentPos);
 
-	// If we have an index manager we need to perform indexing operations
-	if(Manager)
-	{
-		// Offer this index table data to the index manager
-		Manager->OfferEditUnit(ManagedStreamID, PictureNumber, 0, 0x80);
-	}
-
 	// If the size is known (possible in a JP2 file) we return it
 	if(DataSize != 0)
 	{
@@ -586,6 +579,13 @@ Length mxflib::JP2K_EssenceSubParser::ReadInternal(FileHandle InFile, Uint32 Str
 	
 	// Move back to the current position
 	FileSeek(InFile, CurrentPos);
+
+	// If we have an index manager we need to perform indexing operations
+	if((Ret != 0) && (Manager))
+	{
+		// Offer this index table data to the index manager
+		Manager->OfferEditUnit(ManagedStreamID, PictureNumber, 0, 0x80);
+	}
 
 	return Ret;
 
