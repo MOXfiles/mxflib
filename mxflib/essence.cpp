@@ -1943,6 +1943,25 @@ Length BodyWriter::WriteEssence(StreamInfoPtr &Info, Length Duration /*=0*/, Len
 				{
 					Stream->SetEndOfStream(true);
 					Stream->GetNextState();
+
+					// If we are requested to add a "free space" index entry do so here
+					if(Stream->GetFreeSpaceIndex())
+					{
+						Position EditUnit = IndexMan->AcceptProvisional();
+						if(EditUnit == -1) EditUnit = IndexMan->GetLastNewEditUnit();
+
+						if(EditUnit >= 0)
+						{
+							// Add free space entry for each sub-stream
+							BodyStream::iterator it = Stream->begin();
+							while(it != Stream->end())
+							{
+								IndexMan->OfferOffset((*it)->GetIndexStreamID(), EditUnit + 1, Writer->GetStreamOffset());
+								it++;
+							}
+						}
+					}
+
 					return Ret;
 				}
 
