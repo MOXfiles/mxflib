@@ -93,6 +93,11 @@ namespace mxflib
 		 */
 		PartitionPtr ReadMasterPartition(Length MaxScan = 1024*1024);
 
+		//! Locate and read the footer partition
+		/*! \ret NULL if not found
+		 */
+		PartitionPtr ReadFooterPartition(Length MaxScan = 1024*1024);
+
 		//! Report the position of the file pointer
 		Position Tell(void) 
 		{ 

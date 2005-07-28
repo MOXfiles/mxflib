@@ -1485,3 +1485,55 @@ PartitionPtr MXFFile::ReadMasterPartition(Length MaxScan /*=1024*1024*/)
 }
 
 
+//! Locate and read the footer partition
+/*! \ret NULL if not found
+	*/
+PartitionPtr MXFFile::ReadFooterPartition(Length MaxScan /*=1024*1024*/)
+{
+	PartitionPtr Ret;
+
+	// Start by checking the FooterPosition value in the header
+	Seek(0);
+
+	// Read the header
+	Ret = ReadPartition();
+	if(!Ret) return Ret;
+
+	// Now try to locate the footer
+	Position FooterPos = 0;
+
+	// First we see if the header partition tells us where the footer is
+	FooterPos = Ret->GetInt64("FooterPartition");
+
+	// If the footer position is not specified in the header we must look for it
+	if(FooterPos == 0)
+	{
+		// If we don't already have a RIP read one if we can!
+		if(FileRIP.size() < 2)
+		{
+			// If we didn't manage to read a RIP try scanning for the footer partition
+			if(!ReadRIP())
+			{
+				FooterPos = ScanRIP_FindFooter(MaxScan);
+				if(FooterPos == 0) return NULL;
+			}
+		}
+
+		// We use the RIP, but not if we successfully scanned for the footer
+		if(FooterPos == 0)
+		{
+			// Locate the last partition in the file
+			RIP::iterator it = FileRIP.end();
+			it--;
+			FooterPos = (*it).second->ByteOffset;
+		}
+	}
+
+	// Read the footer
+	Seek(FooterPos);
+	Ret = ReadPartition();
+
+	// Return the footer partition
+	return Ret;
+}
+
