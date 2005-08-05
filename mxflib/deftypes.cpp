@@ -1241,6 +1241,9 @@ int mxflib::LoadDictionary(DictionaryPtr &DictionaryData, bool FastFail /*=false
 		Classes_it++;
 	}
 
+	// Locate reference target types for any new types
+	MDOType::LocateRefTypes();
+
 	return Ret;
 }
 
@@ -1270,6 +1273,9 @@ int mxflib::LoadDictionary(const ConstDictionaryRecord *DictionaryData, bool Fas
 
 		DictionaryData++;
 	}
+
+	// Locate reference target types for any new types
+	MDOType::LocateRefTypes();
 
 	return Ret;
 }
