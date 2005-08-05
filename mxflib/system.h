@@ -251,7 +251,7 @@ namespace mxflib
 		CoCreateGuid(reinterpret_cast<GUID*>(Buffer));
 	}
 
-	//! Determine if the spacified filename refers to an absolute path
+	//! Determine if the specified filename refers to an absolute path
 	inline bool IsAbsolutePath(const char *Filename)
 	{
 		if(*Filename == '\\') return true;
@@ -443,7 +443,7 @@ namespace mxflib
 	}
 #endif // HAVE_UUID_GENERATE
 
-	//! Determine if the spacified filename refers to an absolute path
+	//! Determine if the specified filename refers to an absolute path
 	inline bool IsAbsolutePath(const char *Filename)
 	{
 		if(*Filename == '/') return true;
