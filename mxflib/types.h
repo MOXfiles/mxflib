@@ -75,8 +75,17 @@ namespace mxflib
 	public:
 		Identifier(const Uint8 *ID = NULL) { if(ID == NULL) memset(Ident,0,SIZE); else memcpy(Ident,ID, SIZE); };
 		Identifier(const SmartPtr<Identifier> ID) { ASSERT(SIZE == ID->Size()); if(!ID) memset(Ident,0,SIZE); else memcpy(Ident,ID->Ident, SIZE); };
+		
+		//! Set the value of the Identifier
 		void Set(const Uint8 *ID = NULL) { if(ID == NULL) memset(Ident,0,SIZE); else memcpy(Ident,ID, SIZE); };
+
+		//! Set an individual byte of the identifier
+		void Set(int Index, Uint8 Value) { if(Index < SIZE) Ident[Index] = Value; };
+
+		//! Get a read-only pointer to the identifier value
 		const Uint8 *GetValue(void) const { return Ident; };
+
+		//! Get the size of the identifier
 		int Size(void) const { return SIZE; };
 
 		bool operator!(void) const
