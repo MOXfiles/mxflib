@@ -787,6 +787,9 @@ namespace mxflib
 		//! Set the object's tag
 		void SetTag(Tag NewTag) { TheTag = NewTag; }
 
+		//! Get the object's tag
+		Tag GetTag(void) { return TheTag; }
+
 		//! Change the type of an MDObject
 		/*! \note This may result in very wrong data - exercise great care! */
 		bool ChangeType(std::string NewType)
