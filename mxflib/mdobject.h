@@ -334,6 +334,9 @@ namespace mxflib
 		//! Read-only access to the global key
 		const DataChunk &GetGlobalKey(void) { return GlobalKey; }
 
+		//! Get the usage for this type
+		ClassUsage GetUse(void) { return (ClassUsage)Use; }
+
 	//** Static Dictionary Handling data and functions **
 	//***************************************************
 	protected:
@@ -774,9 +777,6 @@ namespace mxflib
 
 		//! Access function for ParentFile
 		MXFFilePtr &GetParentFile(void) { return ParentFile; };
-
-		//! Get a copy of the object's UL
-		UL GetUL(void) { return *TheUL; }
 
 		//! Get the object's UL
 		const ULPtr &GetUL(void) { return TheUL; }
