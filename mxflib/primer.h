@@ -65,10 +65,10 @@ namespace mxflib
 
 	public:
 		Primer() { NextDynamic = 0xffff; };
-		Uint32 ReadValue(const Uint8 *Buffer, Uint32 Size);
+		UInt32 ReadValue(const UInt8 *Buffer, UInt32 Size);
 
 		//! Write this primer to a memory buffer
-		Uint32 WritePrimer(DataChunkPtr &Buffer);
+		UInt32 WritePrimer(DataChunkPtr &Buffer);
 
 		//! Determine the tag to use for a given UL
 		Tag Lookup(ULPtr ItemUL, Tag TryTag = 0);

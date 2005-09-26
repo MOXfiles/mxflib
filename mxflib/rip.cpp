@@ -52,7 +52,7 @@ mxflib::RIP::~RIP()
 //! Add a partition to a RIP
 void mxflib::RIP::AddPartition(PartitionPtr Part,
 						  Position Offset			/* = -1 */, 
-						  Uint32 SID				/* = 0 */)
+						  UInt32 SID				/* = 0 */)
 {
 	debug("Adding a partition to a RIP\n");
 
@@ -69,7 +69,7 @@ void mxflib::RIP::AddPartition(PartitionPtr Part,
 //! PartitionInfo constructor
 mxflib::PartitionInfo::PartitionInfo(PartitionPtr Part	/* = NULL */,
 									 Position Offset			/* = -1 */, 
-									 Uint32 SID					/* = 0 */)
+									 UInt32 SID					/* = 0 */)
 	: ThePartition(Part), ByteOffset(Offset), BodySID(SID)
 {
 	debug("Generating new PartitionInfo\n");

@@ -101,9 +101,12 @@ namespace mxflib
 
 #ifdef _MSC_VER
 
+// Visual studio 6 specifics
+#if _MSC_VER < 1300
 #pragma warning(disable:4786)			// Ignore "identifer > 255 characters" warning
 										// This is produced from many STL class specialisations
-										// Note: Not all these warnings go away (another MS-Bug!!)
+										// Note: Not all these warnings go away (another MS-Bug??)
+#endif // _MSC_VER < 1300
 
 #include <crtdbg.h>						//!< Debug header
 #include <string>						//!< Required for strings
@@ -146,6 +149,7 @@ namespace mxflib
 	
 	/******** Int64 Conversion ********/
 	inline Int64 ato_Int64(const char *str) { return _atoi64(str); };
+	inline Int64 ato_UInt64(const char *str) { return (UInt64)_atoi64(str); };
 
 	inline std::string Int64toString(Int64 Val)
 	{ 
@@ -328,6 +332,7 @@ namespace mxflib
 	
 	/******** Int64 Conversion ********/
 	inline Int64 ato_Int64(const char *str) { return strtoll(str, NULL, 10); }
+	inline Int64 ato_UInt64(const char *str) { return strtoull(str, NULL, 10); }
 
 	inline std::string Int64toString(Int64 Val)
 	{ 

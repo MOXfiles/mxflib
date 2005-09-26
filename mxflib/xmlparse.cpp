@@ -71,9 +71,9 @@ bool mxflib::XMLParserParseFile(mxflib::XMLParserHandlerPtr Hand, void *UserData
 	do
 	{
 		const int BufferSize = 1024 * 64;
-		Uint8 *Buffer = (Uint8*)XML_GetBuffer(Parser, BufferSize);
+		UInt8 *Buffer = (UInt8*)XML_GetBuffer(Parser, BufferSize);
 
-		int Bytes = FileRead(InFile, Buffer, BufferSize);
+		int Bytes = (int)FileRead(InFile, Buffer, BufferSize);
 
 		if(FileEof(InFile)) Done = -1;
 

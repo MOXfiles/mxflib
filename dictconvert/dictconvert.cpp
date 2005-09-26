@@ -610,8 +610,8 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 			std::string RefType = "ClassRefNone";
 			std::string Detail;
 			std::string Type;
-			Uint32 minLength = 0;
-			Uint32 maxLength = 0;
+			UInt32 minLength = 0;
+			UInt32 maxLength = 0;
 			std::string RefTargetName;
 			std::string Base;
 			std::string default_text;
@@ -730,8 +730,8 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 			if(!HasGlobalKey) GlobalKey = Key;
 
 			// Calculate the local tag (if that is what the key is)
-			Uint16 Tag = 0;
-			Uint8 KeyBuff[16];
+			UInt16 Tag = 0;
+			UInt8 KeyBuff[16];
 			int Count = ReadHexString(Key.c_str(), 16, KeyBuff, " \t.");
 			if(Count == 2) Tag = GetU16(KeyBuff);
 

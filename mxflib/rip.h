@@ -47,7 +47,7 @@ namespace mxflib
 
 		Position ByteOffset;		//!< Byte offset into the file for the start of this partition
 									/*!< \note
-									 *	 Version 11 of the MXF spec uses a Uint64 for this
+									 *	 Version 11 of the MXF spec uses a UInt64 for this
 									 *         field but we are using a Position type here as it
 									 *         makes more sense, and allows distingushed value -1
 									 *   
@@ -56,13 +56,13 @@ namespace mxflib
 									 *         in the file is not known
 									 */
 
-		Uint32 BodySID;				//!< Stream ID of any essence in this partition (0 if none)
+		UInt32 BodySID;				//!< Stream ID of any essence in this partition (0 if none)
 									/*!< \note 0 is also used if the existance of essence is
 									 *         has not yet been determined
 									 */
 
 	public:
-		PartitionInfo(PartitionPtr Part = NULL, Position Offset = -1, Uint32 SID = 0);
+		PartitionInfo(PartitionPtr Part = NULL, Position Offset = -1, UInt32 SID = 0);
 
 		//! Comparison function to allow sorting
 		bool operator< (PartitionInfo &Other) {	return (ByteOffset < Other.ByteOffset); }
@@ -91,7 +91,7 @@ namespace mxflib
 		RIP();
 		~RIP();
 
-		void AddPartition(PartitionPtr Part, Position Offset = -1, Uint32 SID = 0);
+		void AddPartition(PartitionPtr Part, Position Offset = -1, UInt32 SID = 0);
 	};
 }
 

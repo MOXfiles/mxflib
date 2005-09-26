@@ -233,7 +233,7 @@ namespace mxflib
 			{
 				char buffer[1024];
 				sprintf(&buffer[0], "Item size = %d :", sizeof(T));
-				for(int i=0; i<min(sizeof(T), 64); i++) sprintf(&buffer[strlen(buffer)], " %02x", ((Uint8*)(this))[i]);
+				for(int i=0; i<min(sizeof(T), 64); i++) sprintf(&buffer[strlen(buffer)], " %02x", ((UInt8*)(this))[i]);
 				return std::string(buffer);
 			}
 

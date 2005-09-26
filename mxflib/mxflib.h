@@ -37,6 +37,7 @@ namespace mxflib {}
 //! Include system specifics first to allow any required compiler set-up
 #include <mxflib/system.h>
 
+#include <mxflib/constants.h>
 
 // Required std::headers
 
@@ -49,7 +50,7 @@ namespace mxflib
 #define MXFLIB_VERSION_MAJOR "0"
 #define MXFLIB_VERSION_MINOR "5"
 #define MXFLIB_VERSION_TWEAK "2"
-#define MXFLIB_VERSION_BUILD "2"
+#define MXFLIB_VERSION_BUILD "3"
 #define MXFLIB_VERSION_REL   2
 #define MXFLIB_VERSION_RELTEXT(REL) (REL==1?"-Release":(REL==2?"-Development":(REL==3?"-Patched":(REL==4?"-Beta":(REL==5?"-Private":"")))))
 #define MXFLIB_VERSION_RELNUMBER(REL) (REL==1?"1":(REL==2?"2":(REL==3?"3":(REL==4?"4":(REL==5?"5":"0")))))
