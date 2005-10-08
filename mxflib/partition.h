@@ -55,6 +55,8 @@ namespace mxflib
 		//! Child access operators that overcome dereferencing problems with SmartPtrs
 		MDObjectPtr operator[](const char *ChildName);
 		MDObjectPtr operator[](MDOTypePtr ChildType);
+		MDObjectPtr operator[](const UL &ChildType);
+		MDObjectPtr operator[](ULPtr &ChildType);
 	};
 
 	//! A parent pointer to an Partition object (with operator[] overload)
@@ -67,6 +69,8 @@ namespace mxflib
 		//! Child access operators that overcome dereferencing problems with SmartPtrs
 		MDObjectPtr operator[](const char *ChildName);
 		MDObjectPtr operator[](MDOTypePtr ChildType);
+		MDObjectPtr operator[](const UL &ChildType);
+		MDObjectPtr operator[](ULPtr &ChildType);
 	};
 
 	//! A list of smart pointers to Partition objects
@@ -95,7 +99,8 @@ namespace mxflib
 	public:
 		Partition(const char *BaseType) { Object = new MDObject(BaseType); };
 		Partition(MDOTypePtr BaseType) { Object = new MDObject(BaseType); };
-		Partition(ULPtr BaseUL) { Object = new MDObject(BaseUL); };
+		Partition(const UL &BaseUL) { Object = new MDObject(BaseUL); };
+		Partition(ULPtr BaseUL) { Object = new MDObject(*BaseUL); };
 
 		//! Reload the metadata tree - DRAGONS: not an ideal way of doing this
 		void UpdateMetadata(ObjectInterface *NewObject) { ClearMetadata(); AddMetadata(NewObject->Object); };
@@ -139,7 +144,7 @@ namespace mxflib
 		//! Set the KAG for this partition
 		void SetKAG(UInt64 KAG)
 		{
-			MDObjectPtr Ptr = Object->Child("KAGSize");
+			MDObjectPtr Ptr = Object[KAGSize_UL];
 			ASSERT(Ptr);
 			Ptr->SetUInt64(KAG);
 		}
@@ -199,6 +204,8 @@ namespace mxflib
 {
 inline MDObjectPtr PartitionPtr::operator[](const char *ChildName) { return GetPtr()->Object[ChildName]; }
 inline MDObjectPtr PartitionPtr::operator[](MDOTypePtr ChildType) { return GetPtr()->Object[ChildType]; }
+inline MDObjectPtr PartitionPtr::operator[](const UL &ChildType) { return GetPtr()->Object[ChildType]; }
+inline MDObjectPtr PartitionPtr::operator[](ULPtr &ChildType) { return GetPtr()->Object[*ChildType]; }
 }
 
 #endif // MXFLIB__PARTITION_H

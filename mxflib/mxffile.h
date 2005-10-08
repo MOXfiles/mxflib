@@ -226,12 +226,12 @@ namespace mxflib
 		//! Write the RIP
 		void WriteRIP(void)
 		{
-			MDObjectPtr RIPObject = new MDObject("RandomIndexMetadata");
+			MDObjectPtr RIPObject = new MDObject(RandomIndexMetadata_UL);
 			ASSERT(RIPObject);
 
 			if(RIPObject)
 			{
-				MDObjectPtr PA = RIPObject->AddChild("PartitionArray");
+				MDObjectPtr PA = RIPObject->AddChild(PartitionArray_UL);
 
 				ASSERT(PA);
 				if(PA)
@@ -239,14 +239,14 @@ namespace mxflib
 					RIP::iterator it = FileRIP.begin();
 					while(it != FileRIP.end())
 					{
-						PA->AddChild("BodySID", false)->SetUInt((*it).second->BodySID);
-						PA->AddChild("ByteOffset", false)->SetUInt64((*it).second->ByteOffset);
+						PA->AddChild(BodySID_UL, false)->SetUInt((*it).second->BodySID);
+						PA->AddChild(ByteOffset_UL, false)->SetUInt64((*it).second->ByteOffset);
 						it++;
 					}
 				}
 				
 				// Calculate the pack length
-				RIPObject->SetUInt("Length", 16 + 4 + (FileRIP.size() * 12) + 4);
+				RIPObject->SetUInt(Length_UL, 16 + 4 + (FileRIP.size() * 12) + 4);
 
 				DataChunkPtr Buffer = RIPObject->WriteObject();
 

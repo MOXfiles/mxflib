@@ -186,7 +186,7 @@ UInt32 Primer::WritePrimer(DataChunkPtr &Buffer)
 	Buffer->ResizeBuffer((UInt32)(Buffer->Size + 16 + 4 + PrimerLen));
 
 	// Lookup the type to get the key - Static so only need to lookup once
-	static MDOTypePtr PrimerType = MDOType::Find("Primer");
+	static MDOTypePtr PrimerType = MDOType::Find(Primer_UL);
 	ASSERT(PrimerType);
 
 	Buffer->Append(PrimerType->GetKey());

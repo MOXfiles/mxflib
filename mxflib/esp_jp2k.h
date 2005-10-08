@@ -172,7 +172,7 @@ namespace mxflib
 
 			// Pretend that the essence is sampled at whatever rate we are wrapping at
 			MDObjectPtr Ptr;
-			if(CurrentDescriptor) Ptr = CurrentDescriptor->AddChild("SampleRate");
+			if(CurrentDescriptor) Ptr = CurrentDescriptor->AddChild(SampleRate_UL);
 			if(Ptr)
 			{
 				Ptr->SetInt("Numerator", UseEditRate.Numerator);
