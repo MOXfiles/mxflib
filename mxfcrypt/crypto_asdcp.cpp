@@ -183,7 +183,7 @@ Encrypt_GCReadHandler::Encrypt_GCReadHandler(GCWriterPtr Writer, UInt32 BodySID,
 	int Bytes = 0;
 	if(FileValid(KeyFile))
 	{
-		Bytes = FileRead(KeyFile, (UInt8*)Buffer, 32);
+		Bytes = (int)FileRead(KeyFile, (UInt8*)Buffer, 32);
 		FileClose(KeyFile);
 
 		if(Bytes != 32) error("Failed to read key from key-file \"%s\"\n", Buffer);
@@ -205,7 +205,7 @@ Encrypt_GCReadHandler::Encrypt_GCReadHandler(GCWriterPtr Writer, UInt32 BodySID,
 				FileHandle KeyFile = FileOpenRead(UseName.c_str());
 				if(FileValid(KeyFile))
 				{
-					Bytes = FileRead(KeyFile, (UInt8*)Buffer, 32);
+					Bytes = (int)FileRead(KeyFile, (UInt8*)Buffer, 32);
 					FileClose(KeyFile);
 				}
 			}
@@ -304,7 +304,7 @@ Decrypt_GCEncryptionHandler::Decrypt_GCEncryptionHandler(UInt32 BodySID, DataChu
 	int Bytes = 0;
 	if(FileValid(KeyFile))
 	{
-		Bytes = FileRead(KeyFile, (UInt8*)Buffer, 32);
+		Bytes = (int)FileRead(KeyFile, (UInt8*)Buffer, 32);
 		FileClose(KeyFile);
 
 		if(Bytes != 32) error("Failed to read key from key-file \"%s\"\n", Buffer);
@@ -326,7 +326,7 @@ Decrypt_GCEncryptionHandler::Decrypt_GCEncryptionHandler(UInt32 BodySID, DataChu
 				FileHandle KeyFile = FileOpenRead(UseName.c_str());
 				if(FileValid(KeyFile))
 				{
-					Bytes = FileRead(KeyFile, (UInt8*)Buffer, 32);
+					Bytes = (int)FileRead(KeyFile, (UInt8*)Buffer, 32);
 					FileClose(KeyFile);
 				}
 			}
