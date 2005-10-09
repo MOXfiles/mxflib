@@ -1234,7 +1234,7 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 
 			// Calculate how many bytes will be written before the start of the index
 			Length BytesBefore = PartitionPackSize;
-			if(KAGSize > 1) BytesBefore += (PartitionPackSize, KAGSize);
+			if(KAGSize > 1) BytesBefore += FillerSize(PartitionPackSize, KAGSize);
 			BytesBefore += HeaderByteCount;
 
 
