@@ -32,7 +32,7 @@
 using namespace mxflib;
 
 // Define the features bitmap - turn on those features set by compile time switch
-UInt64 mxflib::Features = UINT64_C(MXFLIB_FEATURE_DEFAULT) & UINT64_C(MXFLIB_FEATURE_MASK);
+UInt64 mxflib::Features = (UINT64_C(MXFLIB_FEATURE_DEFAULT)) & (UINT64_C(MXFLIB_FEATURE_MASK));
 
 
 //! Build a BER length
