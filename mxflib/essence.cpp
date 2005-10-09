@@ -948,7 +948,7 @@ void GCWriter::Flush(void)
 
 				// Write the true length over the (2^xx)-1 version
 				LinkedFile->Seek(LenPosition);
-				if(LinkedFile->WriteBER(ValueSize, LenSize) != LenSize)
+				if((int)LinkedFile->WriteBER(ValueSize, LenSize) != LenSize)
 				{
 					// DRAGONS: At this point the file is broken - but there is no graceful solution!
 					error("Clip wrapped essence item greater than will fit in the required %d-byte BER length\n", LenSize);
