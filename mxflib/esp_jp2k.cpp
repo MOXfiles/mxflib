@@ -889,7 +889,6 @@ bool mxflib::JP2K_EssenceSubParser::ParseJP2KCodestreamHeader(FileHandle InFile,
 			return true;
 		}
 
-		int Bytes = 0;
 		bool isSegment = true;
 
 		// Determine if there is a marker segment
