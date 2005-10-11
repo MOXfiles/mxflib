@@ -1,4 +1,4 @@
-/*! \file	xmlparse.h
+/*! \file	xmlparser.h
  *	\brief	Interface to available SAX style XML parser
  *
  *	\version $Id$

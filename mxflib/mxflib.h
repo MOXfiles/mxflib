@@ -121,7 +121,7 @@ namespace mxflib
 #include <mxflib/esp_dvdif.h>
 #include <mxflib/esp_jp2k.h>
 #include <mxflib/sopsax.h>
-#include <mxflib/xmlparse.h>
+#include <mxflib/xmlparser.h>
 
 #endif // MXFLIB__MXFLIB_H
 

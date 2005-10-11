@@ -1,4 +1,4 @@
-/*! \file	xmlparse.cpp
+/*! \file	xmlparser.cpp
  *	\brief	Interface to available SAX style XML parser
  *
  *	\version $Id$
