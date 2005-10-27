@@ -234,7 +234,7 @@ MDTypePtr MDType::EffectiveBase(void) const
 
 
 //! Report the effective size of this type
-/*! /ret The size in bytes of a single instance of this type, or 0 if variable size
+/*! \return The size in bytes of a single instance of this type, or 0 if variable size
  */
 UInt32 MDType::EffectiveSize(void) const
 {

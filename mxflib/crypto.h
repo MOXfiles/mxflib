@@ -536,7 +536,7 @@ namespace mxflib
 		bool LoadData(void);
 
 		//! Read the AS-DCP footer (if any)
-		/*! /ret false on error, else true
+		/*! \return false on error, else true
 		 */
 		bool ReadFooter(void);
 
@@ -545,7 +545,7 @@ namespace mxflib
 		UInt32 CalcFooterLength(void);
 
 		//! Write the AS-DCP footer (if fequired)
-		/*! /ret false on error, else true
+		/*! \return false on error, else true
 		 */
 		bool WriteFooter(void);
 

@@ -470,15 +470,15 @@ bool mxflib::IsWideString(std::string &String)
 
 
 //! Read hex values separated by any of 'Sep'
-/*! /ret number of values read */
+/*! \return number of values read */
 int mxflib::ReadHexString(const char **Source, int Max, UInt8 *Dest, const char *Sep)
 {
-	/* Note - Pointer to pointer used for Source
-	**		  This allows the caller's pointer to be updated to
-	**		  point to the first character after the hex string
+	/* DRAGONS: - Pointer to pointer used for Source
+	**		      This allows the caller's pointer to be updated to
+	**		      point to the first character after the hex string
 	**
-	**		  **Source = character value in input data
-	**		  *Source  = pointer to source data
+	**  		  **Source = character value in input data
+	**			  *Source  = pointer to source data
 	*/
 
 	int Count = 0;

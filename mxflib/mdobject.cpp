@@ -59,7 +59,7 @@ MDObject::ULTranslator MDObject::UL2NameFunc = NULL;
 
 //! Build a Primer object for the current dictionary
 /*! This primer has the mappings of tag to UL from the dictionary
- *  /param SetStatic - If true the StaticPrimer will be set to this new primer
+ *  \param SetStatic - If true the StaticPrimer will be set to this new primer
  */
 PrimerPtr MDOType::MakePrimer(bool SetStatic /*=false*/)
 {
@@ -2638,8 +2638,8 @@ void MDOType::XML_endElement(void *user_data, const char *name)
 
 
 //! Derive this new entry from a base entry
-/*! /note It is important that DictName is set before calling
- *	/note Don't attempt to call this function on objects that are not freshly created
+/*! \note It is important that DictName is set before calling
+ *	\note Don't attempt to call this function on objects that are not freshly created
  */
 void MDOType::Derive(MDOTypePtr BaseEntry)
 {

@@ -1136,9 +1136,9 @@ Track::TrackType Track::GetType(void)
 
 
 //! Add a new track type definition label
-/*! /param Type The type of track that this new definition identifies
- *  /param Label The label to compare with the data definition
- *  /param CompareLength The number of bytes to compare in the label, this allows generic labels
+/*! \param Type The type of track that this new definition identifies
+ *  \param Label The label to compare with the data definition
+ *  \param CompareLength The number of bytes to compare in the label, this allows generic labels
  */
 void mxflib::Track::AddTrackType(TrackType Type, const UInt8 *Label, int CompareLength /* =16 */)
 {

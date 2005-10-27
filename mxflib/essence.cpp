@@ -719,7 +719,7 @@ void GCWriter::StartNewCP(void)
 
 
 //! Calculate how much data will be written if "Flush" is called now
-/*! /note Will return (2^64)-1 if the buffer contains a "FastClipWrap" item
+/*! \note Will return (2^64)-1 if the buffer contains a "FastClipWrap" item
  */
 UInt64 GCWriter::CalcWriteSize(void)
 {
