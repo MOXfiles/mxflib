@@ -90,7 +90,7 @@ namespace mxflib
 	typedef std::list<SymbolSpaceParent> SymbolSpaceParentList;
 
 	//! A map of names to symbol space pointers
-	typedef std::map<std::string, SymbolSpaceParent> SymbolSpaceMap;
+	typedef std::map<std::string, SymbolSpacePtr> SymbolSpaceMap;
 
 	//! Global SymbolSpace for all MXFLib's normal symbols
 	extern SymbolSpacePtr MXFLibSymbols;
