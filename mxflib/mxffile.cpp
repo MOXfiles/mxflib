@@ -134,18 +134,8 @@ bool mxflib::MXFFile::ReadRunIn()
 	// If we couldn't read 16-bytes then this isn't a valid MXF file
 	if(Key->Size != 16) return false;
 
-	// Locate a closed header type for key compares
-	MDOTypePtr BaseHeader = MDOType::Find(ClosedHeader_UL);
-
-	if(!BaseHeader)
-	{
-		error("Cannot find \"ClosedHeader\" in current dictionary\n");
-		return false;
-	}
-
-	// Index the start of the key (with a sanity check first!)
-	if(BaseHeader->GetKey().Size < 16) return false;
-	UInt8 *BaseKey = BaseHeader->GetKey().Data;
+	// Use the closed header for key compares
+	const UInt8 *BaseKey = ClosedHeader_UL.GetValue();
 
 	// If no run-in end now
 	if(memcmp(BaseKey,Key->Data,11) == 0)
