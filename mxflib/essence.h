@@ -224,6 +224,39 @@ namespace mxflib
 		 *        they will always return true from this function
 		 */
 		virtual bool GetNonGC(void) { return NonGC; }
+
+		/* Essence type identification */
+		/* These functions can be overwridden, or use the base versions to parse GetGCEssenceType() */
+
+		//! Is this picture essence?
+		virtual bool IsPictureEssence(void)
+		{
+			UInt8 Type = GetGCEssenceType();
+			if((Type == 0x05) || (Type == 0x15)) return true;
+			return false;
+		}
+
+		//! Is this sound essence?
+		virtual bool IsSoundEssence(void)
+		{
+			UInt8 Type = GetGCEssenceType();
+			if((Type == 0x06) || (Type == 0x16)) return true;
+			return false;
+		}
+
+		//! Is this data essence?
+		virtual bool IsDataEssence(void)
+		{
+			UInt8 Type = GetGCEssenceType();
+			if((Type == 0x07) || (Type == 0x17)) return true;
+			return false;
+		}
+
+		//! Is this compound essence?
+		virtual bool IsCompoundEssence(void)
+		{
+			return (GetGCEssenceType() == 0x18);
+		}
 	};
 
 	// Smart pointer to an EssenceSource object
