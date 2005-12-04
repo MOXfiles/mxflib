@@ -266,9 +266,6 @@ int main_process(int argc, char *argv[])
 	// Build an essence parser
 	EssenceParser EssParse;
 
-	// Load the dictionaries
-	LoadDictionary("dict.xml");
-
 	// Parse command line options and exit on error
 	ForceEditRate.Numerator = 0;
 	if(!ParseCommandLine(argc, argv))
