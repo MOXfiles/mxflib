@@ -309,6 +309,8 @@ namespace mxflib
 			if(Type) TypeName = Type->Name();
 			else TypeName = Name;
 
+			RefType = ClassRefNone;
+
 			// Set the name lookup - UL lookup set when key set
 			NameLookup[RootName + Name] = this;
 		};
