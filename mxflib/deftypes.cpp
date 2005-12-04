@@ -1198,6 +1198,7 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 			if(Parent->RefType != DICT_REF_NONE)
 			{
 				Ret->RefType = Parent->RefType;
+				Ret->RefTargetName = Parent->RefTargetName;
 				Parent->RefType = DICT_REF_NONE;
 			}
 
@@ -1209,8 +1210,24 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 	// Sort referencing (overrides anything inherited)
 	if(ThisClass->RefType != ClassRefNone)
 	{
-		Ret->RefType = ThisClass->RefType;
-		Ret->RefTargetName = ThisClass->RefTarget;
+		if(!Ret->empty())
+		{
+			MDOType::iterator it = Ret->begin();
+			while(it != Ret->end())
+			{
+				if(((*it).second->minLength == 16) && ((*it).second->maxLength == 16))
+				{
+					(*it).second->RefType = ThisClass->RefType;
+					(*it).second->RefTargetName = ThisClass->RefTarget;
+				}
+				it++;
+			}
+		}
+		else
+		{
+			Ret->RefType = ThisClass->RefType;
+			Ret->RefTargetName = ThisClass->RefTarget;
+		}
 	}
 
 	// Set the local tag (if one exists)
