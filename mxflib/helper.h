@@ -54,6 +54,9 @@ namespace mxflib
 		return std::string(Buffer);
 	}
 
+	// Support old capitalization of unsigned integers
+	inline std::string Uint2String(int Num, int Digits = 0) { return UInt2String(Num, Digits); }
+
 	//! Make a hex string containing a number
 	inline std::string Int2HexString(int Num, int Digits = 0)
 	{
