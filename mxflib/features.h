@@ -53,9 +53,10 @@
  *                       Default setting is all features unlocked
  */
 
+
 // Those features that may be enabled
 #ifndef MXFLIB_FEATURE_MASK
-#define MXFLIB_FEATURE_MASK (UINT64_C(-1))
+#define MXFLIB_FEATURE_MASK (~UINT64_C(0))
 #endif
 
 // Those features that are enabled by default
