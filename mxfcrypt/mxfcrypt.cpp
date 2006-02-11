@@ -614,7 +614,7 @@ bool ProcessPackageForEncrypt(BodyReaderPtr BodyParser, GCWriterPtr Writer, UInt
 		return false;
 	}
 
-	// Copy the datat into a byte buffer
+	// Copy the data into a byte buffer
 	UInt8 KeyBuffU8[16];
 	{
 		int i;
