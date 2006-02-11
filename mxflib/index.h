@@ -30,22 +30,6 @@
 #ifndef MXFLIB__INDEX_H
 #define MXFLIB__INDEX_H
 
-// Forward refs
-namespace mxflib
-{
-	class IndexTable;
-	//! Smart pointer to an index table
-	typedef SmartPtr<IndexTable> IndexTablePtr;
-	
-	//! Parent pointer to an index table
-	typedef ParentPtr<IndexTable> IndexTableParent;
-
-	//! Smart pointer to an index table segment
-	class IndexSegment;
-	typedef SmartPtr<IndexSegment> IndexSegmentPtr;
-	typedef std::list<IndexSegmentPtr> IndexSegmentList;
-}
-
 
 namespace mxflib
 {
