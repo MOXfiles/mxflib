@@ -1715,7 +1715,7 @@ void MDTraits_Label::SetString(MDValuePtr Object, std::string Val)
 	strncpy(ValueBuff, Val.c_str(), VALBUFF_SIZE -1);
 	const char *p = ValueBuff;
 
-	int Count = Object->GetData().Size;
+	UInt32 Count = Object->GetData().Size;
 	int Value = -1;
 	UInt8 *Data = new UInt8[Count];
 	UInt8 *pD = Data;
@@ -1863,7 +1863,7 @@ void MDTraits_UMID::SetString(MDValuePtr Object, std::string Val)
 	strncpy(ValueBuff, Val.c_str(), VALBUFF_SIZE -1);
 	const char *p = ValueBuff;
 
-	int Count = Object->GetData().Size;
+	UInt32 Count = Object->GetData().Size;
 	int Value = -1;
 	UInt8 *Data = new UInt8[Count];
 	UInt8 *pD = Data;
