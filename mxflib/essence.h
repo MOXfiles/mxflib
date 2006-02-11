@@ -273,6 +273,58 @@ namespace mxflib
 
 namespace mxflib
 {
+	//! Abstract super-class for objects that receive large quantities of essence data
+	/*! \note Classes derived from this class <b>must not</b> include their own RefCount<> derivation
+	 */
+	class EssenceSink : public RefCount<EssenceSink>
+	{
+	protected:
+
+	public:
+		// Base constructor
+		EssenceSink() {};
+
+		//! Virtual destructor to allow polymorphism
+		virtual ~EssenceSink() {};
+
+		//! Receive the next "installment" of essence data
+		/*! This will recieve a buffer containing thhe next bytes of essence data
+		 *  \param Buffer The data buffer
+		 *  \param BufferSize The number of bytes in the data buffer
+		 *  \param EndOfItem This buffer is the last in this wrapping item
+		 *  \return True if all is OK, else false
+		 *  \note The first call may well fail if the sink has not been fully configured.
+		 *	\note If false is returned the caller should make no more calls to this function, but the function should be implemented such that it is safe to do so
+		 */
+		virtual bool PutEssenceData(UInt8 *const Buffer, size_t BufferSize, bool EndOfItem = true) = 0;
+
+		//! Receive the next "installment" of essence data from a smart pointer to a DataChunk
+		bool PutEssenceData(DataChunkPtr &Buffer, bool EndOfItem = true) { return PutEssenceData(Buffer->Data, Buffer->Size, EndOfItem); }
+
+		//! Receive the next "installment" of essence data from a DataChunk
+		bool PutEssenceData(DataChunk &Buffer, bool EndOfItem = true) { return PutEssenceData(Buffer.Data, Buffer.Size, EndOfItem); }
+
+		//! Called once all data exhasted
+		/*! \return true if all is OK, else false
+		 *  \note This function must also be called from the derived class' destructor in case it is never explicitly called
+		 */
+		virtual bool EndOfData(void) = 0;
+	};
+
+	// Smart pointer to an EssenceSink object
+	typedef SmartPtr<EssenceSink> EssenceSinkPtr;
+
+	// Parent pointer to an EssenceSink object
+	typedef ParentPtr<EssenceSink> EssenceSinkParent;
+
+	// List of smart pointer to EssenceSink objects
+	typedef std::list<EssenceSinkPtr> EssenceSinkList;
+}
+
+
+
+namespace mxflib
+{
 	//! Default "Multiple Essence Types in the Generic Container" Label
 	const UInt8 GCMulti_Data[16] = { 0x06, 0x0E, 0x2B, 0x34, 0x04, 0x01, 0x01, 0x03, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x7F, 0x01, 0x00 };
 }
@@ -1538,6 +1590,13 @@ namespace mxflib
 		{ 
 			if(!Source) return 0;
 			return StreamWriter->GetTrackNumber(Source->GetStreamID());
+		}
+
+		//! Get the track number associated with a specified stream or sub-stream
+		Uint32 GetTrackNumber(GCStreamID ID)
+		{ 
+			if(!Source) return 0;
+			return StreamWriter->GetTrackNumber(ID);
 		}
 
 		//! Set the pending essence data flag
