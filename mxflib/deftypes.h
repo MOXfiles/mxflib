@@ -115,7 +115,17 @@ namespace mxflib
 	 */
 	int LoadTypes(TypeRecordList &TypesData);
 
-	const MDTraits* LookupTraits(const char* TraitsName);
+	//! Find the traits for a given type - DEPRECATED
+	/*! <b>DEPRECATED - Use MDTraits::Find()</B>
+	 */
+	inline MDTraitsPtr LookupTraits(const char* Name) { return MDTraits::Find(std::string(Name)); }
+
+	//! Disable automatic loading of built-in traits
+	/*! \note This needs to be called early as they may have already been loaded!
+	 *  \ret false if the traits have already been loaded (or already disabled)
+	 */
+	bool DisableBuiltInTraits(void);
+
 
 	/* Define macros for static type definitions */
 
