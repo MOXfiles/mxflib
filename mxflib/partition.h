@@ -138,6 +138,11 @@ namespace mxflib
 		//! Read any index table segments from a file
 		MDObjectListPtr ReadIndex(MXFFilePtr File, UInt64 Size);
 
+		//! Read any index segments from this partition's source file, and add them to a given table
+		/*! \ret true if all OK
+		 */
+		bool ReadIndex(IndexTablePtr Table);
+
 		//! Read raw index table data from this partition's source file
 		DataChunkPtr ReadIndexChunk(void);
 
