@@ -690,11 +690,14 @@ namespace mxflib
 		}
 
 		//! Set the operational pattern property of the preface
-		void SetOP(ULPtr OP)
+		void SetOP(const UL &OP)
 		{
 			MDObjectPtr Ptr = Object->AddChild(OperationalPattern_UL);
-			Ptr->ReadValue(OP->GetValue(), 16);
+			Ptr->ReadValue(OP.GetValue(), 16);
 		}
+
+		//! Set the operational pattern property of the preface
+		void SetOP(ULPtr OP) { SetOP(*OP); }
 
 		// Add a material package to the metadata
 		PackagePtr AddMaterialPackage(UMIDPtr PackageUMID) { return AddPackage(MaterialPackage_UL, "", PackageUMID); }
