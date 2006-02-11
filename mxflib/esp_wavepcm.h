@@ -202,7 +202,7 @@ namespace mxflib
 
 			UInt32 Ret = SampleSize*ConstSamples;
 
-			if(SelectedWrapping->ThisWrapType == WrappingOption::Frame) 
+			if(Ret && (SelectedWrapping->ThisWrapType == WrappingOption::Frame))
 			{
 				// FIXME: This assumes that 4-byte BER coding will be used - this needs to be adjusted or forced to be true!!
 				Ret += 16 + 4;
@@ -218,7 +218,12 @@ namespace mxflib
 					Ret += Remainder;
 
 					// If there is not enough space to fit a filler in the remaining space an extra KAG will be required
-					if((Remainder > 0) && (Remainder < 17)) Ret++;
+					// DRAGONS: For very small KAGSizes we may need to add several KAGs
+					while((Remainder > 0) && (Remainder < 17))
+					{
+						Ret += KAGSize;
+						Remainder += KAGSize;
+					}
 				}
 			}
 
