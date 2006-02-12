@@ -268,7 +268,7 @@ int main_process(int argc, char *argv[])
 			else if(Opt == 's') SplitStereo = true;
 			else if(Opt == 'w') 
 			{
-				int sub = 2;
+//				int sub = 2;
 				{
 					SplitWave = true;
 				}
