@@ -386,9 +386,9 @@ Length mxflib::Partition::ReadMetadata(MXFFilePtr File, Length Size)
 		{
 			NewItem->SetParent(File, BytesAtItemStart + Location,(UInt32)( Bytes - BytesAtItemStart));
 
-			UInt32 ThisBytes = NewItem->ReadValue(BuffPtr,(UInt32) Len, PartitionPrimer);
+			NewItem->ReadValue(BuffPtr,(UInt32) Len, PartitionPrimer);
 
-			// skip total length, not just the length actually consumed
+			// Skip total length, not just the length actually consumed
 			Size -= Len;
 			Bytes += Len;
 			BuffPtr += Len;
