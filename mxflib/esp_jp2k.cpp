@@ -568,7 +568,8 @@ Length mxflib::JP2K_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Str
 	// If the size is known (possible in a JP2 file) we return it
 	if(DataSize != 0)
 	{
-		Ret = DataSize;
+		Ret = DataSize - (CurrentPos - DataStart);
+		if(Ret < 0) Ret = 0;
 		return Ret;
 	}
 
