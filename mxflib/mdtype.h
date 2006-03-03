@@ -321,10 +321,10 @@ namespace mxflib
 {
 	//! Add a mapping to apply a given set of traits to a certain type
 	/*! \ret The name of the traits
-		*/
-	template<class C> std::string AddTraitsMapping(std::string TypeName)
+	 */
+	/*template<class C>*/ inline std::string AddTraitsMapping(std::string TypeName, MDTraitsPtr Tr)
 	{
-		MDTraitsPtr Tr = new C;
+//		MDTraitsPtr Tr = new C;
 		MDTraitsPtr TrLookup = MDTraits::Find(Tr->Name());
 
 		if(!TrLookup) MDTraits::Add(Tr->Name(), Tr);
@@ -338,10 +338,10 @@ namespace mxflib
 
 	//! Update an existing mapping and apply to any existing type of the given name
 	/*! \ret The name of the traits
-		*/
-	template<class C> std::string UpdateTraitsMapping(std::string TypeName)
+	 */
+	/*template<class C>*/ inline std::string UpdateTraitsMapping(std::string TypeName, MDTraitsPtr Tr)
 	{
-		MDTraitsPtr Tr = new C;
+//		MDTraitsPtr Tr = new C;
 		MDTraitsPtr TrLookup = MDTraits::Find(Tr->Name());
 
 		if(!TrLookup) MDTraits::Add(Tr->Name(), Tr);
