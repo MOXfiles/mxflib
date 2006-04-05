@@ -426,10 +426,10 @@ namespace mxflib
 		GCStreamID AddSoundElement(bool CPCompatible, unsigned int ElementType) { return AddEssenceElement( CPCompatible ? 0x06 : 0x16, ElementType); }
 
 		//! Define a new non-CP data element for this container
-		GCStreamID AddDataElement(unsigned int ElementType) { return AddPictureElement(false, ElementType); }
+		GCStreamID AddDataElement(unsigned int ElementType) { return AddDataElement(false, ElementType); }
 
 		//! Define a new CP-compatible data element for this container
-		GCStreamID AddCPDataElement(unsigned int ElementType) { return AddPictureElement(true, ElementType); }
+		GCStreamID AddCPDataElement(unsigned int ElementType) { return AddDataElement(true, ElementType); }
 
 		//! Define a new data element for this container
 		GCStreamID AddDataElement(bool CPCompatible, unsigned int ElementType) { return AddEssenceElement( CPCompatible ? 0x07 : 0x17, ElementType); }
