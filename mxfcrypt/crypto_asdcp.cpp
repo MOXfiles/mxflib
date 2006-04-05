@@ -244,6 +244,8 @@ Encrypt_GCReadHandler::Encrypt_GCReadHandler(GCWriterPtr Writer, UInt32 BodySID,
 			printf("Key Set OK\n");
 		}
 	}
+
+	IndexPos = 0;
 }
 
 
@@ -286,8 +288,17 @@ bool Encrypt_GCReadHandler::HandleData(GCReaderPtr Caller, KLVObjectPtr Object)
 	int i; for(i=0; i<16; i++) IV[i] = (UInt8) rand();
 	KLVE->SetEncryptIV(16, IV, true);
 
+	// Update the index table to the new position
+	if(Index)
+	{
+		Index->Update(IndexPos, (UInt64)Writer->GetStreamOffset());
+	}
+
 	// Write the encrypted data
 	Writer->WriteRaw(SmartPtr_Cast(KLVE, KLVObject));
+
+	// Update the index position count (even if not yet indexing)
+	IndexPos++;
 
 	return true;
 }
