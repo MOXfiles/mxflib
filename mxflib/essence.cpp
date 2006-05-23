@@ -2233,9 +2233,6 @@ Length BodyWriter::WriteEssence(StreamInfoPtr &Info, Length Duration /*=0*/, Len
 					// Flag that we have "stored" some essence for a later partition
 					Stream->SetPendingData();
 
-					// And exit as this partition is now done
-					Stream->GetNextState();
-
 					// Prevent this partition being "continued"
 					PartitionDone = true;
 
