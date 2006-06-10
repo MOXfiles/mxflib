@@ -2887,7 +2887,7 @@ Length mxflib::BodyWriter::WritePartition(Length Duration /*=0*/, Length MaxPart
 					Index->WriteIndex(*IndexChunk);
 
 					// We will be a closed complete body partition unless the partition handler adds metadata
-					BasePartition->ChangeType(ClosedCompleteBodyPartition_UL);
+					if(!PendingHeader) BasePartition->ChangeType(ClosedCompleteBodyPartition_UL);
 
 					// Set the index SID
 					BasePartition->SetUInt(IndexSID_UL,  Index->IndexSID);
