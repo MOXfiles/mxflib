@@ -622,7 +622,7 @@ bool ProcessPackageForEncrypt(BodyReaderPtr BodyParser, GCWriterPtr Writer, UInt
 	}
 
 	// Link us to the framework
-	ContextSR->MakeLink(CryptoContext);
+	ContextSR->MakeRef(CryptoContext);
 	
 	// Build a new UUID for the Crypto Context ID
 	UUIDPtr ContextID = new mxflib::UUID;
