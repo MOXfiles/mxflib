@@ -93,24 +93,7 @@ namespace mxflib
 		 *  ownership will still be transferred
 		 *	\return pointer to the buffer or NULL if no buffer or not owned by this object
 		 */
-		UInt8 *StealBuffer(bool MakeEmpty = false)
-		{
-//debug("StealBuffer @ 0x%08x\n", (int)Data);
-			UInt8 *Ret = Data;
-			
-			if(ExternalBuffer) return NULL;
-
-			if(MakeEmpty)
-			{
-				Size = 0;
-				DataSize = 0;
-				Data = NULL;
-			}
-			else
-				ExternalBuffer = true;
-
-			return Ret;
-		}
+		UInt8 *StealBuffer(bool MakeEmpty = false);
 
 		//! Set some data into a data chunk (expanding it if required)
 		void Set(const DataChunk &Buffer, UInt32 Start = 0)

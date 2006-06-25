@@ -166,7 +166,7 @@ bool mxflib::DataChunk::TakeBuffer(DataChunk &OldOwner, bool MakeEmpty /*=false*
  *  However it partially destroys the source DataChunk by stealing its buffer.
  *  \return true on success, false on failure
  */
-bool mxflib::DataChunk::TakeBuffer(DataChunkPtr &OldOwner, bool MakeEmpty /*=false*/ )
+bool mxflib::DataChunk::TakeBuffer(DataChunkPtr &OldOwner, bool MakeEmpty /*=false*/)
 {
 	UInt32 BuffSize = OldOwner->Size;
 	UInt32 AllocatedSize = OldOwner->DataSize;
@@ -189,4 +189,32 @@ bool mxflib::DataChunk::TakeBuffer(DataChunkPtr &OldOwner, bool MakeEmpty /*=fal
 
 	return true;
 }
+
+
+//! Steal the buffer belonging to this data chunk
+/*! The buffer is detached and ownership moves to the caller.
+	*	It is the caller's responsibility to free the buffer with <b>delete[]</b> at a later point.
+	*	If MakeEmpty is false the data chunk will not be empty after the call, but the 
+	*  ownership will still be transferred
+	*	\return pointer to the buffer or NULL if no buffer or not owned by this object
+	*/
+UInt8 *DataChunk::StealBuffer(bool MakeEmpty /*=false*/)
+{
+//debug("StealBuffer @ 0x%08x\n", (int)Data);
+	UInt8 *Ret = Data;
+	
+	if(ExternalBuffer) return NULL;
+
+	if(MakeEmpty)
+	{
+		Size = 0;
+		DataSize = 0;
+		Data = NULL;
+	}
+	else
+		ExternalBuffer = true;
+
+	return Ret;
+}
+
 
