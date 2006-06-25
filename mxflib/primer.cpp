@@ -199,7 +199,7 @@ UInt32 Primer::WritePrimer(DataChunkPtr &Buffer)
 
 	// Add the vector header
 	UInt8 Temp[4];
-	PutU32(size(), Temp);
+	PutU32(static_cast<UInt32>(size()), Temp);
 	Buffer->Append(4, Temp);
 	Bytes += 4;
 

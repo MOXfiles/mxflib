@@ -246,7 +246,7 @@ namespace mxflib
 				}
 				
 				// Calculate the pack length
-				RIPObject->SetUInt(Length_UL, 16 + 4 + (FileRIP.size() * 12) + 4);
+				RIPObject->SetUInt(Length_UL, 16 + 4 + (static_cast<UInt32>(FileRIP.size()) * 12) + 4);
 
 				DataChunkPtr Buffer = RIPObject->WriteObject();
 
