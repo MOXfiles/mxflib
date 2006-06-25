@@ -1283,7 +1283,7 @@ UInt32 MDTraits_Raw::GetUInt(MDValuePtr Object)
 	}
 	else if(Object->GetData().Size >= 4)
 	{
-		return UInt32(Object->GetData().Data);
+		return GetU32(Object->GetData().Data);
 	}
 	else if(Object->GetData().Size >= 2)
 	{
