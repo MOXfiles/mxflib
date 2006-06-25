@@ -189,7 +189,7 @@ namespace mxflib
 		virtual DataChunkPtr Read(FileHandle InFile, UInt32 Stream, UInt64 Count = 1);
 
 		//! Build an EssenceSource to read a number of wrapping items from the specified stream
-		virtual EssenceSubParserBase::ESP_EssenceSource *GetEssenceSource(FileHandle InFile, UInt32 Stream, UInt64 Count = 1)
+		virtual EssenceSourcePtr GetEssenceSource(FileHandle InFile, UInt32 Stream, UInt64 Count = 1)
 		{
 			return new ESP_EssenceSource(this, InFile, Stream, Count/*, Index*/);
 		};
@@ -200,6 +200,13 @@ namespace mxflib
 		//! Set a parser specific option
 		/*! \return true if the option was successfully set */
 		virtual bool SetOption(std::string Option, Int64 Param = 0);
+
+		//! Get a unique name for this sub-parser
+		/*! The name must be all lower case, and must be unique.
+		 *  The recommended name is the part of the filename of the parser header after "esp_" and before the ".h".
+		 *  If the parser has no name return "" (however this will prevent named wrapping option selection for this sub-parser)
+		 */
+		virtual std::string GetParserName(void) const { return "mpeg2ves"; }
 
 	protected:
 		//! Read the sequence header at the specified position in an MPEG2 file to build an essence descriptor
