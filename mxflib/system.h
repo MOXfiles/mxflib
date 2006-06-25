@@ -253,13 +253,13 @@ namespace mxflib
 
 
 	/********* Acurate time *********/
+	//! Get the current <b>UTC</b> time including number of milliseconds / 4
 	inline full_time GetTime(void)
 	{
 		full_time Ret;
-		_tzset();
 		_timeb tb;
 		_ftime(&tb);
-		Ret.time = tb.time + tb.timezone*60;
+		Ret.time = tb.time;
 		Ret.msBy4 = tb.millitm / 4;
 		return Ret;
 	}
@@ -408,6 +408,7 @@ namespace mxflib
 #endif //MXFLIB_NO_FILE_IO
 
 	/********* Acurate time *********/
+	//! Get the current <b>UTC</b> time including number of milliseconds / 4
 	inline full_time GetTime(void)
 	{
 		full_time Ret;
