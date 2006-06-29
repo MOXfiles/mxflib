@@ -55,7 +55,7 @@ bool EssenceParser::Inited = false;
 
 
 // Build an essence parser with all known sub-parsers
-EssenceParser::Init()
+void EssenceParser::Init()
 {
 	if(!Inited)
 	{

@@ -1237,7 +1237,7 @@ namespace mxflib
 	
 	protected:
 		//! Initialise the sub-parser list
-		static Init(void);
+		static void Init(void);
 	};
 }
 
