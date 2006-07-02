@@ -33,7 +33,7 @@ using namespace mxflib;
 
 
 //! Resize the data chunk, preserving contents if requested
-void mxflib::DataChunk::Resize(UInt32 NewSize, bool PreserveContents /*=true*/)
+void mxflib::DataChunk::Resize(size_t NewSize, bool PreserveContents /*=true*/)
 {
 	if(Size == NewSize) return;
 
@@ -44,7 +44,7 @@ void mxflib::DataChunk::Resize(UInt32 NewSize, bool PreserveContents /*=true*/)
 		return;
 	}
 
-	UInt32 AllocSize = NewSize;
+	size_t AllocSize = NewSize;
 	if(AllocationGranularity)
 	{
 //debug("AllocGran = %u, NewSize = %u, ", AllocationGranularity, NewSize);
@@ -70,7 +70,7 @@ void mxflib::DataChunk::Resize(UInt32 NewSize, bool PreserveContents /*=true*/)
 
 //! Resize the data buffer, preserving contents if requested
 /*! The buffer is resized to <b>at least</b> NewSize, but Size remains unchanged */
-void mxflib::DataChunk::ResizeBuffer(UInt32 NewSize, bool PreserveContents /*=true*/)
+void mxflib::DataChunk::ResizeBuffer(size_t NewSize, bool PreserveContents /*=true*/)
 {
 	if(DataSize >= NewSize) return;
 
@@ -116,7 +116,7 @@ std::string mxflib::DataChunk::GetString(void)
  *		  important that the value of property <tt><b>Data</b></tt> is checked
  *		  before assuming the external buffer is still in use.
  */
-void mxflib::DataChunk::SetBuffer(UInt8 *Buffer, UInt32 BuffSize, UInt32 AllocatedSize /*=0*/)
+void mxflib::DataChunk::SetBuffer(UInt8 *Buffer, size_t BuffSize, size_t AllocatedSize /*=0*/)
 {
 //debug("Setting Buffer @ 0x%08x -> 0x%08x\n", (int)Data, (int)Buffer);
 	if((!ExternalBuffer) && (Data)) delete[] Data;
@@ -138,8 +138,8 @@ void mxflib::DataChunk::SetBuffer(UInt8 *Buffer, UInt32 BuffSize, UInt32 Allocat
  */
 bool mxflib::DataChunk::TakeBuffer(DataChunk &OldOwner, bool MakeEmpty /*=false*/ )
 {
-	UInt32 BuffSize = OldOwner.Size;
-	UInt32 AllocatedSize = OldOwner.DataSize;
+	size_t BuffSize = OldOwner.Size;
+	size_t AllocatedSize = OldOwner.DataSize;
 	bool ExtBuff = OldOwner.ExternalBuffer;
 
 	// Steal the old buffer
@@ -168,8 +168,8 @@ bool mxflib::DataChunk::TakeBuffer(DataChunk &OldOwner, bool MakeEmpty /*=false*
  */
 bool mxflib::DataChunk::TakeBuffer(DataChunkPtr &OldOwner, bool MakeEmpty /*=false*/)
 {
-	UInt32 BuffSize = OldOwner->Size;
-	UInt32 AllocatedSize = OldOwner->DataSize;
+	size_t BuffSize = OldOwner->Size;
+	size_t AllocatedSize = OldOwner->DataSize;
 	bool ExtBuff = OldOwner->ExternalBuffer;
 
 	// Steal the old buffer

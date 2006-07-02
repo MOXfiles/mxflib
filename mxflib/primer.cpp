@@ -190,12 +190,12 @@ UInt32 Primer::WritePrimer(DataChunkPtr &Buffer)
 	ASSERT(PrimerType);
 
 	Buffer->Append(PrimerType->GetKey());
-	Bytes = PrimerType->GetKey().Size;
+	Bytes = static_cast<UInt32>(PrimerType->GetKey().Size);
 
 	// Add the length
 	DataChunkPtr BER = MakeBER(PrimerLen);
 	Buffer->Append(*BER);
-	Bytes += BER->Size;
+	Bytes += static_cast<UInt32>(BER->Size);
 
 	// Add the vector header
 	UInt8 Temp[4];

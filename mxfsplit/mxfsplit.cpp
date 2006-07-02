@@ -506,7 +506,7 @@ static void DumpIndex( PartitionPtr ThisPartition )
 			MDObjectPtr DeltaEntryArray = (*it)[DeltaEntryArray_UL];
 			if(DeltaEntryArray && DeltaEntryArray->GetType()->size())
 			{
-				Streams = DeltaEntryArray->size() / DeltaEntryArray->GetType()->size();
+				Streams = static_cast<Uint32>(DeltaEntryArray->size() / DeltaEntryArray->GetType()->size());
 				if(Streams == 0) Streams = 1;	// Fix for bad DeltaEntryArray
 			}
 
@@ -838,7 +838,7 @@ static void DumpBody( PartitionPtr ThisPartition )
 					if(CurrentSize <= 0) break;
 					if(CurrentSize > MaxSize) CurrentSize = MaxSize;
 
-					Length Bytes = anElement->ReadDataFrom(Offset, CurrentSize);
+					size_t Bytes = anElement->ReadDataFrom(Offset, static_cast<size_t>(CurrentSize));
 					if(!Bytes) break;
 					Offset += Bytes;
 

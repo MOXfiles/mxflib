@@ -374,7 +374,7 @@ IndexSegmentPtr IndexTable::AddSegment(MDObjectPtr Segment)
 			// Free any old delta array
 			if(BaseDeltaCount) delete[] BaseDeltaArray; 
 
-			BaseDeltaCount = Ptr->size() / 3;		// << There are 3 items in each DeltaCount entry
+			BaseDeltaCount = static_cast<int>(Ptr->size() / 3);		// << There are 3 items in each DeltaCount entry
 
 			BaseDeltaArray = new DeltaEntry[BaseDeltaCount];
 
@@ -411,7 +411,7 @@ IndexSegmentPtr IndexTable::AddSegment(MDObjectPtr Segment)
 		}
 		else
 		{
-			Ret->DeltaCount = Ptr->size() / 3;		// << There are 3 items in each DeltaCount entry
+			Ret->DeltaCount = static_cast<int>(Ptr->size() / 3);		// << There are 3 items in each DeltaCount entry
 
 			Ret->DeltaArray = new DeltaEntry[Ret->DeltaCount];
 			
@@ -626,7 +626,7 @@ IndexSegmentPtr IndexSegment::AddIndexSegmentToIndexTable(IndexTablePtr ParentTa
 
 
 //! Write this index table to a memory buffer
-UInt32 IndexTable::WriteIndex(DataChunk &Buffer)
+size_t IndexTable::WriteIndex(DataChunk &Buffer)
 {
 	// If we don't have a delta array we must build a simple one
 	if(BaseDeltaCount == 0)

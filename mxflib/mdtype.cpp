@@ -685,7 +685,7 @@ void MDValue::Init(void)
  *  This function assumes that this is a viable thing to do!
  *  \return The size of the resized item
  */
-UInt32 MDValue::MakeSize(UInt32 NewSize)
+size_t MDValue::MakeSize(size_t NewSize)
 {
 	// Enforce fixed size if one exists for this type
 	if(Type->Size) NewSize = Type->Size;

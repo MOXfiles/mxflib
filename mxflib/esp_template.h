@@ -66,7 +66,7 @@ namespace mxflib
 		protected:
 			Position EssenceBytePos;
 			bool CountSet;
-			Length ByteCount;
+			size_t ByteCount;
 			Position Offset;
 
 		public:
@@ -84,7 +84,7 @@ namespace mxflib
 			//! Get the size of the essence data in bytes
 			/*! \note There is intentionally no support for an "unknown" response 
 			 */
-			virtual Length GetEssenceDataSize(void) 
+			virtual size_t GetEssenceDataSize(void) 
 			{
 				CountSet = true;
 				Offset = 0;
@@ -137,6 +137,9 @@ namespace mxflib
 			UseEditRate.Numerator = 1;
 			UseEditRate.Denominator = 1;
 		}
+
+		//! Build a new parser of this type and return a pointer to it
+		virtual EssenceSubParserPtr NewParser(void) const { return new TEMPLATE_EssenceSubParser; }
 
 		//! Report the extensions of files this sub-parser is likely to handle
 		virtual StringList HandledExtensions(void)
@@ -260,7 +263,7 @@ namespace mxflib
 		MDObjectPtr BuildDescriptor(FileHandle InFile, UInt64 Start = 0);
 
 		//! Scan the essence to calculate how many bytes to transfer for the given edit unit count
-		Length ReadInternal(FileHandle InFile, UInt32 Stream, UInt64 Count);
+		size_t ReadInternal(FileHandle InFile, UInt32 Stream, UInt64 Count);
 	};
 
 

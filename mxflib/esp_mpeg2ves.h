@@ -78,7 +78,7 @@ namespace mxflib
 		protected:
 			Position EssencePos;
 			Position EssenceBytePos;
-			Position ByteCount;
+			size_t ByteCount;
 			Position Offset;
 
 		public:
@@ -94,7 +94,7 @@ namespace mxflib
 			//! Get the size of the essence data in bytes
 			/*! \note There is intentionally no support for an "unknown" response 
 			 */
-			virtual Length GetEssenceDataSize(void) 
+			virtual size_t GetEssenceDataSize(void) 
 			{
 				Offset = 0;
 				MPEG2_VES_EssenceSubParser *pCaller = SmartPtr_Cast(Caller, MPEG2_VES_EssenceSubParser);
@@ -113,7 +113,7 @@ namespace mxflib
 			 *	\note If Size = 0 the object will decide the size of the chunk to return
 			 *	\note On no account will the returned chunk be larger than MaxSize (if MaxSize > 0)
 			 */
-			virtual DataChunkPtr GetEssenceData(UInt64 Size = 0, UInt64 MaxSize = 0)
+			virtual DataChunkPtr GetEssenceData(size_t Size = 0, size_t MaxSize = 0)
 			{
 				// Allow us to differentiate the first call
 				if(!Started)
@@ -213,7 +213,7 @@ namespace mxflib
 		MDObjectPtr BuildMPEG2VideoDescriptor(FileHandle InFile, UInt64 Start = 0);
 
 		//! Scan the essence to calculate how many bytes to transfer for the given edit unit count
-		Length ReadInternal(FileHandle InFile, UInt32 Stream, UInt64 Count);
+		size_t ReadInternal(FileHandle InFile, UInt32 Stream, UInt64 Count);
 
 		//! Get a byte from the current stream
 		int BuffGetU8(FileHandle InFile);

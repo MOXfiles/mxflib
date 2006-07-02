@@ -177,7 +177,7 @@ bool mxflib::sopSAXParseFile(sopSAXHandlerPtr sax, void *UserData, const char *f
 		CurrentAttrib = &AttribBuffer[0];
 		while(attrib < MAXATTRIBS)
 		{
-			int i;
+			size_t i;
 
 			/* Index current attribute's starting point in buffer */
 			Attribs[attrib*2] = CurrentAttrib;
@@ -188,7 +188,7 @@ bool mxflib::sopSAXParseFile(sopSAXHandlerPtr sax, void *UserData, const char *f
 			
 			/* Work out how much buffer is now free */
 			i = strlen(Attribs[attrib*2]) + 1;
-			AttribBufferFree -= i;
+			AttribBufferFree -= static_cast<int>(i);
 			CurrentAttrib += i;
 
 			if(AttribBufferFree < 3)
@@ -265,7 +265,7 @@ bool mxflib::sopSAXParseFile(sopSAXHandlerPtr sax, void *UserData, const char *f
 			
 			/* Work out how much buffer is now free */
 			i = strlen(Attribs[attrib*2+1]) + 1;
-			AttribBufferFree -= i;
+			AttribBufferFree -= static_cast<int>(i);
 			CurrentAttrib += i;
 
 			attrib++;

@@ -138,7 +138,7 @@ void VBILine::WriteData(UInt8 *Buffer)
 
 //! Get the size of the essence data in bytes
 /*! \note There is intentionally no support for an "unknown" response */
-Length VBISource::GetEssenceDataSize(void)
+size_t VBISource::GetEssenceDataSize(void)
 {
 	// If we don't yet have any data prepared, prepare some (even if this will be an "empty" chunk)
 	if(BufferedData.empty())
@@ -149,7 +149,7 @@ Length VBISource::GetEssenceDataSize(void)
 	}
 
 	// Return the size of the next available chunk
-	return static_cast<Length>(BufferedData.front()->Size);
+	return static_cast<size_t>(BufferedData.front()->Size);
 }
 
 
@@ -164,7 +164,7 @@ Length VBISource::GetEssenceDataSize(void)
  *	\note If Size = 0 the object will decide the size of the chunk to return
  *	\note On no account will the returned chunk be larger than MaxSize (if MaxSize > 0)
  */
-DataChunkPtr VBISource::GetEssenceData(UInt64 Size /*=0*/, UInt64 MaxSize /*=0*/)
+DataChunkPtr VBISource::GetEssenceData(size_t Size /*=0*/, size_t MaxSize /*=0*/)
 {
 	// If we don't yet have any data prepared, prepare some (even if this will be an "empty" chunk)
 	if(BufferedData.empty())

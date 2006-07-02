@@ -288,7 +288,7 @@ namespace mxflib
 		void Purge(UInt64 FirstPosition, UInt64 LastPosition);
 
 		//! Write this index table to a memory buffer
-		UInt32 WriteIndex(DataChunk &Buffer);
+		size_t WriteIndex(DataChunk &Buffer);
 
 		//! Get a pointer to the reorder index object (if one has been enabled)
 		ReorderIndexPtr GetReorder(void)
