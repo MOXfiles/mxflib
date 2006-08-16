@@ -1261,7 +1261,7 @@ int Process(	int OutFileNum,
 
 				// Build a stream object to write
 				Stream[iTrack] = new BodyStream(iTrack + 1, Source);
-				SetStreamWrapType(Stream[iStream], (*WrapCfgList_it)->WrapOpt->ThisWrapType);
+				SetStreamWrapType(Stream[iTrack], (*WrapCfgList_it)->WrapOpt->ThisWrapType);
 
 				// Force edit-unit align if requested
 				if(EditAlign) Stream[iTrack]->SetEditAlign(true);
