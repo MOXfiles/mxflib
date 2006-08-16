@@ -1261,6 +1261,7 @@ int Process(	int OutFileNum,
 
 				// Build a stream object to write
 				Stream[iTrack] = new BodyStream(iTrack + 1, Source);
+				SetStreamWrapType(Stream[iStream], (*WrapCfgList_it)->WrapOpt->ThisWrapType);
 
 				// Force edit-unit align if requested
 				if(EditAlign) Stream[iTrack]->SetEditAlign(true);
@@ -1308,6 +1309,9 @@ int Process(	int OutFileNum,
 			{
 				// Build a stream object to write
 				Stream[0] = new BodyStream(iTrack + 1, Source);
+
+				// DRAGONS: This should always end up as frame wrapping - but in the future "Other" may be used
+				SetStreamWrapType(Stream[0], (*WrapCfgList_it)->WrapOpt->ThisWrapType);
 
 				// Force edit-unit align if requested
 				if(EditAlign) Stream[iTrack]->SetEditAlign(true);
@@ -1360,6 +1364,7 @@ int Process(	int OutFileNum,
 
 			// Build a stream object to write
 			Stream[iTrack] = new BodyStream(iTrack + 1, Source);
+			SetStreamWrapType(Stream[iTrack], (*WrapCfgList_it)->WrapOpt->ThisWrapType);
 
 			// Force edit-unit align if requested
 			if(EditAlign) Stream[iTrack]->SetEditAlign(true);
