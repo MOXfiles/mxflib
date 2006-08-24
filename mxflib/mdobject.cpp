@@ -382,6 +382,9 @@ MDObject::MDObject(Tag BaseTag, PrimerPtr BasePrimer)
 				// Tag not found, build a blank UL
 				// FIXME: Needs to have a more complete name
 				ObjectName = "Unknown " + Tag2String(BaseTag);
+
+				// We will need a UL, so try just using the generic "Unknown" UL
+				TheUL = Type->GetTypeUL();
 			}
 		}
 	}
