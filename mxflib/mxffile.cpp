@@ -308,11 +308,8 @@ bool mxflib::MXFFile::ReadRIP(void)
 	// Do a key lookup on this key
 	MDOTypePtr KeyType = MDOType::Find(UL(RIPKey->Data));
 
-	// If not a known key type then not a valid RIP
-	if(!KeyType) return false;
-
-	// If it is a known type, but not a RIP then exit
-	if(KeyType->Name() != "RandomIndexMetadata") return false;
+	// If not a RIP, then exit
+	if((!KeyType) || (!KeyType->IsA(RandomIndexMetadata_UL))) return false;
 
 	// Go back and read the RIP
 	Seek(RIPStart);
@@ -848,8 +845,8 @@ void MXFFile::WritePartitionPack(PartitionPtr ThisPartition, PrimerPtr UsePrimer
 	// Find the current partition at this location, or the nearest after it
 	RIP::iterator it = FileRIP.lower_bound(CurrentPosition);
 
-	// Now get the previous partition in the RIP
-	if(!FileRIP.empty()) it--;
+	// Now get the previous partition in the RIP (don't attempt this if the RIP is empty, or we are the header)
+	if((!FileRIP.empty()) && (it != FileRIP.begin())) it--;
 
 	// Set the position of the previous partition
 	// DRAGONS: Is there some way to know that we don't know the previous position?
