@@ -2197,7 +2197,8 @@ bool MDObject::IsA(const UL &BaseType)
 
 	while(TestType)
 	{
-		if(*(TestType->GetTypeUL()) == BaseType) return true;
+		const ULPtr &TestUL = TestType->GetTypeUL();
+		if((*TestUL).Matches(BaseType)) return true;
 		TestType = TestType->Base;
 	}
 
@@ -2242,7 +2243,8 @@ bool MDOType::IsA(const UL &BaseType)
 
 	while(TestType)
 	{
-		if(*(TestType->GetTypeUL()) == BaseType) return true;
+		const ULPtr &TestUL = TestType->GetTypeUL();
+		if((*TestUL).Matches(BaseType)) return true;
 		TestType = TestType->Base;
 	}
 
