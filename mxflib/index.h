@@ -176,6 +176,12 @@ namespace mxflib
 		ReorderIndexPtr		Reorder;			//!< Pointer to our reorder index if we are using one (used for building reordered indexes)
 
 	public:
+		//! The lowest valid index position, used to flag omitted "start" parameters
+		/*! DRAGONS: Why isn't this initialized here in the header file? Because MSVC 6 won't allow that!!
+		 */
+		static const Position IndexLowest;
+
+	public:
 		//! Construct an IndexTable with no CBRDeltaArray
 		IndexTable() : IndexSID(0), BodySID(0), EditUnitByteCount(0) , BaseDeltaCount(0) 
 		{ 
@@ -396,6 +402,7 @@ namespace mxflib
 		std::map<Position, IndexData*> ManagedData;
 											//!< Map of IndexData entries for all recorded edit units
 
+		/* DRAGONS: Provisional entries are not currently implemented */
 		IndexData *ProvisionalEntry;		//!< Provisional entry, not yet added to ManagedData
 		Position ProvisionalEditUnit;		//!< Edit unit of ProvisionalEntry
 
@@ -420,6 +427,8 @@ namespace mxflib
 
 		bool ValueRelativeIndexing;			//!< Flag to allow value-relative indexing
 											/*!< \note This is NOT implemented in the IndexManager, but must be handled by the caller */
+
+		Position SubRangeOffset;			//!< An offset to apply to correct position if sub-ranging (number of edit units discarded at the start of the essence)
 
 	public:
 		//! Construct with main stream details
@@ -498,10 +507,10 @@ namespace mxflib
 		bool OfferKeyOffset(Position EditUnit, int Offset);
 
 		//! Accept provisional entry
-		/*! \return The edit unit of the entry accepted - or -1 if none available */
+		/*! \return The edit unit of the entry accepted - or IndexLowest if none available */
 		Position AcceptProvisional(void)
 		{
-			if(!ProvisionalEntry) return -1;
+			if(!ProvisionalEntry) return IndexTable::IndexLowest;
 
 			// Add the entry to the managed data
 			ManagedData.insert(std::pair<Position, IndexData*>(ProvisionalEditUnit, ProvisionalEntry));
@@ -513,7 +522,7 @@ namespace mxflib
 			return ProvisionalEditUnit;
 		}
 
-		//! Read the edit unit of the last entry added (or -1 if none added)
+		//! Read the edit unit of the last entry added (or IndexLowest if none added)
 		Position GetLastNewEditUnit(void) { return 	LastNewEditUnit; }
 
 		//! Accept next edit unit offered
@@ -531,12 +540,12 @@ namespace mxflib
 		//! Accept the next edit unit offered and log it
 		int AcceptLogNext(void) { AcceptNext();  return LogNext(); }
 
-		//! Read the edit unit from a given log slot (or -1 if not available)
+		//! Read the edit unit from a given log slot (or IndexLowest if not available)
 		Position ReadLog(int LogID)
 		{
 			std::map<int, Position>::iterator it;
 			it = EntryLog.find(LogID);
-			if(it == EntryLog.end()) return -1;
+			if(it == EntryLog.end()) return IndexTable::IndexLowest;
 			return (*it).second;
 		}
 
@@ -555,13 +564,13 @@ namespace mxflib
 
 		//! Add all complete entries in a range to the supplied index table
 		/*! \return Number of index entries added */
-		int AddEntriesToIndex(IndexTablePtr Index, Position FirstEditUnit = 0, Position LastEditUnit = UINT64_C(0x7fffffffffffffff))
+		int AddEntriesToIndex(IndexTablePtr Index, Position FirstEditUnit = IndexTable::IndexLowest, Position LastEditUnit = UINT64_C(0x7fffffffffffffff))
 		{
 			return AddEntriesToIndex(false, Index, FirstEditUnit, LastEditUnit);
 		}
 
 		//! Add all complete entries in a range to the supplied index table - allow reordering to be undone
-		int AddEntriesToIndex(bool UndoReorder, IndexTablePtr Index, Position FirstEditUnit = 0, Position LastEditUnit = UINT64_C(0x7fffffffffffffff));
+		int AddEntriesToIndex(bool UndoReorder, IndexTablePtr Index, Position FirstEditUnit = IndexTable::IndexLowest, Position LastEditUnit = UINT64_C(0x7fffffffffffffff));
 
 		//! Force an index that appears to be CBR to be treated as VBR
 		/*! This allows non-indexed KLVs to cause the essence stream to be VBR in nature */
@@ -582,6 +591,9 @@ namespace mxflib
 		 *  be written to a file as they are not 377M complient */
 		bool GetValueRelativeIndexing(void) { return ValueRelativeIndexing; }
 
+		//! Set the sub-range offset
+		void SetSubRangeOffset(Position Offset) { SubRangeOffset = Offset; }
+
 	protected:
 		//! Access an entry in the managed data array - creating or extending the array as required
 		IndexData *GetArrayEntry(Position EditUnit);
@@ -599,6 +611,7 @@ namespace mxflib
 
 	typedef SmartPtr<IndexManager> IndexManagerPtr;
 }
+
 
 #endif // MXFLIB__INDEX_H
 
