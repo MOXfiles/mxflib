@@ -456,6 +456,18 @@ namespace mxflib
 		virtual size_t ReadValue(MDValuePtr Object, const UInt8 *Buffer, size_t Size, int Count=0);
 	};
 
+	class MDTraits_BasicEnum : public MDTraits
+	{
+	public:
+		//! A unique name for this trait
+		virtual std::string Name() const { return "mxflib::MDTraits_BasicEnum"; };
+
+	protected:
+		// DRAGONS: What about all the other set and get functions?
+		virtual void SetString(MDValuePtr Object, std::string Val);
+		virtual std::string GetString(MDValuePtr Object);
+	};
+
 	class MDTraits_Rational : public MDTraits_BasicCompound
 	{
 	public:
