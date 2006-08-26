@@ -36,7 +36,7 @@ using namespace mxflib;
 //! Set a decryption Initialization Vector
 /*! \return False if Initialization Vector is rejected
  */
-bool KLVEObject::SetDecryptIV(UInt32 IVSize, const UInt8 *IV, bool Force /*=false*/)
+bool KLVEObject::SetDecryptIV(size_t IVSize, const UInt8 *IV, bool Force /*=false*/)
 {
 	// Fail if we don't have a decryption wrapper
 	if(!Decrypt) return false;
