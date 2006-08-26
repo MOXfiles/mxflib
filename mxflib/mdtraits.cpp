@@ -2073,7 +2073,7 @@ void MDTraits_RawArrayArray::SetString(MDValuePtr Object, std::string Val)
 
 	for(;;)
 	{
-		OpenBracket = Val.find("{", CloseBracket == std::string::npos ? 0 , CloseBracket+1);
+		OpenBracket = Val.find("{", CloseBracket == std::string::npos ? 0 : CloseBracket+1);
 		if(OpenBracket == std::string::npos) return;
 
 		CloseBracket = Val.find("}",OpenBracket+1);
