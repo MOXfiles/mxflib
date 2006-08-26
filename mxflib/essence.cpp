@@ -3658,9 +3658,6 @@ void ListOfFiles::ParseFileName(std::string FileName)
 	bool InCount = false;
 	bool InStep = false;
 	bool InEnd = false;
-	bool InRangeStart = false;
-	bool InRangeEnd = false;
-	bool InRangeDuration = false;
 
 	while(*pIn)
 	{
@@ -4079,6 +4076,8 @@ EssenceSourcePtr FileParser::GetSubSource(UInt32 Stream)
 	// Return the result of the sub-get
 	return Info.Source;
 }
+
+
 //! Initialize an index manager if required
 void BodyStream::InitIndexManager(void)
 {

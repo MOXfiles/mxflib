@@ -1416,7 +1416,7 @@ namespace mxflib
 		//! Information about a substream
 		struct SubStreamInfo
 		{
-			Int32 StreamID;						//!< The ID of this sub-stream
+			UInt32 StreamID;					//!< The ID of this sub-stream
 			EssenceSourcePtr Source;			//!< The source for the sub-stream data
 		};
 

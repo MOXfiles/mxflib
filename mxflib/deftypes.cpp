@@ -1198,7 +1198,6 @@ namespace
 				const char *Value = "";
 				const char *TypeUL = NULL;
 				// DRAGONS: Not supporting separate symbol space for enum values
-				int Size = 0;
 
 				/* Process attributes */
 				if(attrs != NULL)
