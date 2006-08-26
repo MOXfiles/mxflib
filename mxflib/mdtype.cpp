@@ -1051,7 +1051,7 @@ MDValuePtr MDValue::operator[](const UL &Child)
 /*!
  *  \return Number of bytes read
  */
-UInt32 MDValue::ReadValue(const UInt8 *Buffer, UInt32 Size, int Count /*=0*/)
+size_t MDValue::ReadValue(const UInt8 *Buffer, UInt32 Size, int Count /*=0*/)
 {
 	return Type->Traits->ReadValue(this, Buffer, Size, Count);
 }
