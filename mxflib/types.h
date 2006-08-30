@@ -487,6 +487,12 @@ namespace mxflib
 			Numerator /= GCD;
 			Denominator /= GCD;
 		}
+		
+		//! Check for exact equality (not just the same ratio)
+		inline bool operator==(const Rational &RHS)
+		{
+			return (Numerator == RHS.Numerator) && (Denominator == RHS.Denominator);
+		}
 	};
 
 	//! Determine the greatest common divisor of a 64-bit / 64-bit pair using the Euclidean algorithm
