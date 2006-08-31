@@ -1215,7 +1215,7 @@ void MDTraits_BasicStringArray::SetString(MDValuePtr Object, std::string Val)
 	// TODO: Sanity check the range here
 	UInt32 Size = static_cast<UInt32>(Val.length());
 	size_t Index = 0;
-	
+
 	if(GetStringTermination())
 		Object->Resize(Size + 1);
 	else
@@ -1359,7 +1359,7 @@ std::string MDTraits_Raw::GetString(MDValuePtr Object)
 
 		if(Ret.length() != 0) Ret += " ";
 		Ret += Buffer;
-		
+
 		Count--;
 		Data++;
 	}
