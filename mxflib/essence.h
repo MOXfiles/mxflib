@@ -1199,6 +1199,13 @@ namespace mxflib
 		//! Select the best wrapping option
 		static WrappingConfigPtr SelectWrappingOption(FileHandle InFile, ParserDescriptorListPtr PDList, Rational ForceEditRate, WrappingOption::WrapType ForceWrap = WrappingOption::None);
 
+		//! Select the best wrapping option
+		static WrappingConfigPtr SelectWrappingOption(FileHandle InFile, ParserDescriptorListPtr PDList, WrappingOption::WrapType ForceWrap = WrappingOption::None)
+		{
+			Rational ForceEditRate(0,0);
+			return SelectWrappingOption(InFile, PDList, ForceEditRate, ForceWrap);
+		}
+
 		//! Select the specified wrapping options
 		static void SelectWrappingOption(EssenceParser::WrappingConfigPtr Config);
 
@@ -1264,6 +1271,15 @@ namespace mxflib
 		//! Initialise the sub-parser list
 		static void Init(void);
 	};
+
+
+	/* Make top-level versions of EssenceParser::WrappingConfig typedefs */
+
+	//! Smart pointer to a WrappingConfig object
+	typedef EssenceParser::WrappingConfigPtr WrappingConfigPtr;
+
+	//! List of smart pointers to WrappingConfig objects
+	typedef EssenceParser::WrappingConfigList WrappingConfigList;
 }
 
 
@@ -2181,6 +2197,14 @@ namespace mxflib
 
 		//! Set the wrapping type for this stream
 		void SetWrapType(WrapType NewWrapType) { StreamWrap = NewWrapType; }
+
+		//! Set the wrapping type for this stream
+		void SetWrapType(WrappingOption::WrapType NewWrapType) 
+		{ 
+			if(NewWrapType == WrappingOption::Frame) StreamWrap = StreamWrapFrame; 
+			else if(NewWrapType == WrappingOption::Clip) StreamWrap = StreamWrapClip; 
+			else StreamWrap = StreamWrapOther;
+		}
 
 		//! Get the wrapping type of this stream
 		WrapType GetWrapType(void) { return StreamWrap; }
