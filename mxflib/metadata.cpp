@@ -201,7 +201,7 @@ void Component::SetDuration(Int64 Duration /*=-1*/)
 	// Update the duration in the sequence
 	if(Duration < 0) 
 	{
-		MDObjectPtr Sequence = Parent[SequenceSet_UL]->GetLink();
+		MDObjectPtr Sequence = Parent[Sequence_UL]->GetLink();
 		if(Sequence) Sequence->SetDValue(Duration_UL);
 	}
 	else
