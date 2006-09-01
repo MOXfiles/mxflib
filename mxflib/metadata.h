@@ -668,7 +668,7 @@ namespace mxflib
 			SchemeValue.Set(16, Scheme->GetValue());
 
 			// Get a list of known containers
-			MDObjectPtr SchemeList = Object->Child(EssenceContainers_UL);
+			MDObjectPtr SchemeList = Object->Child(DMSchemes_UL);
 
 			// Scan the list to see if we already have this type
 			MDObjectULList::iterator it = SchemeList->begin();
@@ -679,7 +679,7 @@ namespace mxflib
 			}
 
 			// New scheme, so add it
-			Object->Child(EssenceContainers_UL)->AddChild()->SetValue(SchemeValue);
+			Object->Child(DMSchemes_UL)->AddChild()->SetValue(SchemeValue);
 		}
 
 		//! Add an essence type UL to the listed essence types
