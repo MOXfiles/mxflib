@@ -125,6 +125,7 @@ namespace mxflib
 			SequencePos = 0;
 			DataStart = 0;
 			DataSize = 0;
+			CurrentPosition = 0;
 			BytePosition = 0;
 
 			// Use a sensible default if no edit rate is set - not ideal, but better than one sample!
