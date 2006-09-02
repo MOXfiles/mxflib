@@ -513,6 +513,7 @@ MDObjectListPtr mxflib::Partition::ReadIndex(MXFFilePtr File, UInt64 Size)
 		{
 			error("Error reading IndexTableSegment at 0x%s in %s\n", 
 				   Int64toHexString(Location,8).c_str(), File->Name.c_str());
+			break;
 		}
 
 		if(Bytes > Size) break;
