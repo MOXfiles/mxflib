@@ -392,6 +392,10 @@ GCElementKind KLVEObject::GetGCElementKind(void)
 			// Failed to load the KLVE header
 			GCElementKind GC;
 			GC.IsValid = false;
+			GC.Item = 0;
+			GC.Count = 0;
+			GC.ElementType = 0;
+			GC.Number = 0;
 			return GC;
 		}
 
