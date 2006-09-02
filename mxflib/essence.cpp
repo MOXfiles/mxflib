@@ -2247,7 +2247,7 @@ Length BodyWriter::WriteEssence(StreamInfoPtr &Info, Length Duration /*=0*/, Len
 		bool FirstIteration = true;
 
 		// Start of the current partition
-		Position PartitionStart;
+		Position PartitionStart = 0;
 
 		// TODO: Re-write to not read a whole frame into memory if that is too big!!
 
