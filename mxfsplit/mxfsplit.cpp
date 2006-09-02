@@ -702,7 +702,7 @@ static void DumpBody( PartitionPtr ThisPartition )
 								else
 								{
 									bool HasTrackID = false;
-									UInt32 TrackID;
+									UInt32 TrackID = 0;
 
 									MDObjectPtr TrackIDObject = Track[TrackID_UL];
 									if(TrackIDObject)
