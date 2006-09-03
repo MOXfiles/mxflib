@@ -344,6 +344,9 @@ namespace mxflib
 			}
 		}
 
+		char *OSType = getenv("OSType");
+		if(OSType) Ret += "/" + std::string(OSType);
+
 		return Ret;
 	}
 }
