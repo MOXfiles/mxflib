@@ -316,8 +316,15 @@ namespace mxflib
 				else if(OSInfo.dwMinorVersion == 1) Ret = "Windows XP";
 				else if(OSInfo.dwMinorVersion == 2) 
 				{
+#ifdef _MSC_VER
+#if _MSC_VER >= 1300
 					if(OSInfo.wProductType & VER_NT_SERVER) Ret = "Windows Server 2003";
 					else Ret = "Windows XP x64";
+					
+					if (0)	// Remove following pre-VC7 version
+#endif // _MSC_VER >= 1300
+#endif // _MSC_VER
+						Ret = "Windows Server 2003 or XP x64";
 				}
 				else if(OSInfo.dwMinorVersion == 10) Ret = "Windows 98";
 				else if(OSInfo.dwMinorVersion == 90) Ret = "Windows Me";
@@ -326,8 +333,15 @@ namespace mxflib
 			{
 				if(OSInfo.dwMinorVersion == 0) 
 				{
+#ifdef _MSC_VER
+#if _MSC_VER >= 1300
 					if(OSInfo.wProductType & VER_NT_SERVER) Ret = "Windows Server \"Longhorn\"";
 					else Ret = "Windows Vista";
+					
+					if (0)	// Remove following pre-VC7 version
+#endif // _MSC_VER >= 1300
+#endif // _MSC_VER
+						Ret = "Windows Vista or Server \"Longhorn\"";
 				}
 			}
 
@@ -343,9 +357,6 @@ namespace mxflib
 				else Ret += " " + std::string(OSInfo.szCSDVersion);
 			}
 		}
-
-		char *OSType = getenv("OSType");
-		if(OSType) Ret += "/" + std::string(OSType);
 
 		return Ret;
 	}
