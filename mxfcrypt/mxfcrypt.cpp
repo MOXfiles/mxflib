@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	/* Generate a kiy-file if not given and we are encrypting */
+	/* Generate a key-file if not given and we are encrypting */
 	if(!DecryptMode)
 	{
 		if(KeyFileName.empty() || (KeyFileName[KeyFileName.length()-1] == DIR_SEPARATOR))
