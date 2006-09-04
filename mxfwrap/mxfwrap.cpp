@@ -421,9 +421,6 @@ int main_process(int argc, char *argv[])
 			return 4;
 		}
 
-		// Ensure the essence descriptor reflects the new wrapping
-		WCP->EssenceDescriptor->SetValue(EssenceContainer_UL, DataChunk(16,WCP->WrapOpt->WrappingUL->GetValue()));
-
 		// Add this wrapping option
 		WrappingList.push_back(WCP);
 
