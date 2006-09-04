@@ -371,7 +371,7 @@ std::string mxflib::SearchPath(const char *Path, const char *Filename)
 	else if(IsAbsolutePath(Filename)) NonPath = true;
 
 	// Check the file without path if we should
-	if(NonPath)
+	if((!(*Path)) || NonPath)
 	{
 		if(FileExists(Filename)) return std::string(Filename);
 		return "";
