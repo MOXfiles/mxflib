@@ -181,7 +181,7 @@ DataChunkPtr AESEncrypt::Encrypt(size_t Size, const UInt8 *Data)
 
 //! Construct a handler for a specified BodySID
 Encrypt_GCReadHandler::Encrypt_GCReadHandler(GCWriterPtr Writer, UInt32 BodySID, UUIDPtr &ContextID, DataChunkPtr KeyID, std::string KeyFileName) 
-  : Writer(Writer), OurSID(BodySID), ContextID(ContextID), PlaintextOffset(0)
+  : OurSID(BodySID), Writer(Writer), ContextID(ContextID), PlaintextOffset(0)
 {
 	char Buffer[45];
 
