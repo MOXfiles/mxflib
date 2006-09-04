@@ -525,8 +525,8 @@ size_t mxflib::WAVE_PCM_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32
 	}
 
 	
-	// Return anything we can find if in "unspecified" clip wrapping
-	if((Count == 0) && (SelectedWrapping->ThisWrapType == WrappingOption::Clip)) Ret = Max;
+	// Return anything we can find if in clip wrapping
+	if(SelectedWrapping->ThisWrapType == WrappingOption::Clip) Ret = Max;
 	else Ret = Count * SamplesPerEditUnit * SampleSize;
 
 	// Return no more than the maximum bytes available

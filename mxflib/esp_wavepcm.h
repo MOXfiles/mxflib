@@ -110,6 +110,15 @@ namespace mxflib
 
 				return BaseGetEssenceData(Size, MaxSize);
 			}
+
+			//! Get the preferred BER length size for essence KLVs written from this source, 0 for auto
+			virtual int GetBERSize(void) 
+			{ 
+				WAVE_PCM_EssenceSubParser *pCaller = SmartPtr_Cast(Caller, WAVE_PCM_EssenceSubParser);
+
+				if(pCaller->SelectedWrapping->ThisWrapType == WrappingOption::Clip) return 8;
+				return 4;
+			}
 		};
 
 		// Give our essence source class privilaged access

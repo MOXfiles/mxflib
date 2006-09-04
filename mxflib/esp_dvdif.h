@@ -108,6 +108,15 @@ namespace mxflib
 
 				return BaseGetEssenceData(Size, MaxSize);
 			}
+
+			//! Get the preferred BER length size for essence KLVs written from this source, 0 for auto
+			virtual int GetBERSize(void) 
+			{ 
+				DV_DIF_EssenceSubParser *pCaller = SmartPtr_Cast(Caller, DV_DIF_EssenceSubParser);
+
+				if(pCaller->SelectedWrapping->ThisWrapType == WrappingOption::Clip) return 8;
+				return 4;
+			}
 		};
 
 		// Give our essence source class privilaged access

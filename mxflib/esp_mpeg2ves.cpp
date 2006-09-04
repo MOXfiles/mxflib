@@ -545,7 +545,7 @@ size_t MPEG2_VES_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Stream
 	Count *= EditRatio;
 
 	// Return anything we can find if clip wrapping
-	if((Count == 0) && (SelectedWrapping->ThisWrapType == WrappingOption::Clip)) Count = UINT64_C(0xffffffffffffffff);
+	if(SelectedWrapping->ThisWrapType == WrappingOption::Clip) Count = UINT64_C(0xffffffffffffffff);
 
 	while(Count)
 	{

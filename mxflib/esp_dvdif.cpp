@@ -525,7 +525,7 @@ size_t DV_DIF_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Stream, U
 	if(PictureNumber == 0) FileSeek(InFile, DIFStart);
 
 	// Return anything remaining if clip wrapping
-	if((Count == 0) && (SelectedWrapping->ThisWrapType == WrappingOption::Clip))
+	if(SelectedWrapping->ThisWrapType == WrappingOption::Clip)
 	{
 		Count = ((DIFEnd - DIFStart) / (150 * 80)) - PictureNumber;
 	}

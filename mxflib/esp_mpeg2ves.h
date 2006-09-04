@@ -115,6 +115,15 @@ namespace mxflib
 				return BaseGetEssenceData(Size, MaxSize);
 			}
 
+			//! Get the preferred BER length size for essence KLVs written from this source, 0 for auto
+			virtual int GetBERSize(void) 
+			{ 
+				MPEG2_VES_EssenceSubParser *pCaller = SmartPtr_Cast(Caller, MPEG2_VES_EssenceSubParser);
+
+				if(pCaller->SelectedWrapping->ThisWrapType == WrappingOption::Clip) return 8;
+				return 4;
+			}
+
 			//! Is the last data read the start of an edit point?
 			virtual bool IsEditPoint(void) 
 			{
