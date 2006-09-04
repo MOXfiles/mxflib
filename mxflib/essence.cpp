@@ -2106,6 +2106,9 @@ EssenceParser::WrappingConfigPtr EssenceParser::SelectWrappingOption(FileHandle 
 					// FIXME: This does not take into account the KAG
 					Ret->WrapOpt->BytesPerEditUnit = Ret->Parser->GetBytesPerEditUnit();
 
+					// Set the EssenceContainer Label in the descriptor
+					Ret->EssenceDescriptor->SetValue(EssenceContainer_UL, DataChunk(16,Ret->WrapOpt->WrappingUL->GetValue()));
+
 					return Ret;
 				}
 
@@ -2119,6 +2122,7 @@ EssenceParser::WrappingConfigPtr EssenceParser::SelectWrappingOption(FileHandle 
 		pdit++;
 	}
 
+	// Failed to select - return what will be NULL
 	return Ret;
 }
 
@@ -2141,6 +2145,9 @@ void EssenceParser::SelectWrappingOption(EssenceParser::WrappingConfigPtr Config
 
 	// FIXME: This does not take into account the KAG
 	Config->WrapOpt->BytesPerEditUnit = Config->Parser->GetBytesPerEditUnit();
+
+	// Set the EssenceContainer Label in the descriptor
+	Config->EssenceDescriptor->SetValue(EssenceContainer_UL, DataChunk(16,Config->WrapOpt->WrappingUL->GetValue()));
 }
 
 
