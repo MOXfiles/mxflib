@@ -148,6 +148,9 @@ int main(int argc, char *argv[])
 	/**          SET UP ESSENCE WRITING         **/
 	/*********************************************/
 
+	// Enable FastClipWrap mode - don't do this if random access not available of the output medium
+	SetFastClipWrap(true);
+
 	// Open the destination MXF file
 	MXFFilePtr OutFile = new MXFFile;
 	if(!OutFile->OpenNew(DestFile))
