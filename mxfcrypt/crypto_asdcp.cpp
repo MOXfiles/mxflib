@@ -192,7 +192,7 @@ Encrypt_GCReadHandler::Encrypt_GCReadHandler(GCWriterPtr Writer, UInt32 BodySID,
 		Bytes = FileRead(KeyFile, (UInt8*)Buffer, 32);
 		FileClose(KeyFile);
 
-		if(Bytes != 32) error("Failed to read key from key-file \"%s\"\n", Buffer);
+		if(Bytes != 32) error("Failed to read key from key-file \"%s\"\n", KeyFileName.c_str());
 	}
 	else if((!ForceKeyMode) && (KeyID) && (KeyID->Size == 16))
 	{
@@ -341,7 +341,7 @@ Decrypt_GCEncryptionHandler::Decrypt_GCEncryptionHandler(UInt32 BodySID, DataChu
 		Bytes = FileRead(KeyFile, (UInt8*)Buffer, 32);
 		FileClose(KeyFile);
 
-		if(Bytes != 32) error("Failed to read key from key-file \"%s\"\n", Buffer);
+		if(Bytes != 32) error("Failed to read key from key-file \"%s\"\n", KeyFileName.c_str());
 	}
 	else if((!ForceKeyMode) && (KeyID) && (KeyID->Size == 16))
 	{
