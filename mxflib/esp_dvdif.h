@@ -225,8 +225,11 @@ namespace mxflib
 		virtual std::string GetParserName(void) const { return "dvdif"; }
 
 	protected:
-		//! Read the header at the specified position in a DV file to build an essence descriptor
+		//! Read the header at the specified position in a DV file to build a video essence descriptor
 		MDObjectPtr BuildCDCIEssenceDescriptor(FileHandle InFile, UInt64 Start = 0);
+
+		//! Read the header at the specified position in a DV file to build an audio essence descriptor
+		MDObjectPtr BuildSoundEssenceDescriptor(FileHandle InFile, UInt64 Start = 0);
 
 		//! Scan the essence to calculate how many bytes to transfer for the given edit unit count
 		size_t ReadInternal(FileHandle InFile, UInt32 Stream, UInt64 Count/*, IndexTablePtr Index = NULL*/);
