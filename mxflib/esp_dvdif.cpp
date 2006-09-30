@@ -594,9 +594,6 @@ MDObjectPtr DV_DIF_EssenceSubParser::BuildSoundEssenceDescriptor(FileHandle InFi
 	// Set 625/50 flag from the header
 	bool is625 = ((Buffer[3] & 0x80) == 0x80);
 
-	// Set SMPTE-314M flag by assuming the APT value will only be 001 or 111 if we are in SMPTE-314M
-	bool isS314M = ((Buffer[4] & 0x07) == 0x01) || ((Buffer[4] & 0x07) == 0x07);
-
 	// Bug out if the video is flagged as invalid
 	if((Buffer[6] & 0x80) != 0) return Ret;
 
