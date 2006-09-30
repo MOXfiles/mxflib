@@ -570,7 +570,7 @@ namespace mxflib
 #include <assert.h>
 #define ASSERT assert		// use -DNDEBUG
 
-/** Operating system name for non-windows platrorms **/
+/** Operating system name for non-windows platforms **/
 
 namespace mxflib
 {
