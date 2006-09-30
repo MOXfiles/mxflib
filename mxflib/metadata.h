@@ -667,10 +667,10 @@ namespace mxflib
 			DataChunk SchemeValue;
 			SchemeValue.Set(16, Scheme->GetValue());
 
-			// Get a list of known containers
+			// Get a list of current schemes
 			MDObjectPtr SchemeList = Object->Child(DMSchemes_UL);
 
-			// Scan the list to see if we already have this type
+			// Scan the list to see if we already have this one
 			MDObjectULList::iterator it = SchemeList->begin();
 			while(it != SchemeList->end())
 			{
