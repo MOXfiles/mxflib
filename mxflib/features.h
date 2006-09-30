@@ -76,6 +76,10 @@ namespace mxflib
 
 	const UInt64 Feature0 = UINT64_C(1) << 0;			//!< MXFLib feature: Not used
 
+	/* This sub-range is currently used by temporary fixes (bits 16 to 30) */
+
+	const UInt64 FeatureNegPrechargeIndex = UINT64_C(1) << 16;	//!< Use -ve indexing for precharge
+
 	// Reserve a bit for user-extensions
 	const UInt64 UserExtension = UINT64_C(1) << 31;		//!< MXFLib feature: Reserved to allow user extensions
 
