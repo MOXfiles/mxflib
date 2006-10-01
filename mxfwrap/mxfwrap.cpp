@@ -1413,7 +1413,9 @@ int Process(	int OutFileNum,
 		MDObjectPtr SubDescriptors;
 
 		//! Iterator for scanning the sub-descriptor batch, if this is a multiple stream
-		MDObject::iterator SubDescriptorsIt;
+		// DRAGONS: Here we initialize the iterator with a generic MDObject::iterator::end() value that won't
+		//          ever be used, but keeps strict compilers from complaining it is uninitialized
+		MDObject::iterator SubDescriptorsIt = ThisDescriptor->end();
 
 		//! The index number of the sub track within this multiple essence stream, zero for the first
 		size_t SubTrackIndex = 0;
