@@ -1234,7 +1234,7 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 			}
 
 			// If this is less than the requested padding keep adding blocks until it is enough
-			while(BlockAlignHeaderBytes < Padding)
+			while(BlockAlignIndexBytes < Padding)
 			{
 				BlockAlignIndexBytes += BlockAlign;
 				IndexByteCount += BlockAlign;
