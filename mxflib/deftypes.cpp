@@ -1580,8 +1580,9 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 	{
 		/* If no valid UL given we use an end-swapped UUID to allow lookups */
 
-		// Build a UL from a new UUID
-		TypeUL = new UL(new UUID);
+		// Build a UL from a new UUID (which will get a new value generated)
+		UUID Temp;
+		TypeUL = new UL(Temp);
 	}
 
 	// Work out the root name of this class (showing the list of parents)
