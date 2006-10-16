@@ -440,11 +440,8 @@ namespace mxflib
 		//! Constructor
 		GCWriter(MXFFilePtr File, UInt32 BodySID = 0, int Base = 0);
 
-		//! Destructor - free the stream table
-		~GCWriter()
-		{
-			delete[] StreamTable;
-		}
+		//! Destructor
+		~GCWriter();
 
 		//! Set the KAG for this Essence Container
 		void SetKAG(UInt32 KAG, bool ForceBER4 = false) { KAGSize = KAG; ForceFillerBER4 = ForceBER4; };
