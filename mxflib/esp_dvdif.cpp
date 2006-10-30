@@ -427,7 +427,7 @@ Position DV_DIF_EssenceSubParser::GetCurrentPosition(void)
 DataChunkPtr DV_DIF_EssenceSubParser::Read(FileHandle InFile, UInt32 Stream, UInt64 Count /*=1*/) 
 { 
 	// Either use the cached value, or scan the stream and find out how many bytes to read
-	if(CachedDataSize == static_cast<size_t>(-1)) ReadInternal(InFile, Stream, Count);
+	if((CachedDataSize == static_cast<size_t>(-1)) || (CachedCount != Count)) ReadInternal(InFile, Stream, Count);
 
 	// Record, then clear, the data size
 	size_t Bytes = CachedDataSize;
@@ -642,13 +642,13 @@ MDObjectPtr DV_DIF_EssenceSubParser::BuildSoundEssenceDescriptor(FileHandle InFi
 size_t DV_DIF_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Stream, UInt64 Count)
 {	
 	// Return the cached value if we have not yet used it
-	if(CachedDataSize != static_cast<size_t>(-1)) return CachedDataSize;
+	if((CachedDataSize != static_cast<size_t>(-1)) && CachedCount == Count) return CachedDataSize;
 
 	// Seek to the start of the essence on the first read
 	if(PictureNumber == 0) FileSeek(InFile, DIFStart);
 
 	// Return anything remaining if clip wrapping
-	if(SelectedWrapping->ThisWrapType == WrappingOption::Clip)
+	if((Count == 0) && (SelectedWrapping->ThisWrapType == WrappingOption::Clip))
 	{
 		Count = ((DIFEnd - DIFStart) / (150 * 80)) - PictureNumber;
 	}
@@ -684,6 +684,7 @@ size_t DV_DIF_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Stream, U
 
 		// Store so we don't have to calculate if called again without reading
 		CachedDataSize =  static_cast<size_t>(Ret);
+		CachedCount = Count;
 		
 		return CachedDataSize;
 	}

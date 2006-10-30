@@ -55,6 +55,7 @@ namespace mxflib
 
 
 		size_t CachedDataSize;								//!< The size of the next data to be read, or (size_t)-1 if not known
+		UInt64 CachedCount;									//!< The number of wrapping units that CachedDataSize relates to
 
 		// File buffering
 		UInt8 *Buffer;										//!< Buffer for efficient file reading
@@ -77,6 +78,9 @@ namespace mxflib
 			ESP_EssenceSource(EssenceSubParserPtr TheCaller, FileHandle InFile, UInt32 UseStream, UInt64 Count = 1/*, IndexTablePtr UseIndex = NULL*/)
 				: EssenceSubParserBase::ESP_EssenceSource(TheCaller, InFile, UseStream, Count/*, UseIndex*/) 
 			{
+				DV_DIF_EssenceSubParser *pCaller = SmartPtr_Cast(Caller, DV_DIF_EssenceSubParser);
+
+				if(pCaller->SelectedWrapping->ThisWrapType == WrappingOption::Clip) RequestedCount = 0;
 			};
 
 			//! Get the size of the essence data in bytes
@@ -131,6 +135,7 @@ namespace mxflib
 			Buffer = NULL;
 
 			CachedDataSize = static_cast<size_t>(-1);
+			CachedCount = 0;
 		}
 
 		~DV_DIF_EssenceSubParser()
