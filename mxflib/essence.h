@@ -761,6 +761,8 @@ namespace mxflib
 			virtual DataChunkPtr GetEssenceData(size_t Size = 0, size_t MaxSize = 0) { return BaseGetEssenceData(Size, MaxSize); };
 
 			//! Non-virtual basic version of GetEssenceData() that can be called by derived classes
+			/*! DRAGONS: This implementation always reads whole wrapping units, so it NOT SAFE if these could be too large to fit in memory 
+			 */
 			DataChunkPtr BaseGetEssenceData(size_t Size = 0, size_t MaxSize = 0)
 			{
 				// Allow us to differentiate the first call
