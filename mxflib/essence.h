@@ -1972,6 +1972,11 @@ namespace mxflib
 		 */
 		Position Seek(UInt32 BodySID, Position Pos);
 
+		//! Report the byte offset in a given stream
+		/*! \return File offset or -1 if not known or stream does not exist
+		 */
+		Position Tell(UInt32 BodySID);
+
 		//! Set the default handler for all new GCReaders
 		/*! Each time a new GCReader is created this default handler will be used if no other is specified
 		 */
