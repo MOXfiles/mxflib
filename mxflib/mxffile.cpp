@@ -842,16 +842,12 @@ void MXFFile::WritePartitionPack(PartitionPtr ThisPartition, PrimerPtr UsePrimer
 		ThisPartition->SetUInt64(BodyOffset_UL, 0);
 	}
 
-	// Find the current partition at this location, or the nearest after it
-	RIP::iterator it = FileRIP.lower_bound(CurrentPosition);
+	// Find the partition before the current partition
+	PartitionInfoPtr PrevPart = FileRIP.FindPreviousPartition(CurrentPosition);
 
-	// Now get the previous partition in the RIP (don't attempt this if the RIP is empty, or we are the header)
-	if((!FileRIP.empty()) && (it != FileRIP.begin())) it--;
-
-	// Set the position of the previous partition
-	// DRAGONS: Is there some way to know that we don't know the previous position?
-	if(it == FileRIP.end()) ThisPartition->SetInt64(PreviousPartition_UL, 0);
-	else ThisPartition->SetInt64(PreviousPartition_UL, (*it).first);
+	// Set the previous partition location, or zero if not known
+	if(PrevPart) ThisPartition->SetInt64(PreviousPartition_UL, PrevPart->ByteOffset);
+	else ThisPartition->SetInt64(PreviousPartition_UL, 0);
 
 	// Add this partition to the RIP, but don't store the partition as we don't
 	// own it and therefore cannot prevent changes after writing
@@ -1419,6 +1415,7 @@ KLVObjectPtr MXFFile::ReadKLV(void)
 
 //! Locate and read a partition containing closed header metadata
 /*! \ret NULL if none found
+ * TODO: Fix slightly iffy assumptions about RIP
  */
 PartitionPtr MXFFile::ReadMasterPartition(Length MaxScan /*=1024*1024*/)
 {
@@ -1484,7 +1481,8 @@ PartitionPtr MXFFile::ReadMasterPartition(Length MaxScan /*=1024*1024*/)
 
 //! Locate and read the footer partition
 /*! \ret NULL if not found
-	*/
+ * TODO: Fix slightly iffy assumptions about RIP
+ */
 PartitionPtr MXFFile::ReadFooterPartition(Length MaxScan /*=1024*1024*/)
 {
 	PartitionPtr Ret;
