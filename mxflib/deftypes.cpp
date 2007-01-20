@@ -190,6 +190,10 @@ namespace
 		AddTraitsMapping("ISO7String", new MDTraits_BasicStringArray);
 		AddTraitsMapping("UTF16String", new MDTraits_UTF16String);
 
+		// DRAGONS: At the moment we assume all unknown UTF is basically 7-bit text!
+		AddTraitsMapping("UTF", new MDTraits_ISO7);
+		AddTraitsMapping("UTFString", new MDTraits_BasicStringArray);
+
 		AddTraitsMapping("UInt8Array", new MDTraits_RawArray);
 		AddTraitsMapping("Uint8Array", new MDTraits_RawArray);
 
