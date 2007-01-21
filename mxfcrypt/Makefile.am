@@ -9,7 +9,7 @@ INCLUDES = -I$(top_builddir)
 
 bin_PROGRAMS = mxfcrypt
 
-mxfcrypt_SOURCES = mxfcrypt.cpp crypto_asdcp.cpp
+mxfcrypt_SOURCES = mxfcrypt.cpp crypto_asdcp.cpp crypto_asdcp.h
 
 LDADD = ../mxflib/libmxf.a $(UUIDLIB) -lcrypto
 
