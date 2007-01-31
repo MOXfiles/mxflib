@@ -204,7 +204,7 @@ namespace mxflib
 		/*! \note Partition properties are updated from the linked metadata
 		 *	\return true if re-write was successful, else false
 		 */
-		bool MXFFile::ReWritePartition(PartitionPtr ThisPartition, PrimerPtr UsePrimer = NULL) 
+		bool ReWritePartition(PartitionPtr ThisPartition, PrimerPtr UsePrimer = NULL) 
 		{
 			return WritePartitionInternal(true, ThisPartition, true, NULL, UsePrimer, 0, 0);
 		}
@@ -213,7 +213,7 @@ namespace mxflib
 		/*! \note Partition properties are updated from the linked metadata
 		 *	\return true if re-write was successful, else false
 		 */
-		bool MXFFile::ReWritePartitionWithIndex(PartitionPtr ThisPartition, DataChunkPtr IndexData, PrimerPtr UsePrimer = NULL) 
+		bool ReWritePartitionWithIndex(PartitionPtr ThisPartition, DataChunkPtr IndexData, PrimerPtr UsePrimer = NULL) 
 		{
 			return WritePartitionInternal(true, ThisPartition, true, IndexData, UsePrimer, 0, 0);
 		}
