@@ -1257,7 +1257,7 @@ int Process(	int OutFileNum,
 			if(WriteFP) // (iTrack == OutFileNum)
 			{
 				// Get the source for this essence
-				EssenceSourcePtr Source = (*WrapCfgList_it)->WrapOpt->Handler->GetEssenceSource(InFile[iTrack], (*WrapCfgList_it)->Stream, 0 );
+				EssenceSourcePtr Source = (*WrapCfgList_it)->WrapOpt->Handler->GetEssenceSource(InFile[iTrack], (*WrapCfgList_it)->Stream );
 
 				// Build a stream object to write
 				Streams.push_back(new BodyStream(iTrack + 1, Source));
@@ -1303,7 +1303,7 @@ int Process(	int OutFileNum,
 		else if( FrameGroup ) // !OPAtom
 		{
 			// Get the source for this essence
-			EssenceSourcePtr Source = (*WrapCfgList_it)->WrapOpt->Handler->GetEssenceSource(InFile[iTrack], (*WrapCfgList_it)->Stream, 0 );
+			EssenceSourcePtr Source = (*WrapCfgList_it)->WrapOpt->Handler->GetEssenceSource(InFile[iTrack], (*WrapCfgList_it)->Stream );
 
 			if(iTrack == 0)
 			{
@@ -1362,7 +1362,7 @@ int Process(	int OutFileNum,
 		else // !OPAtom, !FrameGroup
 		{
 			// Get the source for this essence
-			EssenceSourcePtr Source = (*WrapCfgList_it)->WrapOpt->Handler->GetEssenceSource(InFile[iTrack], (*WrapCfgList_it)->Stream, 0 );
+			EssenceSourcePtr Source = (*WrapCfgList_it)->WrapOpt->Handler->GetEssenceSource(InFile[iTrack], (*WrapCfgList_it)->Stream );
 
 			// Build a stream object to write
 			Streams.push_back(new BodyStream(iTrack + 1, Source));
