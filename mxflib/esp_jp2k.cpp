@@ -261,6 +261,9 @@ DataChunkPtr mxflib::JP2K_EssenceSubParser::Read(FileHandle InFile, UInt32 Strea
 	// Find out how many bytes to read
 	size_t Bytes = ReadInternal(InFile, Stream, Count);
 
+	// Clear the cached size as we are about to read it, so it will need to be recalculated
+	CachedDataSize = static_cast<size_t>(-1);
+
 	// If there is no data left return a NULL pointer as a signal
 	if(!Bytes) return Ret;
 
