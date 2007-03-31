@@ -914,12 +914,18 @@ UInt64 MXFFile::Align(bool ForceBER4, UInt32 KAGSize, UInt32 MinSize /*=0*/)
 	// Nothing to do!
 	if(Fill == 0) return Tell();
 
-	// The filler type - don't perform the lookup each time!
-	static MDOTypePtr FillType = MDOType::Find("KLVFill");
-	ASSERT(FillType);
-
-	// Write the filler key
-	Write(FillType->GetGlobalKey());
+	if(Feature(FeatureVersion1KLVFill))
+	{
+		// Write the version 1 filler key
+		Write(KLVFill_UL.GetValue(), 7);
+		WriteU8(1);
+		Write(&KLVFill_UL.GetValue()[8], 8);
+	}
+	else
+	{
+		// Write the filler key
+		Write(KLVFill_UL.GetValue(), 16);
+	}
 
 	// Calculate filler length for shortform BER length
 	Fill -= 17;
