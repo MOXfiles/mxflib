@@ -277,7 +277,11 @@ DataChunkPtr MPEG2_VES_EssenceSubParser::ESP_EssenceSource::GetEssenceData(size_
 		pCaller->CachedDataSize = static_cast<size_t>(-1);
 
 		// Flag all done when no more to read
-		if(BytesRemaining == 0) return NULL;
+		if(BytesRemaining == 0)
+		{
+			AtEndOfData = true;
+			return NULL;
+		}
 	}
 
 	// Decide how many bytes to read this time - start by trying to read them all
