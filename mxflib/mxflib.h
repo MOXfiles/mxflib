@@ -97,8 +97,8 @@ namespace mxflib
 #include <mxflib/ulmap.h>
 
 #include <mxflib/mdtraits.h>
-#include <mxflib/mdtype.h>
 #include <mxflib/deftypes.h>
+#include <mxflib/mdtype.h>
 
 #include <mxflib/mdobject.h>
 
