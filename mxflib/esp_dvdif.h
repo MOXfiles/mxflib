@@ -53,6 +53,8 @@ namespace mxflib
 
 		int SeqCount;										//!< Number of DIF sequences in a frame
 
+		bool isS314M;										//!< True if this is a SMPTE 314M DV stream ("DV-Based")
+
 		UInt32 AVIFrameCount;								//!< The number of frames, if the essence is AVI wrapped
 		int StreamNumber;									//!< AVI Stream number, if the essence is AVI wrapped
 
