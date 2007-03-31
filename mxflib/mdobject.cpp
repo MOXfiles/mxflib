@@ -1961,8 +1961,8 @@ bool MDObject::MakeRef(MDObjectPtr &TargetSet, bool ForceLink /*=false*/)
 	// Validate that we are a reference source
 	// Note: The link will be attempted even if an error is produced
 	//		 This is intentional as it may be valid in a later file spec
-	DictRefType RType = Type->GetRefType();
-	if((RType != DICT_REF_STRONG) && (RType != DICT_REF_WEAK))
+	ClassRef RType = Type->GetRefType();
+	if((RType != ClassRefStrong) && (RType != ClassRefWeak) && (RType != ClassRefGlobal))
 	{
 		if(!ForceLink)
 		{
