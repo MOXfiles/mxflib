@@ -447,6 +447,38 @@ MDTypePtr MDType::EffectiveBase(void) const
 }
 
 
+//! Report the effective reference type of this type
+TypeRef MDType::EffectiveRefType(void) const
+{
+	if(RefType != TypeRefUndefined) return RefType;
+
+	// If we are an interpretation then see what of
+	if(Class == INTERPRETATION || Class == ENUM)
+	{
+		ASSERT(Base);
+		return Base->EffectiveRefType();
+	}
+
+	return TypeRefNone;
+}
+
+
+//! Report the effective reference target of this type
+std::string MDType::EffectiveRefTarget(void) const
+{
+	if(RefTarget.length() != 0) return RefTarget;
+
+	// If we are an interpretation then see what of
+	if(Class == INTERPRETATION || Class == ENUM)
+	{
+		ASSERT(Base);
+		return Base->EffectiveRefTarget();
+	}
+
+	return "";
+}
+
+
 //! Report the effective size of this type
 /*! \return The size in bytes of a single instance of this type, or 0 if variable size
  */
