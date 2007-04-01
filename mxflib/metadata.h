@@ -684,10 +684,14 @@ namespace mxflib
 
 		//! Add an essence type UL to the listed essence types
 		/*! Only added if it does not already appear in the list */
-		void AddEssenceType(ULPtr ECType)
+		void AddEssenceType(ULPtr ECType) { AddEssenceType(*ECType); };
+
+		//! Add an essence type UL to the listed essence types
+		/*! Only added if it does not already appear in the list */
+		void AddEssenceType(const UL &ECType)
 		{
 			DataChunk ECTypeValue;
-			ECTypeValue.Set(16, ECType->GetValue());
+			ECTypeValue.Set(16, ECType.GetValue());
 
 			// Get a list of known containers
 			MDObjectPtr ECTypeList = Object->Child(EssenceContainers_UL);
