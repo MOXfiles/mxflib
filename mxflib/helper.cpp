@@ -447,7 +447,8 @@ bool mxflib::IsPartitionKey(const UInt8 *Key)
 	const UInt8 DegeneratePartition[13] = { 0x06, 0x0E, 0x2B, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01 };
 	if( memcmp(Key, DegeneratePartition, 13) == 0 )
 	{
-		return true;
+		// Treat all matches as partition packs EXCEPT the RIP
+		return Key[13] != 0x11;
 	}
 
 	return false;
