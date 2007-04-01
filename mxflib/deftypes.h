@@ -913,14 +913,14 @@ namespace mxflib
 	protected:
 		// Private constructor - to build a new label one of the Insert() functions must be called
 		Label(std::string LabelName, std::string Detail, const UInt8 *LabelUL, const UInt8 *LabelMask) 
-			: Detail(Detail), Value(LabelUL)
+			: Value(LabelUL), Detail(Detail)
 		{
 			Init(LabelName, LabelMask);
 		}
 
 		// Private constructor - to build a new label one of the Insert() functions must be called
 		Label(std::string LabelName, std::string Detail, const UUID &LabelULasUUID, const UInt8 *LabelMask) 
-			: Detail(Detail), Value(LabelULasUUID)
+			: Value(LabelULasUUID), Detail(Detail)
 		{
 			Init(LabelName, LabelMask);
 		}
