@@ -511,7 +511,8 @@ MDObjectPtr mxflib::JP2K_EssenceSubParser::BuildDescriptorFromCodeStream(FileHan
 
 	
 	// Link the sub-descrioptor to the file descriptor
-	MDObjectPtr Link = Ret->AddChild(SubDescriptor_UL);
+	MDObjectPtr Link = Ret->AddChild(SubDescriptors_UL);
+	if(Link) Link = Link->AddChild();
 	if(Link) Link->MakeRef(SubDescriptor);
 
 	return Ret;
