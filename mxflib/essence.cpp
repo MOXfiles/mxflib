@@ -1963,7 +1963,7 @@ bool mxflib::IsGCSystemItem(const ULPtr TheUL)
 	if( ( TheUL->GetValue()[10] == GCSystemKey[10] )
 	 && ( TheUL->GetValue()[9]  == GCSystemKey[9]  )
 	 && ( TheUL->GetValue()[8]  == GCSystemKey[8]  )
-	 && ( TheUL->GetValue()[8]  == GCSystemKey[6]  )
+	 && ( TheUL->GetValue()[6]  == GCSystemKey[6]  )
 	 && ( memcmp(TheUL->GetValue(), GCSystemKey, 5 ) == 0) )
 	{
 		return true;
