@@ -405,6 +405,18 @@ GCElementKind KLVEObject::GetGCElementKind(void)
 }
 
 
+//! Determine if this is a system item
+bool KLVEObject::IsGCSystemItem(void)
+{
+	if(!DataLoaded) 
+	{
+		if(!LoadData()) return false;
+	}
+
+	return mxflib::IsGCSystemItem(TheUL);
+}
+
+
 //! Get the track number of this KLVObject (if it is a GC KLV, else 0)
 UInt32 KLVEObject::GetGCTrackNumber(void)
 {

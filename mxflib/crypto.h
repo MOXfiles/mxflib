@@ -428,6 +428,9 @@ namespace mxflib
 		//! Get a GCElementKind structure
 		virtual GCElementKind GetGCElementKind(void);
 
+		//! Determine if this is a system item
+		virtual bool IsGCSystemItem(void);
+
 		//! Get the track number of this KLVObject (if it is a GC KLV, else 0)
 		virtual UInt32 GetGCTrackNumber(void);
 
