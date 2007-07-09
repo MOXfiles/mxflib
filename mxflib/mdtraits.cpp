@@ -1139,9 +1139,12 @@ size_t MDTraits_BasicArray::ReadValue(MDValuePtr Object, const UInt8 *Buffer, si
 			UnknownCount = false;
 		}
 
-		if((ItemCount * ItemSize) < Size)
+		if((ItemCount * ItemSize) > Size)
 		{
 			error("Invalid batch of type %s - count = %u, item size = %u so 0x%08x bytes required but only 0x%08x available\n", Object->Name().c_str(), ItemCount, ItemSize, (ItemCount * ItemSize), Size);
+			
+			// Make the count safe
+			Count = static_cast<int>(Size / ItemSize);
 		}
 	}
 
