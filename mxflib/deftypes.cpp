@@ -2833,7 +2833,7 @@ LabelPtr Label::Find(const UL &LabelValue)
 				// Do a masked compare, first use XOR to select which bits don't match, then clear the masked ones
 				// Any bytes that match the test will end up zero, otherwise the failing bit will be set
 				if( ((*p1++) ^ (*p2++)) & ~(*pMask++) ) break;
-			} while(Count--);
+			} while(--Count);
 
 			// If we counted all the way to zero, we found a match - so count the mask bits
 			if(!Count)
