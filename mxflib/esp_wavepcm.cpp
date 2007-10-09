@@ -218,9 +218,9 @@ DataChunkPtr WAVE_PCM_EssenceSubParser::ESP_EssenceSource::GetEssenceData(size_t
 	if(!BytesRemaining)	
 	{
 		// Only do a simple add if not reading the whole clip, and if the read succeeded
-		if((RequestedCount != 0) && (Ret->Size == Bytes)) pCaller->CurrentPosition += RequestedCount;
+		if((pCaller->SelectedWrapping->ThisWrapType != WrappingOption::Clip) && (Ret->Size == Bytes)) pCaller->CurrentPosition += RequestedCount;
 		// ... otherwise calculate the new position
-		else pCaller->CalcCurrentPosition();
+		else pCaller->CurrentPosition = pCaller->CalcCurrentPosition();
 	}
 
 	return Ret;
