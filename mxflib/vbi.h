@@ -115,11 +115,11 @@ namespace mxflib
 			this->SampleCount = SampleCount;
 		}
 
-		//! Get the size of the data buffer, excluding the line number, wrapping type, sample coding and sample count bytes
+		//! Get the size of the data buffer, excluding the line number, wrapping type, sample coding, sample count bytes and array header
 		size_t GetDataSize(void) { return static_cast<size_t>(Data.Size); }
 
-		//! Get the size of the data buffer, including the line number, wrapping type, sample coding and sample count bytes
-		size_t GetFullDataSize(void) { return static_cast<size_t>(Data.Size) + 6; }
+		//! Get the size of the data buffer, including the line number, wrapping type, sample coding, sample count bytes and array header
+		size_t GetFullDataSize(void) { return static_cast<size_t>(Data.Size) + 14; }
 
 		//! Write the line of data into a buffer, including the line number, wrapping type, sample coding and sample count bytes
 		/*! \note It is the caller's responsibility to ensure that the buffer has enough space - the number of bytes written <b>will be</b> GetFullDataSize()
