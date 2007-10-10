@@ -66,6 +66,13 @@ namespace
 bool mxflib::AllowFastClipWrap;
 
 
+namespace
+{
+	//! Max nmumber of bytes that we will try and wrap in one go (stops clip-wrapping bursting our memory)
+	const size_t MaxWrapChunkSize = 1024 * 1024 * 32;
+}
+
+
 //! Constructor
 GCWriter::GCWriter(MXFFilePtr File, UInt32 BodySID /*=0*/, int Base /*=0*/)
 {
@@ -951,7 +958,7 @@ void GCWriter::Flush(void)
 					}
 				}
 
-				DataChunkPtr Data = (*it).second.Source->GetEssenceData();
+				DataChunkPtr Data = (*it).second.Source->GetEssenceData(0, MaxWrapChunkSize);
 				
 				// Exit when no more data left
 				if(!Data) break;
