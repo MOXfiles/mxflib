@@ -142,7 +142,7 @@ namespace mxflib
 	UMIDPtr MakeUMID(int Type, const UUIDPtr AssetID = NULL);
 
 	//! Read a "Chunk" from a non-MXF file
-	DataChunkPtr FileReadChunk(FileHandle InFile, UInt64 Size);
+	DataChunkPtr FileReadChunk(FileHandle InFile, size_t Size);
 
 
 	//! Read an IFF chunk header (from an open file)

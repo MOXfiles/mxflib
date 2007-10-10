@@ -247,13 +247,15 @@ UMIDPtr mxflib::MakeUMID(int Type, const UUIDPtr AssetID)
 
 
 //! Read a "Chunk" from a non-MXF file
-DataChunkPtr mxflib::FileReadChunk(FileHandle InFile, UInt64 Size)
+DataChunkPtr mxflib::FileReadChunk(FileHandle InFile, size_t Size)
 {
 	DataChunkPtr Ret = new DataChunk;
-	Ret->Resize((UInt32)Size);
+	Ret->Resize(Size);
 
 	// Read the data (and shrink chunk to fit)
-	Ret->Resize((UInt32)FileRead(InFile, Ret->Data,(UInt32) Size));
+	size_t Bytes = FileRead(InFile, Ret->Data, Size);
+	if(Bytes == static_cast<size_t>(-1)) Bytes = 0;
+	Ret->Resize(Bytes);
 
 	return Ret;
 }
