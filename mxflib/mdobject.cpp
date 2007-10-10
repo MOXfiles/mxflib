@@ -2366,7 +2366,7 @@ void MDOType::ReDefine(std::string NewDetail, std::string NewBase, unsigned int 
 	{
 		MDTypePtr Type = MDType::Find(NewBase);
 		if(!Type)
-			error(NULL, "Attempt to redefine %s to be of type %s which is not known\n", FullName().c_str(), NewBase.c_str());
+			error("Attempt to redefine %s to be of type %s which is not known\n", FullName().c_str(), NewBase.c_str());
 		else
 			ValueType = Type;
 	}
