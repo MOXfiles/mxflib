@@ -53,6 +53,8 @@
  *                       Default setting is all features unlocked
  */
 
+#ifndef MXFLIB__FEATURES_H
+#define MXFLIB__FEATURES_H
 
 // Those features that may be enabled
 #ifndef MXFLIB_FEATURE_MASK
@@ -185,3 +187,4 @@ namespace mxflib
 	}
 }
 
+#endif // MXFLIB__FEATURES_H
