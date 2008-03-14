@@ -3617,7 +3617,15 @@ void mxflib::BodyWriter::WriteFooter(bool WriteMetadata /*=false*/, bool IsCompl
 
 		// Set the "done" flag for this index type
 		// DRAGONS: Is this an MSVC funny or can we really not do bitmaths with enums without them becoming integers?
-		Stream->SetFooterIndex((BodyStream::IndexType) (Stream->GetFooterIndex() | IndexFlags) );
+		BodyStream::IndexType Flags = Stream->GetFooterIndex();
+		Stream->SetFooterIndex((BodyStream::IndexType) (Flags | IndexFlags) );
+		if(Flags == Stream->GetFooterIndex())
+		{
+			error("Internal Error: Failed to clear footer index flag 0x%04x for BodySID 0x%04x\n", (int)IndexFlags, (int)CurrentBodySID);
+			
+			// Flag all indexing done
+			Stream->SetFooterIndex(Stream->GetIndexType());
+		}
 
 		// This stream has done a cycle - move to the next stream
 		SetNextStream();
