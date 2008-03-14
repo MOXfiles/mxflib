@@ -861,6 +861,13 @@ namespace mxflib
 				// Set the manager in our containing parser
 				Caller->SetIndexManager(Manager, StreamID);
 			}
+
+			//! Get the IndexManager StreamID for this essence stream
+			virtual int GetIndexStreamID(void)
+			{
+				// Get from our containing parser
+				return Caller->GetIndexStreamID();
+			}
 		};
 
 		// Allow embedded essence source to access our protected properties
