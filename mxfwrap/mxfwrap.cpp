@@ -1278,9 +1278,6 @@ int Process(	int OutFileNum,
 				// Force edit-unit align if requested
 				if(EditAlign) Streams.back()->SetEditAlign(true);
 
-				// The source will have be allocated a StreamID when added to the BodyStream - we need that for track linking later
-				TrackInfoList.back()->EssenceID = Source->GetStreamID();
-
 				// Set indexing options for this stream
 				if(UseIndex || SparseIndex || SprinkledIndex)
 				{
@@ -1300,6 +1297,9 @@ int Process(	int OutFileNum,
 
 				// Add this stream to the body writer
 				Writer->AddStream(Streams.back());
+
+				// The source will have be allocated a StreamID when added to the BodyStream - we need that for track linking later
+				TrackInfoList.back()->EssenceID = Source->GetStreamID();
 
 				// Add the file package
 				FilePackage = MData->AddFilePackage(iTrack+1, std::string("File Package: ") + (*WrapCfgList_it)->WrapOpt->Description, FPUMID[iTrack]);
@@ -1383,9 +1383,6 @@ int Process(	int OutFileNum,
 			// Force edit-unit align if requested
 			if(EditAlign) Streams.back()->SetEditAlign(true);
 
-			// The source will have be allocated a StreamID when added to the BodyStream - we need that for track linking later
-			TrackInfoList.back()->EssenceID = Source->GetStreamID();
-
 			// Set indexing options for this stream
 			if(UseIndex || SparseIndex || SprinkledIndex)
 			{
@@ -1405,6 +1402,9 @@ int Process(	int OutFileNum,
 
 			// Add this stream to the body writer
 			Writer->AddStream(Streams.back());
+
+			// The source will have be allocated a StreamID when added to the BodyStream - we need that for track linking later
+			TrackInfoList.back()->EssenceID = Source->GetStreamID();
 
 			// DRAGONS: Why if(true) ? To match the code structure in the other two cases above
 			if( true )
