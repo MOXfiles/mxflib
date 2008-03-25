@@ -383,10 +383,10 @@ std::string mxflib::SearchPath(const char *Path, const char *Filename)
 	char *Buffer = new char[strlen(Path) + strlen(Filename) + 2];
 
 	// Start searching all paths
-	char *p = const_cast<char*>(Path);
+	const char *p = Path;
 	while(p && *p)
 	{
-		char *sep = strchr(p, PATH_SEPARATOR);
+		const char *sep = strchr(p, PATH_SEPARATOR);
 
 		// No more path separators - this is the last path to check
 		if(!sep)
