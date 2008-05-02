@@ -1146,8 +1146,8 @@ DataChunkPtr MDValue::PutData(void)
 		}
 	}
 
-	// If this is a batch where we did not know the item size, set it now we havbe written all items
-	if(BatchCorrection)
+	// If this is a batch where we did not know the item size, set it now we have written all items
+	if(BatchCorrection && (Count > 0) && (Ret->Size > 8))
 	{
 		UInt32 Size = static_cast<UInt32>((Ret->Size - 8) / Count);
 		PutU32(Size, &Ret->Data[4]);
