@@ -385,7 +385,7 @@ MDObjectPtr MPEG2_VES_EssenceSubParser::BuildMPEG2VideoDescriptor(FileHandle InF
 	UInt32 HSize = (Buffer[4] << 4) | (Buffer[5] >> 4);
 	UInt32 VSize = ((Buffer[5] & 0x0f) << 8) | (Buffer[6]);
 
-	char *Aspect;
+	const char *Aspect;
 	switch(Buffer[7] & 0xf0)
 	{
 	default: Aspect = NULL; break;

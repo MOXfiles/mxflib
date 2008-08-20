@@ -3226,9 +3226,13 @@ Length mxflib::BodyWriter::WritePartition(Length Duration /*=0*/, Length MaxPart
 			if((!IndexSharesWithMetadata) && (!PartitionDone))
 			{
 				if(PartitionWritePending)
+				{
 					if(PendingHeader || PendingMetadata) PartitionDone = true;
+				}
 				else
+				{
 					if(BasePartition->GetUInt64(HeaderByteCount_UL) > 0) PartitionDone = true;
+				}
 			}
 
 			// Fall through to no-index version
@@ -3240,9 +3244,13 @@ Length mxflib::BodyWriter::WritePartition(Length Duration /*=0*/, Length MaxPart
 			if((!EssenceSharesWithMetadata) && (!PartitionDone))
 			{
 				if(PartitionWritePending)
+				{
 					if(PendingHeader || PendingMetadata) PartitionDone = true;
+				}
 				else
+				{
 					if(BasePartition->GetUInt64(HeaderByteCount_UL) > 0) PartitionDone = true;
+				}
 			}
 
 			// It's OK to continue with the current partition if:
