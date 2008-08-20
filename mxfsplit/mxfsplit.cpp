@@ -249,7 +249,7 @@ int main_process(int argc, char *argv[])
 				// DM Dictionary
 				if(tolower(*(p+1))=='d')
 				{
-					char *name=""; // default name
+					const char *name=""; // default name
 					if( '='==*(p+2) || ':'==*(p+2))	name=p+3; // explicit name
 					else if( i+1<argc ) name=argv[++i]; // explicit name in next arg
 
