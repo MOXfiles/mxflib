@@ -34,6 +34,7 @@
 #include <stdlib.h>
 
 // Standard library includes
+#include <cstring>
 #include <list>
 
 
