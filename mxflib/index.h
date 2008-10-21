@@ -158,7 +158,7 @@ namespace mxflib
 		//! Number of entries in BaseDeltaArray
 		int BaseDeltaCount;
 
-		//! Deltas for CBR data and base delta array for VBR segments
+		//! Deltas for CBR data and base delta array for VBR segments, zero if not allocated
 		DeltaEntry *BaseDeltaArray;
 
 		//! Map of edit unit position to index entry for VBR
@@ -183,7 +183,7 @@ namespace mxflib
 
 	public:
 		//! Construct an IndexTable with no CBRDeltaArray
-		IndexTable() : IndexSID(0), BodySID(0), EditUnitByteCount(0) , BaseDeltaCount(0) 
+		IndexTable() : IndexSID(0), BodySID(0), EditUnitByteCount(0) , BaseDeltaCount(0), BaseDeltaArray(NULL)
 		{ 
 			EditRate.Numerator=0; 
 			EditUnitByteCount=0; 
@@ -195,13 +195,17 @@ namespace mxflib
 		//! Free any memory used by BaseDeltaArray when this IndexTable is destroyed
 		~IndexTable() 
 		{ 
-			if(BaseDeltaCount) delete[] BaseDeltaArray; 
+			if(BaseDeltaArray) delete[] BaseDeltaArray; 
 		};
 
 		//! Define the base delta entry array from another delta entry array
 		void DefineDeltaArray(int DeltaCount, DeltaEntry *DeltaArray)
 		{
-			if(BaseDeltaCount) delete[] BaseDeltaArray;
+			if(BaseDeltaArray) 
+			{
+				delete[] BaseDeltaArray;
+				BaseDeltaArray = NULL;
+			}
 
 			BaseDeltaCount = DeltaCount;
 			if(!DeltaCount) return;
@@ -231,7 +235,11 @@ namespace mxflib
 		 */
 		void DefineDeltaArray(int DeltaCount, UInt32 *ElementSizes)
 		{
-			if(BaseDeltaCount) delete[] BaseDeltaArray;
+			if(BaseDeltaArray) 
+			{
+				delete[] BaseDeltaArray;
+				BaseDeltaArray = NULL;
+			}
 
 			BaseDeltaCount = DeltaCount;
 			if(!DeltaCount) return;

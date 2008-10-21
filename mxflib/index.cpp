@@ -377,16 +377,25 @@ IndexSegmentPtr IndexTable::AddSegment(MDObjectPtr Segment)
 		if(Ptr)
 		{
 			// Free any old delta array
-			if(BaseDeltaCount) delete[] BaseDeltaArray; 
+			if(BaseDeltaArray) 
+			{
+				delete[] BaseDeltaArray;
+				BaseDeltaArray = NULL;
+			}
 
-			BaseDeltaCount = static_cast<int>(Ptr->size());
-
-			BaseDeltaArray = new DeltaEntry[BaseDeltaCount];
+			BaseDeltaCount = static_cast<int>(Ptr->size() / 3);
+			if(BaseDeltaEntryCount) BaseDeltaArray = new DeltaEntry[BaseDeltaCount];
 
 			int Delta = 0;
 			MDObjectULList::iterator it = Ptr->begin();
 			while(it != Ptr->end())
 			{
+				if(Delta > BaseDeltaCount)
+				{
+					error("Malformed DeltaEntryArray in %s at %s\n", Segment->FullName().c_str(), Segment->GetSourceLocation().c_str());
+					break;
+				}
+
 				BaseDeltaArray[Delta].PosTableIndex = (*it).second->GetInt();
 				if(++it == Ptr->end()) break;
 
@@ -468,9 +477,10 @@ IndexSegmentPtr IndexTable::AddSegment(MDObjectPtr Segment)
 		if((BaseDeltaCount == 0) && (Ret->DeltaCount != 0))
 		{
 			BaseDeltaCount = Ret->DeltaCount;
-			BaseDeltaArray = new DeltaEntry[BaseDeltaCount];
 			if(BaseDeltaCount) 
 			{
+				if(BaseDeltaArray) delete[] BaseDeltaArray;
+				BaseDeltaArray = new DeltaEntry[BaseDeltaCount];
 				memcpy(BaseDeltaArray, Ret->DeltaArray, BaseDeltaCount * sizeof(DeltaEntry));
 			}
 		}
