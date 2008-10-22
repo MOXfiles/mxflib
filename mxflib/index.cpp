@@ -384,7 +384,7 @@ IndexSegmentPtr IndexTable::AddSegment(MDObjectPtr Segment)
 			}
 
 			BaseDeltaCount = static_cast<int>(Ptr->size() / 3);
-			if(BaseDeltaEntryCount) BaseDeltaArray = new DeltaEntry[BaseDeltaCount];
+			if(BaseDeltaCount) BaseDeltaArray = new DeltaEntry[BaseDeltaCount];
 
 			int Delta = 0;
 			MDObjectULList::iterator it = Ptr->begin();
