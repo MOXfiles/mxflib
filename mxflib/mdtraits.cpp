@@ -1126,7 +1126,7 @@ size_t MDTraits_BasicArray::ReadValue(MDValuePtr Object, const UInt8 *Buffer, si
 		Bytes += 8;
 		Size -= 8;
 
-		if(Count > (int)ItemCount)
+		if(Count > (int)ItemCount  && !UnknownCount)
 		{
 			error("Tried to read more items from batch of type %s than available - requested = %u, available = %u\n", Object->Name().c_str(), Count, ItemCount);
 		}
