@@ -590,8 +590,8 @@ namespace mxflib
 			return AddTrack(DataDD, TrackNumber, EditRate, TrackName, TrackID);
 		}
 
-		TrackPtr AddTimecodeTrack(Rational EditRate, std::string TrackName = "Timecode Track", UInt32 TrackID = 0) { return AddTimecodeTrack(0, EditRate, TrackName, TrackID); }
-		TrackPtr AddTimecodeTrack(UInt32 TrackNumber, Rational EditRate, std::string TrackName = "Timecode Track", UInt32 TrackID = 0)
+		TrackPtr AddTimecodeTrack(Rational EditRate, std::string TrackName = "Master Timecode", UInt32 TrackID = 0) { return AddTimecodeTrack(0, EditRate, TrackName, TrackID); }
+		TrackPtr AddTimecodeTrack(UInt32 TrackNumber, Rational EditRate, std::string TrackName = "Master Timecode", UInt32 TrackID = 0)
 		{
 			static const ULPtr TCDD = new UL(TrackTypeDataDefTimecode12M);
 			return AddTrack(TCDD, TrackNumber, EditRate, TrackName, TrackID);
