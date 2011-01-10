@@ -33,7 +33,6 @@
 #include <list>
 #include "mxflib/mxflib.h"
 #include "opmap.h"
-#include "mxflib/bufferlayout.h"
 
 using namespace mxflib;
 

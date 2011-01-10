@@ -37,11 +37,6 @@ using namespace std;
 
 
 #include "libprocesswrap/process.h"
-#include "libprocesswrap/dminst.h"
-
-// Definitions of the MXFixer API tokens
-#include "apiMXFixer.h"
-#include "libprocesswrap/restranslate.h"
 
 
 #include <stdio.h>

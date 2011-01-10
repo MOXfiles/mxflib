@@ -33,8 +33,6 @@ using namespace mxflib;
 
 #include "parseoptions.h"
 
-#include "libprocesswrap/dminst.h"
-
 #include <stdio.h>
 #include <iostream>
 
