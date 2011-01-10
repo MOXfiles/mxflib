@@ -27,7 +27,7 @@
  *	     distribution.
  */
 
-#include <mxflib/mxflib.h>
+#include "mxflib/mxflib.h"
 
 using namespace mxflib;
 
@@ -94,7 +94,7 @@ void mxflib::DataChunk::ResizeBuffer(size_t NewSize, bool PreserveContents /*=tr
 
 
 //! Get a (hex) string representation of the data in the buffer
-std::string mxflib::DataChunk::GetString(void)
+std::string mxflib::DataChunk::GetString(void) const
 {
 	std::string Ret;
 	unsigned i;

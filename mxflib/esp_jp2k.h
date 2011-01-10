@@ -144,7 +144,7 @@ namespace mxflib
 
 		//! Set a wrapping option for future Read and Write calls
 		/*! \return true if this EditRate is acceptable with this wrapping */
-		virtual void Use(UInt32 Stream, WrappingOptionPtr UseWrapping)
+		virtual void Use(UInt32 Stream, WrappingOptionPtr &UseWrapping)
 		{
 			SelectedWrapping = UseWrapping;
 

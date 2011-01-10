@@ -30,7 +30,7 @@
  *	     distribution.
  */
 
-#include <mxflib/mxflib.h>
+#include "mxflib/mxflib.h"
 
 using namespace mxflib;
 
@@ -83,7 +83,7 @@ PartitionInfo::PartitionInfo(PartitionPtr Part	/* = NULL */,
 
 
 //! Locate the previous partition to a given location
-/*! Finds the nearest partition that is located before a given location
+/*! Finds the nearest partition that is located at or before a given location
  *  \return Smart pointer to the PartitionInfo block, or NULL if no entries exist before the specified position
  */
 PartitionInfoPtr RIP::FindPreviousPartition(Position Pos)
@@ -172,7 +172,7 @@ PartitionInfoPtr RIP::FindPartition(UInt32 SID, Position StreamOffset)
 				StreamPosition = (*it).second->GetStreamOffset();
 
 				// If we overshoot we must retrun the previous partition - this is done by exiting the loop
-				if(StreamPosition < StreamOffset) break;
+				if(StreamPosition > StreamOffset) break;
 
 				// If we have not over-shot the desired position, we have now updated our stream position with an accurate value
 				PositionAccurate = true;
@@ -198,6 +198,10 @@ PartitionInfoPtr RIP::FindPartition(UInt32 SID, Position StreamOffset)
 					// Read the actual offset
 					StreamPosition = (*it).second->ThePartition->GetInt64("BodyOffset");
 					(*it).second->SetEstimatedStreamOffset(StreamPosition);
+
+					// If we overshoot we must retrun the previous partition - this is done by exiting the loop
+					if(StreamPosition > StreamOffset) break;
+
 					PositionAccurate = true;
 				}
 				else
@@ -224,13 +228,10 @@ PartitionInfoPtr RIP::FindPartition(UInt32 SID, Position StreamOffset)
 							/* We know the start and end of the previous partition, so start estimating */
 
 							// Use the previously calculated estimate (if we have one)
-							if((*it).second->GetEstimatedStreamOffset())
+							if((*it).second->GetEstimatedStreamOffset() != -1)
 							{
 								StreamPosition = (*it).second->GetEstimatedStreamOffset();
 								PositionAccurate = false;
-
-								// If we overshoot we must retrun the previous partition - this is done by exiting the loop
-								if(StreamPosition < StreamOffset) break;
 							}
 							else
 							{
@@ -266,7 +267,7 @@ PartitionInfoPtr RIP::FindPartition(UInt32 SID, Position StreamOffset)
 							}
 
 							// If we overshoot we must retrun the previous partition - this is done by exiting the loop
-							if(StreamPosition < StreamOffset) break;
+							if(StreamPosition > StreamOffset) break;
 
 							/* We should assume that only the header has header metadata, unless we have found some elsewhere,
 							* so if we calculated PartitionEstimate from the header, remove the header byte count */
@@ -281,6 +282,7 @@ PartitionInfoPtr RIP::FindPartition(UInt32 SID, Position StreamOffset)
 
 			// Record this as the previous one of our partitions
 			PrevStart = (*it).second->ByteOffset;
+			PrevEnd = -1;
 			PrevPartition = it;
 		}
 	

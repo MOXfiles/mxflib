@@ -31,8 +31,9 @@
 
 #include <string.h>		/* strcpy */
 
+
+#include "mxflib/mxflib.h"
 #include "sopsax.h"
-#include <mxflib/mxflib.h>
 
 using namespace mxflib;
 

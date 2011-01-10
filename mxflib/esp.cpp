@@ -42,7 +42,6 @@ using namespace mxflib;
 #include <mxflib/esp_jp2k.h>
 
 
-
 //! List of pointers to known parsers
 /*! Used only for building parsers to parse essence - the parses 
  *  in this list must not themselves be used for essence parsing 

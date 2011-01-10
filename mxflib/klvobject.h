@@ -376,7 +376,7 @@ namespace mxflib
 			Length BytesToWrite = Data.Size - Start;
 
 			// Write the requested size (if valid)
-			if((Size > 0) && (Size < BytesToWrite)) BytesToWrite = Size;
+			if((Size > 0) && ((Length)Size < BytesToWrite)) BytesToWrite = Size;
 
 			// Sanity check the size of this chunk
 			if((sizeof(size_t) < 8) && (BytesToWrite > 0xffffffff))

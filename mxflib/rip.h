@@ -32,7 +32,7 @@
 #ifndef MXFLIB__RIP_H
 #define MXFLIB__RIP_H
 
-#include <mxflib/partition.h>
+#include "mxflib/partition.h"
 
 
 #include <list>
@@ -186,7 +186,7 @@ namespace mxflib
 		PartitionInfoPtr AddPartition(PartitionPtr Part, Position Offset = -1, UInt32 SID = 0);
 
 		//! Locate the previous partition to a given location
-		/*! Finds the nearest partition that is located before a given location
+		/*! Finds the nearest partition that is located at or before a given location
 		 */
 		PartitionInfoPtr FindPreviousPartition(Position Pos);
 

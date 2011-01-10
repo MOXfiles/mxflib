@@ -30,7 +30,7 @@
  *	     distribution.
  */
 
-#include <mxflib/system.h>
+#include "mxflib/system.h"
 
 namespace mxflib
 {

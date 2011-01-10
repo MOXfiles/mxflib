@@ -33,8 +33,6 @@
 #ifndef MXFLIB__PRIMER_H
 #define MXFLIB__PRIMER_H
 
-#include <mxflib/mdtype.h>
-
 
 #include <map>
 
