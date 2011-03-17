@@ -442,29 +442,33 @@ SourceClipPtr Track::AddSourceClip(Int64 Duration /*=-1*/)
 	// Initially assume the SourceClip starts at the start of the referenced essence
 	Ret->AddChild(StartPosition_UL, 0);
 
-		// Add this SourceClip to the sequence for this track
-		MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
-		Sequence[StructuralComponents_UL]->AddChild()->MakeRef(Ret->Object);
-	
-		// Copy the data definition from the sequence
-		Ret->AddChild(ComponentDataDefinition_UL)->SetValue(Sequence[ComponentDataDefinition_UL]->PutData());
-	
-		// Add this sequence to the list of "owned" components
-		Components.push_back(SmartPtr_Cast(Ret, Component));
-	//	Components.push_back(Ret);
-	
-		// Record the track as the parent of the new SourceClip
-		Ret->SetParent(this);
-	
-		// Update the duration in the sequence
-		if(Duration < 0) 
-		{
-			Sequence->SetDValue(ComponentLength_UL);
-		}
-		else
-		{
-			UpdateDuration();
-		}
+	// Add this SourceClip to the sequence for this track
+	MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
+	Sequence[StructuralComponents_UL]->AddChild()->MakeRef(Ret->Object);
+
+	// Copy the data definition from the sequence
+	Ret->AddChild(ComponentDataDefinition_UL)->SetValue(Sequence[ComponentDataDefinition_UL]->PutData());
+
+	// Add this sequence to the list of "owned" components
+	Components.push_back(SmartPtr_Cast(Ret, Component));
+//	Components.push_back(Ret);
+
+	// Record the track as the parent of the new SourceClip
+	Ret->SetParent(this);
+
+	// Update the duration in the sequence
+	if(Duration < 0) 
+	{
+		Sequence->SetDValue(ComponentLength_UL);
+	}
+	else
+	{
+		UpdateDuration();
+	}
+
+	// Add this SourceClip to the list of components
+	Component *pComp = Ret;
+	Components.push_back(pComp);
 
 	return Ret;
 }
@@ -495,27 +499,31 @@ TimecodeComponentPtr Track::AddTimecodeComponent(UInt16 FPS, bool DropFrame, Int
 	else
 		Ret->SetInt64(ComponentLength_UL, Duration);
 
-		// Add this Timecode Component to the sequence for this track
-		MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
-		MDObjectPtr S1=Sequence[StructuralComponents_UL];
-		MDObjectPtr C1=S1->AddChild();
-		C1->MakeRef(Ret->Object);
+	// Add this Timecode Component to the sequence for this track
+	MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
+	MDObjectPtr S1=Sequence[StructuralComponents_UL];
+	MDObjectPtr C1=S1->AddChild();
+	C1->MakeRef(Ret->Object);
 
-		// Copy the data definition from the sequence
-		Ret->AddChild(ComponentDataDefinition_UL)->SetValue(Sequence[ComponentDataDefinition_UL]->PutData());
+	// Copy the data definition from the sequence
+	Ret->AddChild(ComponentDataDefinition_UL)->SetValue(Sequence[ComponentDataDefinition_UL]->PutData());
 
-		// Record the track as the parent of the new Timecode Component
-		Ret->SetParent(this);
+	// Record the track as the parent of the new Timecode Component
+	Ret->SetParent(this);
 
-		// Update the duration in the sequence
-		if(Duration < 0) 
-		{
-			Sequence->SetDValue(ComponentLength_UL);
-		}
-		else
-		{
-			UpdateDuration();
-		}
+	// Update the duration in the sequence
+	if(Duration < 0) 
+	{
+		Sequence->SetDValue(ComponentLength_UL);
+	}
+	else
+	{
+		UpdateDuration();
+	}
+
+	// Add this Timecode Component to the list of components
+	Component *pComp = Ret;
+	Components.push_back(pComp);
 
 	return Ret;
 }
@@ -558,18 +566,24 @@ DMSegmentPtr Track::AddDMSegment(Int64 EventStart /*=-1*/,Int64 Duration /*=-1*/
 		UpdateDuration();
 	}
 
+	// Add this DM Segment to the list of components
+	Component *pComp = Ret;
+	Components.push_back(pComp);
+
 	return Ret;
 }
 
-//! Update the duration field in the sequence for this track based on component durations
-/*! \return The duration, or -1 if unknown */
-Int64 Track::UpdateDuration(void)
-{
-	MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
-	Int64 SeqDuration = 0;
-	MDObjectPtr Structs = Sequence[StructuralComponents_UL];
 
-	// if the Sequence is not a valid sequence, exit now
+
+//! Get the duration of this track based on component durations
+/*! \return The duration, or -1 if unknown */
+Length Track::GetDuration(void)
+{
+	Length SeqDuration = 0;
+	MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
+	MDObjectPtr Structs = Sequence ? Sequence[StructuralComponents_UL] : NULL;
+
+	// If the Sequence is not a valid sequence, exit now
 	if( !Structs ) return -1;
 
 	MDObjectULList::iterator it = Structs->begin();
@@ -594,6 +608,22 @@ Int64 Track::UpdateDuration(void)
 		it++;
 	}
 
+	return SeqDuration;
+}
+
+
+//! Update the duration field in the sequence for this track based on component durations
+/*! \return The duration, or -1 if unknown */
+Length Track::UpdateDuration(void)
+{
+	MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
+
+	// If the Sequence is not a valid sequence, exit now
+	if( !Sequence ) return -1;
+
+	Length SeqDuration = GetDuration();
+
+
 	if(SeqDuration < 0)
 		Sequence->SetDValue(ComponentLength_UL);
 	else
@@ -601,6 +631,7 @@ Int64 Track::UpdateDuration(void)
 
 	return SeqDuration;
 }
+
 
 namespace
 {
@@ -637,7 +668,7 @@ namespace
 /*! \note If the TrackID is set manually it is the responsibility of the caller to prevent clashes */
 TrackPtr Package::AddTrack(ULPtr DataDef, UInt32 TrackNumber, Rational EditRate, std::string TrackName /*=""*/, UInt32 TrackID /*=0*/)
 {
-	mxflib_assert( DataDef);
+	mxflib_assert(DataDef);
 
 	// Smart pointer to the dictionary definition to make the target of this dict ref (or NULL for 337-1 style DataDef)
 	MDObjectPtr DictRef = NULL;
@@ -710,6 +741,39 @@ TrackPtr Package::AddTrack(ULPtr DataDef, UInt32 TrackNumber, Rational EditRate,
 
 	return Ret;
 }
+
+
+//! Add an appropriate essence track for the given source, using a specified edit rate
+TrackPtr Package::AddEssenceTrack(EssenceSource *Source, UInt32 TrackNumber, Rational EditRate, std::string TrackName /*= ""*/, UInt32 TrackID /*= 0*/)
+{
+	if(EditRate.Numerator == 0) EditRate = Source->GetEditRate();
+
+	ULPtr DataDef;
+	if(Source->IsPictureEssence())
+	{
+		DataDef = new UL(PictureEssenceTrack_UL);
+		if(TrackName.empty()) TrackName = "Picture Track";
+	}
+	else if(Source->IsSoundEssence())
+	{
+		DataDef = new UL(SoundEssenceTrack_UL);
+		if(TrackName.empty()) TrackName = "Sound Track";
+	}
+	else if(Source->IsCompoundEssence())
+	{
+		// DRAGONS: Only the picture track will be added for compound essence!
+		DataDef = new UL(PictureEssenceTrack_UL);
+		if(TrackName.empty()) TrackName = "Picture Track";
+	}
+	else
+	{
+		DataDef = new UL(DataEssenceTrack_UL);
+		if(TrackName.empty()) TrackName = "Data Track";
+	}
+
+	return AddTrack(DataDef, TrackNumber, EditRate, TrackName, TrackID);
+};
+
 
 
 //! Update the duration field in each sequence in each track for this package

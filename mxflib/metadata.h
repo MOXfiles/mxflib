@@ -467,8 +467,8 @@ namespace mxflib
 			MDObjectPtr EditRate = Child("EditRate");
 			if(EditRate)
 			{
-				double FPS = ((double)GetInt("Numerator", 1)) / ((double)GetInt("Denominator", 1));
-				return AddTimecodeComponent((UInt16)FPS, (GetInt("Denominator") == 1001), Start, Duration);
+				double FPS = ((double)EditRate->GetInt("Numerator", 1)) / ((double)EditRate->GetInt("Denominator", 1));
+				return AddTimecodeComponent((UInt16)(FPS + 0.5), (EditRate->GetInt("Denominator") == 1001), Start, Duration);
 			}
 
 			// Default to an edit rate of 1 if no known edit rate
@@ -478,17 +478,18 @@ namespace mxflib
 		//! Add a Timecode Component to a track
 		TimecodeComponentPtr AddTimecodeComponent(UInt16 FPS, bool DropFrame, Int64 Start = 0, Int64 Duration = -1);
 
-
-
-
 		//! Add a DMSegment to a track
 		DMSegmentPtr AddDMSegment(Int64 EventStart = -1, Int64 Duration = -1);
 
 		//! Add a DMSourceClip to a track
 		DMSourceClipPtr AddDMSourceClip(Int64 Duration = -1);
 
+		//! Get the duration of this track based on component durations
+		/*! \return The duration, or -1 if unknown */
+		Length GetDuration(void);
+
 		//! Update the duration field in the sequence for this track based on component durations
-		Int64 UpdateDuration(void);
+		Length UpdateDuration(void);
 
 		//! Get the package containing this track
 		PackageParent GetParent(void) { return Parent; };
@@ -613,8 +614,6 @@ namespace mxflib
 		Package(ULPtr &BaseUL) : LastTrackID(0) { Object = new MDObject(BaseUL); if(Object) Object->SetOuter(this); }
 
 
-
-
 		//! Add a timeline track to the package
 		TrackPtr AddTrack(ULPtr DataDef, UInt32 TrackNumber, Rational EditRate, std::string TrackName = "", UInt32 TrackID = 0);
 
@@ -623,6 +622,19 @@ namespace mxflib
 
 		//! Add a static track to the package
 		TrackPtr AddTrack(ULPtr DataDef, UInt32 TrackNumber, std::string TrackName = "", UInt32 TrackID = 0);
+
+		//! Add an appropriate essence track for the given source
+		TrackPtr AddEssenceTrack(EssenceSource *Source, std::string TrackName = "", UInt32 TrackID = 0) 
+		{ 
+			Rational Zero(0,0);
+			return AddEssenceTrack(Source, Zero, TrackName, TrackID);
+		}
+
+		//! Add an appropriate essence track for the given source, using a specified edit rate
+		TrackPtr AddEssenceTrack(EssenceSource *Source,  Rational EditRate, std::string TrackName = "", UInt32 TrackID = 0) { return AddEssenceTrack(Source, 0, EditRate, TrackName, TrackID); }
+
+		//! Add an appropriate essence track for the given source, using a specified edit rate
+		TrackPtr AddEssenceTrack(EssenceSource *Source, UInt32 TrackNumber, Rational EditRate, std::string TrackName = "", UInt32 TrackID = 0);
 
 		TrackPtr AddPictureTrack(Rational EditRate, std::string TrackName = "Picture Track", UInt32 TrackID = 0) { return AddPictureTrack(0, EditRate, TrackName, TrackID); }
 		TrackPtr AddPictureTrack(UInt32 TrackNumber, Rational EditRate, std::string TrackName = "Picture Track", UInt32 TrackID = 0)
