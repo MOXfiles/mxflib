@@ -133,5 +133,7 @@ namespace mxflib
 
 #include "mxflib/metadict.h"
 
+#include "mxflib/metabuilder.h"
+
 #endif // MXFLIB__MXFLIB_H
 
