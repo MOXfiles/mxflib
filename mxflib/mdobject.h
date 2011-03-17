@@ -1692,13 +1692,13 @@ error("UNSUPPORTED: Trying to determine ref target of %s\n", FullName().c_str())
 		MDObjectParent GetRef(ULPtr &ChildType) const { return GetRef(*ChildType); }
 
 		//! Make a link from this reference source to the specified target set
-		bool MakeRef(MDObjectPtr &TargetSet, bool ForceLink = false) { return MakeRef(TargetSet, InstanceUID_UL, ForceLink); }
+		bool MakeRef(MDObject *TargetSet, bool ForceLink = false) { return MakeRef(TargetSet, InstanceUID_UL, ForceLink); }
 
 		//! Make a link from this reference source to the specified target set via the given target property
-		bool MakeRef(MDObjectPtr &TargetSet, const UL &Target, bool ForceLink = false);
+		bool MakeRef(MDObject *TargetSet, const UL &Target, bool ForceLink = false);
 
 		//! Make a link from the given source child of this set to the specified target set, adding a new child if required
-		bool MakeRef(const UL &Source, MDObjectPtr &TargetSet, bool ForceLink = false)
+		bool MakeRef(const UL &Source, MDObject *TargetSet, bool ForceLink = false)
 		{
 			MDObjectPtr Ptr = Child(Source);
 			if(!Ptr) Ptr = AddChild(Source);
@@ -1708,7 +1708,7 @@ error("UNSUPPORTED: Trying to determine ref target of %s\n", FullName().c_str())
 
 		//! Add a new source child to the specified property of this set and link it to the specified target set
 		/*! This is used for adding new reference entries to batches or arrays in this set */
-		bool AddRef(const UL &Source, MDObjectPtr &TargetSet, bool ForceLink = false)
+		bool AddRef(const UL &Source, MDObject *TargetSet, bool ForceLink = false)
 		{
 			MDObjectPtr Ptr = Child(Source);
 			if(!Ptr) Ptr = AddChild(Source);

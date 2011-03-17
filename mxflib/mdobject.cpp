@@ -2553,12 +2553,12 @@ UInt32 MDObject::WriteKey(DataChunkPtr &Buffer, DictKeyFormat Format, PrimerPtr 
  *		  must be a set (or pack) containing a property of Target type which is a
  *		  reference target
  */
-bool MDObject::MakeRef(MDObjectPtr &TargetSet, const UL &Target, bool ForceLink /*=false*/)
+bool MDObject::MakeRef(MDObject *TargetSet, const UL &Target, bool ForceLink /*=false*/)
 {
 	DataChunk TheUID_Data;
 
 	// Does the target set already have an InstanceUID?
-	MDObjectPtr TargetUID = TargetSet[Target];
+	MDObjectPtr TargetUID = TargetSet->Child(Target);
 
 	// If not add one
 	if(!TargetUID)
