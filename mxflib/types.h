@@ -412,10 +412,11 @@ namespace mxflib
 		 */
 		UMID(const UInt8 *ID = NULL) : Identifier32(ID) {};
 
-		//! Construct a UMID from a sequence of bytes
-		/*! \note The byte string must contain at least 16 bytes or errors will be produced when it is used
-		 */
+		//! Construct a UMID a smart pointer to another UMID
 		UMID(const SmartPtr<UMID> ID) { if(!ID) memset(Ident,0,32); else memcpy(Ident,ID->Ident, 32); };
+
+		//! Construct a UMID from a string
+		UMID(std::string String);
 
 		//! Copy constructor
 		UMID(const UMID &RHS) { memcpy(Ident,RHS.Ident, 16); };

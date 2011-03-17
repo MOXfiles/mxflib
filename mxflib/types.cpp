@@ -1368,3 +1368,22 @@ std::string mxflib::UUID::FormatString(UInt8 const *Ident, OutputFormatEnum Form
 
 	return Ret;
 }
+
+
+//! Construct a UMID from a string
+UMID::UMID(std::string String)
+{
+	DataChunkPtr Bytes = Hex2DataChunk(String);
+
+	if(Bytes->Size < 32)
+	{
+		error("Invalid UMID %s\n", String);
+		
+		// Copy what we can!
+		memset(Ident, 0, Bytes->Size);
+
+		return;
+	}
+
+	memcpy(Ident, 0, 32);
+}
