@@ -407,7 +407,7 @@ Rational mxflib::WAVE_PCM_EssenceSubParser::GetPreferredEditRate(void)
 	if(Samples == floor(Samples))
 	{
 		// Return 24ms edit rate
-		return Rational(1000,24);
+		return Rational(24,1000);
 	}
 
 	/* Try 100ms next */
