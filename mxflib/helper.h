@@ -36,15 +36,12 @@
 
 namespace mxflib
 {
-	// Forware declare MDObjectPtr
+	// Forware declare MDObjectPtr and EssenceSource
 	class MDObjectPtr;
+	class EssenceSource;
 
 	// Declare the global null-ul which is 16 zero bytes
 	extern const UL Null_UL;
-//_atoi64 is s wondows only - rewrite to linux version
-#ifndef _WIN32
-#define _atoi64 atoll
-#endif
 	
 	inline Int64 ato_Int64(const std::string str) { return _atoi64(str.c_str()); };
 	inline Int64 ato_UInt64(const std::string str) { return (UInt64)_atoi64(str.c_str()); };
@@ -157,10 +154,13 @@ namespace mxflib
 	int EncodeOID( UInt8* presult, UInt64 subid, int length );
 
 	//! Build a new UMID
-	UMIDPtr MakeUMID(int Type, const UUIDPtr AssetID = NULL);
+	UMIDPtr MakeUMID(int Type, const UUID *AssetID = NULL);
+
+	//! Build a new UMID - for a specific source
+	UMIDPtr MakeUMID(EssenceSource *Source, const UUID *AssetID = NULL);
 
 	//! Build a new UMID from given values
-	//!AssetID is 16 bytes with the desired UUID
+	/*! AssetID is 16 bytes with the desired UUID */
 	UMIDPtr MakeUMIDFromUUID(  int Type,  const UInt8 * AssetID );
 
 	//! Read a "Chunk" from a non-MXF file

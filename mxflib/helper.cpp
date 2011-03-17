@@ -237,7 +237,7 @@ UMIDPtr mxflib::MakeUMIDFromUUID(  int Type, const UInt8* AssetID )
 
 
 //! Build a new UMID
-UMIDPtr mxflib::MakeUMID(int Type, const UUIDPtr AssetID)
+UMIDPtr mxflib::MakeUMID(int Type, const UUID *AssetID)
 {
 	static const UInt8 UMIDBase[10] = { 0x06, 0x0a, 0x2b, 0x34, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
 	UInt8 Buffer[32];
@@ -279,6 +279,30 @@ UMIDPtr mxflib::MakeUMID(int Type, const UUIDPtr AssetID)
 }
 
 
+//! Build a new UMID - for a specific source
+UMIDPtr mxflib::MakeUMID(EssenceSource *Source, const UUID *AssetID)
+{
+	if(Source->IsPictureEssence())
+	{
+		return MakeUMID( 0x01, AssetID ); // Picture essence
+	}
+	else if(Source->IsSoundEssence())
+	{
+		return MakeUMID( 0x02, AssetID ); // Sound essence
+	}
+	else if(Source->IsDataEssence())
+	{
+		return MakeUMID( 0x03, AssetID ); // Data essence
+	}
+	else if(Source->IsCompoundEssence())
+	{
+		return MakeUMID( 0x0d, AssetID ); // Compound essence
+	}
+
+	return MakeUMID( 0x0f, AssetID ); // "Not identified" essence
+}
+
+
 //! Read a "Chunk" from a non-MXF file
 DataChunkPtr mxflib::FileReadChunk(FileHandle InFile, size_t Size)
 {
@@ -300,9 +324,9 @@ DataChunkPtr mxflib::Hex2DataChunk(std::string Hex)
 	// Build the result chunk
 	DataChunkPtr Ret = new DataChunk();
 
-	// Use a granularity of 16 as most hex strings are likely to be 16 or 32 bytes
+	// Use a granularity of 32 as most hex strings are likely to be 16 or 32 bytes
 	// DRAGONS: We may want to revise this later
-	Ret->SetGranularity(16);
+	Ret->SetGranularity(32);
 
 	// Index the hex string
 	char const *p = Hex.c_str();
