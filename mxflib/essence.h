@@ -1506,6 +1506,9 @@ namespace mxflib
 
 	/* Make top-level versions of EssenceParser::WrappingConfig typedefs */
 
+	//! Configuration data for an essence parser with a specific wrapping option
+	typedef EssenceParser::WrappingConfig WrappingConfig;
+
 	//! Smart pointer to a WrappingConfig object
 	typedef EssenceParser::WrappingConfigPtr WrappingConfigPtr;
 
