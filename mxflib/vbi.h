@@ -302,7 +302,7 @@ namespace mxflib
 		virtual bool EndOfItem(void) { return (BufferOffset == 0); }
 
 		//! Get the GCEssenceType to use when wrapping this essence in a Generic Container
-		virtual UInt8 GetGCEssenceType(void) { return 0x17; }
+		virtual UInt8 GetGCEssenceType(void) const { return 0x17; }
 
 		//! Get the current position in GetEditRate() sized edit units
 		/*! This is relative to the start of the stream, so the first edit unit is always 0.
