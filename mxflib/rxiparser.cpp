@@ -1583,6 +1583,7 @@ else { warning("Found type kind %s - not yet supported\n", ThisLeaf.TypeKind.c_s
 
 namespace
 {
+#ifdef HAVE_EXPAT
 	//! XML callback - Handle character data
 	void CharacterHandler(void *user_data, const XML_Char *s, int len)
 	{
@@ -1606,7 +1607,7 @@ namespace
 		// Free our working buffer
 		delete[] pBuffer;
 	}
-
+#endif // HAVE_EXPAT
 
 	//! XML callback - Deal with start tag of an element
 	void DictLoad_startElement(void *user_data, const char *name, const char **attrs)
