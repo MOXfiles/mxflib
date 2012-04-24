@@ -5,8 +5,6 @@
 #include <sstream>
 #include <iomanip>
 
-#include "utility/sourcemeta.h"
-
 
 namespace mxflib
 {
