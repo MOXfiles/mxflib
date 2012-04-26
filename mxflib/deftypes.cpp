@@ -486,9 +486,46 @@ int mxflib::LoadTypes(TypeRecordList &TypesData, SymbolSpacePtr DefaultSymbolSpa
 						}
 					}
 
-					// Add this child type to the list
-					ULPtr NewUL = (*subit)->UL ? (*subit)->UL : RandomUL();
-					MDTypePtr SubType = MDType::AddInterpretation((*subit)->Type, BaseType, NewUL, (*subit)->Size);
+					// Is this a duplicate of an existing entry (when extending or re-loading the dictionary)
+					MDTypePtr SubType;
+					if(Extending)
+					{
+						MDType::iterator Child_it = Ptr->begin();
+						while(Child_it != Ptr->end())
+						{
+							if((*Child_it).first == (*subit)->Type)
+							{
+								if(((*subit)->UL) && (!(*subit)->UL->Matches((*Child_it).second->GetTypeUL())))
+								{
+									error("Member %s of %s has UL %s in new dictionary, but already found member with that name and UL %s\n", 
+										  (*subit)->Type.c_str(), (*it)->Type.c_str(), (*subit)->UL->GetString().c_str(), (*Child_it).second->GetTypeUL()->GetString().c_str());
+									break;
+								}
+
+								SubType = (*Child_it).second;
+								break;
+							}
+							else if(((*subit)->UL) && ((*subit)->UL->Matches((*Child_it).second->GetTypeUL())))
+							{
+								error("Member %s of %s has UL %s in new dictionary, but already found member with that UL named %s\n", 
+									  (*subit)->Type.c_str(), (*it)->Type.c_str(), (*subit)->UL->GetString().c_str(), (*Child_it).second->Name().c_str());
+								break;
+							}
+
+							Child_it++;
+						}
+
+						// Move out another layer on error
+						if(!SubType) break;
+					}
+					else
+					{
+						// Add this child type to the list
+						ULPtr NewUL = (*subit)->UL ? (*subit)->UL : RandomUL();
+						SubType = MDType::AddInterpretation((*subit)->Type, BaseType, NewUL, (*subit)->Size);
+					}
+					
+					// Add this child - even if it is a duplicate of an existing when redefining
 					ChildList.push_back(SubType);
 
 					subit++;
@@ -649,7 +686,9 @@ int mxflib::LoadTypes(TypeRecordList &TypesData, SymbolSpacePtr DefaultSymbolSpa
 
 				if(!Label::Insert((*it)->Type, (*it)->Detail, (*it)->UL, Mask))
 				{
-					warning("Failed to add label %s - this probably means that it matches an existing label definition", (*it)->Type.c_str());
+					// Warn if this is a redefinition
+					LabelPtr prior = Label::Find( (*it)->UL );
+					if( prior && prior->GetName() != (*it)->Type ) warning( "Label with UL %s already exists with name %s \n", (*it)->UL->GetString().c_str(), (*it)->Type.c_str());
 				}
 				else
 				{
@@ -800,7 +839,7 @@ namespace
 		ThisClass->Detail = ClassData->Detail;
 		ThisClass->Usage = ClassData->Usage;
 		ThisClass->Base = ClassData->Base;
-		ThisClass->Tag = ClassData->Tag;
+		ThisClass->LocalTag = ClassData->LocalTag;
 		
 		UInt8 ULBuffer[16];
 		int Count = ReadHexStringOrUL(ClassData->UL, 16, ULBuffer, " \t.");
