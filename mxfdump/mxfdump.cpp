@@ -42,6 +42,12 @@ MXFLIB_DICTIONARY_END
 // Include the bootstrap dictionary
 #include "bootdict.h"
 
+// The version of this aplication
+const UInt16 VersionMajor = 1;
+const UInt16 VersionMinor = 2;
+const UInt16 VersionPatch = 0;
+const UInt16 VersionBuild = 120;
+
 
 #include <stdio.h>
 #include <iostream>
@@ -75,6 +81,9 @@ static bool SortedDump = false;
 //! Flag to say whether IDs such as UUID and UMID and Timestamps will be dumped
 static bool DumpIDs = true;
 
+//! Flag to say whether Ident version details such as ProductVersion will be dumped
+static bool DumpIdents = true;
+
 //! Flag for basic compiled dictionary as bootstrap when loading a metadictionary
 static bool BootstrapDict = false;
 
@@ -82,6 +91,10 @@ static bool BootstrapDict = false;
 //! Flag for diplaying baseline UL of sets unsing the ObjectClass extention mechanism
 static bool ShowBaseline = false;
 #endif // OPTION3ENABLED
+
+//! Dump the specified file
+/*! \ret 0 if all OK */
+int DumpFile(std::string Name);
 
 static void DumpObject(MDObjectPtr Object, std::string Prefix);
 
@@ -113,6 +126,10 @@ int main_process(int argc, char *argv[]);
 //! Do the main processing and pause if required
 int main(int argc, char *argv[]) 
 { 
+	char VersionText[256];
+	snprintf(VersionText, 255, "MXFDump %d.%d.%d(%d) of %s %s", VersionMajor, VersionMinor, VersionPatch, VersionBuild, __DATE__, __TIME__);
+	HandleVersionRequest(argc, argv, VersionText);
+
 	int Ret = main_process(argc, argv);
 
 	if(PauseBeforeExit) PauseForInput();
@@ -143,7 +160,10 @@ int main_process(int argc, char *argv[])
 			else if((argv[i][1] == 'c') || (argv[i][1] == 'C'))
 			{
 				if(argv[i][2] == '0')
+				{
 					DumpIDs = false;
+					if(argv[i][3] == '0') DumpIdents = false;
+				}
 				else
 					CheckDump = true;
 			}
@@ -273,15 +293,25 @@ int main_process(int argc, char *argv[])
 		UpdateTraitsMapping("Timestamp", new MessageTraits("{Timestamp}"));
 	}
 
+	return DumpFile(argv[num_options+1]);
+}
+
+
+//! Dump the specified file
+/*! \ret 0 if all OK */
+int DumpFile(std::string Name)
+{
 	MXFFilePtr TestFile = new MXFFile;
-	if (! TestFile->Open(argv[num_options+1], true))
+
+	if(!TestFile->Open(Name, true))
 	{
-		perror(argv[num_options+1]);
+		perror(Name.c_str());
 		return 1;
 	}
 
 	// Get a RIP (however possible)
 	TestFile->GetRIP();
+
 
 	unsigned int PartitionNumber = 0;
 	RIP::iterator it = TestFile->FileRIP.begin();
@@ -323,8 +353,8 @@ int main_process(int argc, char *argv[])
 					}
 
 					// Read any index table segments!
-					MDObjectListPtr Segments = ThisPartition->ReadIndex();
-					if(Segments->empty())
+					DataChunkPtr IndexChunk = ThisPartition->ReadIndexChunk();
+					if((!IndexChunk) || (IndexChunk->Size == 0))
 					{
 						printf("No index table in this partition\n");
 					}
@@ -332,24 +362,20 @@ int main_process(int argc, char *argv[])
 					{
 						IndexTablePtr Table = new IndexTable;
 
-						MDObjectList::iterator it = Segments->begin();
+						Table->AddSegments(IndexChunk);
 
-						while(it != Segments->end())
+						IndexSegmentMap::iterator it = Table->SegmentMap.begin();
+						while(it != Table->SegmentMap.end())
 						{
 							// Summarize this new segment
 							
 							UInt32 Streams = 1;
-							MDObjectPtr DeltaEntryArray = (*it)[DeltaEntryArray_UL];
-							if(DeltaEntryArray && DeltaEntryArray->GetType()->size())
-							{
-								Streams = static_cast<UInt32>(DeltaEntryArray->size() / DeltaEntryArray->GetType()->size());
-								if(Streams == 0) Streams = 1;	// Fix for bad DeltaEntryArray
-							}
+							if((*it).second->DeltaArray && (*it).second->DeltaCount) Streams = (*it).second->DeltaCount;
 
-							Position Start = (*it)->GetInt64(IndexStartPosition_UL);
-							Length Duration = (*it)->GetInt64(IndexDuration_UL);
-							UInt32 IndexSID = (*it)->GetUInt(IndexSID_UL);
-							UInt32 BodySID = (*it)->GetUInt(BodySID_UL);
+							Position Start = (*it).second->StartPosition;
+							Length Duration = (*it).second->EntryCount;
+							UInt32 IndexSID = Table->IndexSID;
+							UInt32 BodySID = Table->BodySID;
 							
 							if(Duration == 0) printf("CBR Index Table Segment (covering whole Essence Container) :\n");
 							else printf("\nIndex Table Segment (first edit unit = %s, duration = %s) :\n", Int64toString(Start).c_str(), Int64toString(Duration).c_str());
@@ -387,8 +413,8 @@ int main_process(int argc, char *argv[])
 						}
 
 						// Read any index table segments!
-						MDObjectListPtr Segments = ThisPartition->ReadIndex();
-						if(Segments->empty())
+						DataChunkPtr IndexChunk = ThisPartition->ReadIndexChunk();
+						if((!IndexChunk) || (IndexChunk->Size == 0))
 						{
 							printf("No index table in this partition\n");
 						}
@@ -396,26 +422,20 @@ int main_process(int argc, char *argv[])
 						{
 							IndexTablePtr Table = new IndexTable;
 
-							MDObjectList::iterator it = Segments->begin();
+							Table->AddSegments(IndexChunk);
 
-							while(it != Segments->end())
+							IndexSegmentMap::iterator it = Table->SegmentMap.begin();
+							while(it != Table->SegmentMap.end())
 							{
-								Table->AddSegment(*it);
-							
-								// Demonstrate this new segment
+								// Summarize this new segment
 								
 								UInt32 Streams = 1;
-								MDObjectPtr DeltaEntryArray = (*it)[DeltaEntryArray_UL];
-								if(DeltaEntryArray)
-								{
-									Streams = static_cast<UInt32>(DeltaEntryArray->size());
-									if(Streams == 0) Streams = 1;	// Fix for bad DeltaEntryArray
-								}
+								if((*it).second->DeltaArray && (*it).second->DeltaCount) Streams = (*it).second->DeltaCount;
 
-								Position Start = (*it)->GetInt64(IndexStartPosition_UL);
-								Length Duration = (*it)->GetInt64(IndexDuration_UL);
-								UInt32 IndexSID = (*it)->GetUInt(IndexSID_UL);
-								UInt32 BodySID = (*it)->GetUInt(BodySID_UL);
+								Position Start = (*it).second->StartPosition;
+								Length Duration = (*it).second->EntryCount;
+								UInt32 IndexSID = Table->IndexSID;
+								UInt32 BodySID = Table->BodySID;
 								
 								if(Duration == 0) printf("CBR Index Table Segment (covering whole Essence Container) :\n");
 								else printf("\nIndex Table Segment (first edit unit = %s, duration = %s) :\n", Int64toString(Start).c_str(), Int64toString(Duration).c_str());
@@ -448,9 +468,9 @@ int main_process(int argc, char *argv[])
 									{
 										IndexPosPtr Pos = Table->Lookup(Start + i,j);
 										printf("  EditUnit %3s for stream %d is at 0x%s", Int64toString(Start + i).c_str(), j, Int64toHexString(Pos->Location,8).c_str());
-										printf(", TempOffset=%d", Pos->TemporalOffset);
+	///									printf(", TempOffset=%d", Pos->TemporalOffset);
 										printf(", Flags=%02x", Pos->Flags);
-	///									printf(", Keyframe is at 0x%s", Int64toHexString(Pos->KeyLocation,8).c_str() );
+										printf(", Keyframe 0x%s", Int64toHexString(Pos->KeyLocation,8).c_str() );
 
 										if(Pos->Exact) printf("  *Exact*\n");
 										else if(Pos->OtherPos) printf(" (Location of un-reordered position %s)\n", Int64toString(Pos->ThisPos).c_str());
@@ -526,6 +546,7 @@ int main_process(int argc, char *argv[])
 		}
 	}
 */
+
 	TestFile->Close();
 
 /*	PrimerPtr NewPrimer = new Primer;
@@ -608,12 +629,21 @@ void DumpObject(MDObjectPtr Object, std::string Prefix)
 	{
 		if(Object->GetRefType() == ClassRefStrong)
 		{
-			printf("%s%s = %s\n", Prefix.c_str(), Object->Name().c_str(), Object->GetString().c_str());
+			if(Object->EffectiveRefNested())
+			{
+				printf("%s%s -> Nested Item\n", Prefix.c_str(), Object->Name().c_str(), Object->GetLink()->Name().c_str());
 
-			if(DumpLocation) printf("0x%s : ", Int64toHexString(Object->GetLocation(),8).c_str());
-			printf("%s%s -> Strong Reference to %s\n", Prefix.c_str(), Object->Name().c_str(), Object->GetLink()->Name().c_str());
+				DumpObject(Object->GetLink(), Prefix + "  ");
+			}
+			else
+			{
+				printf("%s%s = %s\n", Prefix.c_str(), Object->Name().c_str(), Object->GetString().c_str());
 
-			DumpObject(Object->GetLink(), Prefix + "  ");
+				if(DumpLocation) printf("0x%s : ", Int64toHexString(Object->GetLocation(),8).c_str());
+				printf("%s%s -> Strong Reference to %s\n", Prefix.c_str(), Object->Name().c_str(), Object->GetLink()->Name().c_str());
+
+				DumpObject(Object->GetLink(), Prefix + "  ");
+			}
 		}
 		else if(Object->GetRefType() == ClassRefGlobal)
 		{
@@ -654,16 +684,22 @@ void DumpObject(MDObjectPtr Object, std::string Prefix)
 		}
 		else
 		{
+//if(Object->Name().find("Unknown") == std::string::npos)
 			// Check first for values that are not reference batches
 			if(Object->IsAValue())
 			{
-//if(Object->Name().find("Unknown") == std::string::npos)
-				printf("%s%s = %s\n", Prefix.c_str(), Object->Name().c_str(), Object->GetString().c_str());
+				if((!DumpIdents) && Object->GetParent() && Object->GetParent()->IsA(Identification_UL))
+				{
+					printf("%s%s = {Value}\n", Prefix.c_str(), Object->Name().c_str());
+				}
+				else
+					printf("%s%s = %s\n", Prefix.c_str(), Object->Name().c_str(), Object->GetString().c_str());
+
 //else			printf("%s%s\n", Prefix.c_str(), Object->Name().c_str());
-if(Object->GetRefType() == ClassRefMeta)
-	printf("%s%s is an unsatisfied MetaRef\n", Prefix.c_str(), Object->Name().c_str());
-else if(Object->GetRefType() == ClassRefDict)
-	printf("%s%s is an unsatisfied DictRef\n", Prefix.c_str(), Object->Name().c_str());
+//if(Object->GetRefType() == ClassRefMeta)
+//	printf("%s%s is an unsatisfied MetaRef\n", Prefix.c_str(), Object->Name().c_str());
+//else if(Object->GetRefType() == ClassRefDict)
+//	printf("%s%s is an unsatisfied DictRef\n", Prefix.c_str(), Object->Name().c_str());
 			}
 			else
 			{
