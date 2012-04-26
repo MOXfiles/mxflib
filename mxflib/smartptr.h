@@ -85,14 +85,18 @@ namespace mxflib
 	protected:
 		// A number of pure virtual functions that the reference counter needs
 
-		virtual void __IncRefCount() =0;				//!< Increment the number of references
-		virtual void __DecRefCount() =0;				//!< Decrement the number of references, if none left delete the object
-		virtual T * GetPtr() =0;						//!< Get a pointer to the object
-		virtual IRefCount<T> * GetRefC() =0;			//!< Get a pointer to the reference counter
+		virtual void __IncRefCount() =0;					//!< Increment the number of references
+		virtual void __DecRefCount() =0;					//!< Decrement the number of references, if none left delete the object
+		virtual T * GetPtr() =0;							//!< Get a pointer to the object
+		virtual IRefCount<T> * GetRefC() =0;				//!< Get a pointer to the reference counter
 
-		virtual void AddRefC(ParentPtr<T> &Ptr) =0;		//!< Add a parent pointer to this object
-		virtual void DeleteRef(ParentPtr<T> &Ptr) =0;	//!< Delete a parent pointer to this object
-		virtual void ClearParents(void) =0;				//!< Clear all parent pointers
+		virtual void AddRefC(ParentPtr<T> &Ptr) =0;			//!< Add a parent pointer to this object
+		virtual void DeleteRef(ParentPtr<T> &Ptr) =0;		//!< Delete a parent pointer to this object
+		virtual void ClearParents(void) =0;					//!< Clear all parent pointers
+
+	public:
+		virtual void SetTransient(bool Value = true) =0;	//!< Set the transient value flag
+		virtual bool IsTransient(void) = 0;					//!< Is this a transient value?
 
 		virtual ~IRefCount() { };
 	};
@@ -129,6 +133,10 @@ namespace mxflib
 		typedef ParentPtr<T> LocalParent;					//!< Parent pointer to this type
 		typedef std::list<LocalParent*> LocalParentList;	//!< List of pointers to parent pointers
 		LocalParentList *ParentPointers;					//!< List of parent pointers to this object
+
+		bool Transient;										//!< If set true, this counted object is intended as a temporary carrier for a value
+															/*!< This means that when a smart pointer to this object is called, rather than setting the pointer
+															 *   to reference this object, the value is copied from this object into the existing referenced target */
 
 #ifndef NO_SP_MUTEX
 #ifdef _WIN32
@@ -309,6 +317,10 @@ namespace mxflib
 #endif //NO_SP_MUTEX
 		}
 
+	public:
+		virtual void SetTransient(bool Val = true) { Transient = Val; }			//!< Set the transient value flag
+		virtual bool IsTransient(void) { return Transient; }					//!< Is this a transient value?
+
 	protected:
 		//! Constructor for the RefCount class
 		RefCount()
@@ -325,11 +337,14 @@ namespace mxflib
 			// item quickly when it is deleted (most objects are first-in-last-out)
 			PTRCHECK( PtrCheckList.push_front(PtrCheckListItemType((void*)this, PrintInfo())); )
 
-				// No references yet!
-				__m_counter = 0;
+			// No references yet!
+			__m_counter = 0;
 
 			// No parent pointers (yet) reference this item
 			ParentPointers = NULL;
+
+			// Not a transient object
+			Transient = false;
 
 			PTRDEBUG( debug("%p Build new (zero) count\n", this); )
 		}
@@ -354,6 +369,10 @@ namespace mxflib
 
 			// No parent pointers (yet) reference this item
 			ParentPointers = NULL;
+
+			// Not a transient object
+			// TODO: Is there any case where we should copy the existing value?
+			Transient = false;
 
 			PTRDEBUG( debug("%p Copy Construct new (zero) count\n", this); )
 		}
@@ -620,10 +639,28 @@ namespace mxflib
 		}
 
 		//! Assign another smart pointer
-		SmartPtr & operator = (const SmartPtr<T> &sp) {__Assign(sp.__m_refcount); return *this;}
+		SmartPtr & operator = (const SmartPtr<T> &sp) 
+		{
+			// If this is a pointer to a transient value, copy the value rather than setting the pointer
+			if(sp.__m_refcount && sp.__m_refcount->IsTransient())
+			{
+				if(__m_refcount) (*__m_refcount) = (*sp.__m_refcount);
+			}
+			else
+				__Assign(sp.__m_refcount); return *this;
+		}
 
 		//! Assign pointer or NULL
-		SmartPtr & operator = (IRefCount<T> * ptr) {__Assign(ptr); return *this;}
+		SmartPtr & operator = (IRefCount<T> * ptr) 
+		{
+			// If this is a pointer to a transient value, copy the value rather than setting the pointer
+			if(ptr && ptr->IsTransient())
+			{
+				if(__m_refcount) (*__m_refcount) = (*ptr);
+			}
+			else
+				__Assign(ptr); return *this;
+		}
 
 		//! Give access to members of T
 		T * operator ->()
@@ -676,6 +713,9 @@ namespace mxflib
 
 		//! Set the debug name
 		PTRDEBUG( void SetDebugName(std::string Name) { DebugName = Name; } )
+
+		//! Simple true/false for a smart pointer
+		operator bool() { return (GetPtr() != 0); }
 	};
 }
 
@@ -725,6 +765,13 @@ namespace mxflib
 
 		//!	Construct a parent pointer to an object
 		ParentPtr(IRefCount<T> * ptr)
+		{
+			this->__m_refcount = NULL;
+			__Assign(ptr);
+		}
+
+		//!	Construct a parent pointer to an object
+		ParentPtr(T * ptr)
 		{
 			this->__m_refcount = NULL;
 			__Assign(ptr);
