@@ -1,8 +1,8 @@
 
 	// Types definitions converted from file dict.xml
 	MXFLIB_TYPE_START(DictData_Types)
-		MXFLIB_TYPE_BASIC("Float32", "32 bit IEEE Floating Point", "", 4, false, false)
-		MXFLIB_TYPE_BASIC("Float64", "64 bit IEEE Floating Point", "", 8, false, false)
+		MXFLIB_TYPE_BASIC("Float32", "32 bit IEEE Floating Point", "urn:smpte:ul:060e2b34.01040101.01020100.00000000", 4, false, false)
+		MXFLIB_TYPE_BASIC("Float64", "64 bit IEEE Floating Point", "urn:smpte:ul:060e2b34.01040101.01020300.00000000", 8, false, false)
 		MXFLIB_TYPE_BASIC("Float80", "80 bit IEEE Floating Point", "", 10, false, false)
 		MXFLIB_TYPE_BASIC_EX("Int8", "8 bit integer", "urn:x-ul:060E2B34.0104.0101.01010500.00000000", 1, false, NULL, TypeFlags_Baseline)
 		MXFLIB_TYPE_BASIC_EX("Int16", "16 bit integer", "urn:x-ul:060E2B34.0104.0101.01010600.00000000", 2, false, NULL, TypeFlags_Endian + TypeFlags_Baseline)
@@ -59,6 +59,7 @@
 		MXFLIB_TYPE_MULTIPLE("RAW", "Raw data bytes, unknown representation", "UInt8", "", ARRAYIMPLICIT, 0)
 		MXFLIB_TYPE_MULTIPLE("RAWBatch", "Batch of Raw data items", "RAW", "", ARRAYEXPLICIT, 0)
 		MXFLIB_TYPE_MULTIPLE("ChannelStatusModeTypeBatch", "Batch of ChannelStatusModeTypes", "ChannelStatusModeType", "", ARRAYEXPLICIT, 0)
+		MXFLIB_TYPE_MULTIPLE("DataValue", "Data represented as AAF varying array of UInt8", "UInt8", "urn:x-ul:060E2B34.0104.0101.04100100.00000000", ARRAYIMPLICIT, 0)
 		MXFLIB_TYPE_ENUM_EX("LayoutType", "Frame Layout Type", "UInt8", "urn:x-ul:060e2b34.0104.0101.02010108.00000000", NULL, TypeFlags_Baseline)
 			MXFLIB_TYPE_ENUM_VALUE("FullFrame", "Full Frame", "0")
 			MXFLIB_TYPE_ENUM_VALUE("SeparateFields", "Separate Fields", "1")
@@ -84,7 +85,6 @@
 			MXFLIB_TYPE_ENUM_VALUE("ChannelStatusMode_Essence", "Stream of data multiplexed within MXF Body", "5")
 		MXFLIB_TYPE_ENUM_END
 		MXFLIB_TYPE_INTERPRETATION("Stream", "Data mapped to AAF Stream, MXF represents using a SID", "RAW", "urn:x-ul:060E2B34.0104.0101.04100200.00000000", 0, false)
-		MXFLIB_TYPE_INTERPRETATION("DataValue", "Data represented as AAF varying array of UInt8", "UInt8Array", "urn:x-ul:060E2B34.0104.0101.04100100.00000000", 0, false)
 		MXFLIB_TYPE_INTERPRETATION("Opaque", "Opaque Data", "UInt8Array", "urn:x-ul:060E2B34.0104.0101.04100400.00000000", 0, false)
 		MXFLIB_TYPE_INTERPRETATION_EX("LocalTagType", "Local Tag for 2-byte tagged SMPTE 336M set", "UInt16", "urn:x-ul:060E2B34.0104.0101.01012004.00000000", 0, false, ClassRefUndefined, NULL, NULL, TypeFlags_Baseline)
 		MXFLIB_TYPE_INTERPRETATION_EX("StrongReferenceTrack", "StrongReference to a Tracks", "StrongRef", "urn:x-ul:060E2B34.0104.0101.05021400.00000000", 0, false, ClassRefUndefined, "GenericTrack", NULL, TypeFlags_Baseline)
@@ -123,6 +123,7 @@
 		MXFLIB_TYPE_MULTIPLE_REF("StrongReferenceVectorSubDescriptor", "Vector of StrongReferences to SubDescriptor sets", "StrongRef", "urn:x-ul:060E2B34.0104.0101.05060e00.00000000", ARRAYEXPLICIT, 0, ClassRefUndefined, "SubDescriptor")
 		MXFLIB_TYPE_MULTIPLE_EX("StrongReferenceVectorLocator", "Vector of StrongReferences to Locator sets", "StrongReferenceLocator", "urn:x-ul:060E2B34.0104.0101.05060400.00000000", ARRAYEXPLICIT, 0, ClassRefUndefined, NULL, NULL, TypeFlags_Baseline)
 		MXFLIB_TYPE_MULTIPLE_EX("StrongReferenceVectorFileDescriptor", "Vector of StrongReferences to File Descriptor sets", "StrongRef", "urn:x-ul:060E2B34.0104.0101.05060B00.00000000", ARRAYEXPLICIT, 0, ClassRefUndefined, "FileDescriptor", NULL, TypeFlags_Baseline)
+		MXFLIB_TYPE_MULTIPLE("StrongReferenceVectorKLVData", "Vector of StrongReferences to StructuralComponent sets", "StrongReferenceKLVData", "urn:x-ul:060E2B34.0104.0101.05060900.00000000", ARRAYEXPLICIT, 0)
 		MXFLIB_TYPE_MULTIPLE("StrongReferenceVectorParameter", "Vector of StrongReferences to ParameterDefinition sets", "StrongReferenceParameter", "urn:x-ul:060E2B34.0104.0101.05060a00.00000000", ARRAYEXPLICIT, 0)
 		MXFLIB_TYPE_MULTIPLE("StrongReferenceSetDataDefinition", "Set of StrongReferences to DataDefinition sets", "StrongReferenceDataDefinition", "urn:x-ul:060E2B34.0104.0101.05050400.00000000", ARRAYEXPLICIT, 0)
 		MXFLIB_TYPE_MULTIPLE("StrongReferenceSetKLVDataDefinition", "Set of StrongReferences to KLVDataDefinition sets", "StrongReferenceKLVDataDefinition", "urn:x-ul:060E2B34.0104.0101.05050d00.00000000", ARRAYEXPLICIT, 0)
@@ -237,6 +238,8 @@
 		MXFLIB_CLASS_FIXEDPACK_END
 		MXFLIB_CLASS_FIXEDPACK_EX("CompleteFooter", "Complete Footer Partition Pack", "PartitionMetadata", "06 0e 2b 34 02 05 01 01  0d 01 02 01 01 04 04 00", NULL, ClassFlags_ExtendSubs + ClassFlags_Baseline)
 		MXFLIB_CLASS_FIXEDPACK_END
+		MXFLIB_CLASS_FIXEDPACK("GenericStreamPartition", "Generic Stream Partition Pack", "PartitionMetadata", "06 0e 2b 34 02 05 01 01  0d 01 02 01 01 03 11 00")
+		MXFLIB_CLASS_FIXEDPACK_END
 		MXFLIB_CLASS_FIXEDPACK_EX("Primer", "Primer Pack", "", "06 0e 2b 34 02 05 01 01  0d 01 02 01 01 05 01 00", NULL, ClassFlags_ExtendSubs + ClassFlags_Baseline)
 			MXFLIB_CLASS_ITEM("LocalTagEntries", "Local Tag Entry Batch", ClassUsageRequired, "LocalTagEntryBatch", 0, 0, 0x0000, "06 0e 2b 34 01 01 01 05  06 01 01 07 15 00 00 00", NULL, NULL)
 		MXFLIB_CLASS_FIXEDPACK_END
@@ -330,7 +333,7 @@
 		MXFLIB_CLASS_SET_END
 		MXFLIB_CLASS_SET_EX("StructuralComponent", "Structural Component Superclass", "InterchangeObject", 2, 2, "urn:x-ul:060E2B34.0253.0101.0D010101.01010200", NULL, ClassFlags_ExtendSubs + ClassFlags_Baseline)
 			MXFLIB_CLASS_ITEM("ComponentDataDefinition", "current~DataDefinition The kind of data or metadata this structure refers to", ClassUsageRequired, "DictReferenceDataDefinition", 0, 0, 0x0201, "06 0e 2b 34 01 01 01 02  04 07 01 00 00 00 00 00", NULL, NULL)
-			MXFLIB_CLASS_ITEM("ComponentLength", "Duration (in units of edit rate)", ClassUsageBestEffort, "LengthType", 8, 8, 0x0202, "06 0e 2b 34 01 01 01 02  07 02 02 01 01 03 00 00", NULL, "-1")
+			MXFLIB_CLASS_ITEM("ComponentLength", "Duration (in units of edit rate)", ClassUsageOptional, "LengthType", 8, 8, 0x0202, "06 0e 2b 34 01 01 01 02  07 02 02 01 01 03 00 00", NULL, NULL)
 		MXFLIB_CLASS_SET_END
 		MXFLIB_CLASS_SET_EX("Segment", "", "StructuralComponent", 2, 2, "06 0E 2B 34 02 53 01 01 0d 01 01 01 01 01 03 00", NULL, ClassFlags_ExtendSubs + ClassFlags_Baseline)
 		MXFLIB_CLASS_SET_END
@@ -706,12 +709,14 @@
 		MXFLIB_LABEL("DMS1Scene", "MXF DMS-1 Scene Framework constrained to the standard version", "06.0E.2B.34.04.01.01.04.0D.01.04.01.01.02.03.01")
 		MXFLIB_LABEL("DMS1SceneExtended", "MXF DMS-1 Scene Framework constrained to the extended version", "06.0E.2B.34.04.01.01.04.0D.01.04.01.01.02.03.02")
 		MXFLIB_LABEL("ATSCA52", "ATSC A/52 Compressed Audio", "06.0E.2B.34.04.01.01.01.04.02.02.02.03.02.01.00")
+		MXFLIB_LABEL("DCinemaTimedText", "SMPTE ST429-5 D-Cinema Timed Text Stream", "06.0E.2B.34.04.01.01.0A.0D.01.03.01.02.13.01.01")
 	MXFLIB_TYPE_END
 
 	// Class definitions converted from file dict.xml
 	MXFLIB_CLASS_START(DictData_Classes_8)
 		MXFLIB_CLASS_EXTEND("Preface", "", "", "")
 			MXFLIB_CLASS_ITEM("Dictionaries", "Link to KXS 377-2 Dictionary", ClassUsageOptional, "StrongReferenceDictionary", 0, 0, 0x3b04, "06 0E 2B 34 01 01 01 02 06 01 01 04 02 02 00 00", NULL, NULL)
+			MXFLIB_CLASS_ITEM("ByteOrder", "AAF only", ClassUsageOptional, "Int16", 0, 0, 0x3b01, "06 0E 2B 34 01 01 01 01 03 01 02 01 02 00 00 00", NULL, NULL)
 		MXFLIB_CLASS_EXTEND_END
 	MXFLIB_CLASS_END
 
