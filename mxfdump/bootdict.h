@@ -218,7 +218,7 @@
 
 	// Class definitions converted from file mxfdump/bootdict.xml
 	MXFLIB_CLASS_START(BootDict_Classes_3)
-		MXFLIB_CLASS_SET("MetaDictionary", "[060E2B34.0253.0101.0D010101.02250000] From AAF", "GenerationInterchangeObject", "06 0E 2B 34 02 53 01 01 0D 01 01 01 02 25 00 00")
+		MXFLIB_CLASS_SET("MetaDictionary", "[060E2B34.0253.0101.0D010101.02250000] From AAF", "AbstractObject", "06 0E 2B 34 02 53 01 01 0D 01 01 01 02 25 00 00")
 			MXFLIB_CLASS_ITEM("ClassDefinitions", "urn:x-ul:060E2B34.0101.0102.06010107.07000000 from AAF", ClassUsageRequired, "StrongReferenceSetClassDefinition", 0, 0, 0x0003, "06 0E 2B 34 01 01 01 02 06 01 01 07 07 00 00 00", NULL, NULL)
 			MXFLIB_CLASS_ITEM("TypeDefinitions", "urn:x-ul:060E2B34.0101.0102.06010107.08000000 from AAF", ClassUsageRequired, "StrongReferenceSetTypeDefinition", 0, 0, 0x0004, "06 0E 2B 34 01 01 01 02 06 01 01 07 08 00 00 00", NULL, NULL)
 		MXFLIB_CLASS_SET_END
