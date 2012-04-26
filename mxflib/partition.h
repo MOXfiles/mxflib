@@ -62,11 +62,18 @@ namespace mxflib
 		std::map<UUID, MDObjectPtr> RefTargets;				//!< Map of UUID of all reference targets to objects
 		std::multimap<UUID, MDObjectPtr> UnmatchedRefs;		//!< Map of UUID of all strong or weak refs not yet linked
 
+	protected:
+		//! Common construction
+		void Init(void)
+		{
+			if(MXFVersion() == 2009) SetInt(MinorVersion_UL, 3);
+		}
+
 	public:
-		Partition(const char *BaseType) { Object = new MDObject(BaseType); };
-		Partition(MDOTypePtr BaseType) { Object = new MDObject(BaseType); };
-		Partition(const UL &BaseUL) { Object = new MDObject(BaseUL); };
-		Partition(ULPtr BaseUL) { Object = new MDObject(*BaseUL); };
+		Partition(const char *BaseType) { Object = new MDObject(BaseType); Init(); };
+		Partition(MDOTypePtr BaseType) { Object = new MDObject(BaseType); Init(); };
+		Partition(const UL &BaseUL) { Object = new MDObject(BaseUL); Init(); };
+		Partition(ULPtr BaseUL) { Object = new MDObject(*BaseUL); Init(); };
 
 		//! Reload the metadata tree - DRAGONS: not an ideal way of doing this
 		void UpdateMetadata(ObjectInterface *NewObject) { ClearMetadata(); AddMetadata(NewObject->Object); };
@@ -144,6 +151,9 @@ namespace mxflib
 
 		//! Locate start of Essence Container
 		bool SeekEssence(void);
+
+		//! Locate start of Index Table data in this partition
+		bool SeekIndex(void);
 
 		//! Locate the set that refers to the given set (with a strong reference)
 		MDObjectParent FindLinkParent(MDObjectPtr &Child);

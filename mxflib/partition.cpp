@@ -654,55 +654,14 @@ DataChunkPtr mxflib::Partition::ReadIndexChunk(void)
 {
 	DataChunkPtr Ret;
 
+	// Locate the index table data
+	if(!SeekIndex()) return Ret;
+
 	Int64 IndexSize = GetInt64(IndexByteCount_UL);
 	if(IndexSize == 0) return Ret;
 
-	MXFFilePtr ParentFile = Object->GetParentFile();
-
-	if(!ParentFile)
-	{
-		error("Call to Partition::ReadIndexChunk() on a partition that is not read from a file\n");
-		return Ret;
-	}
-
-	Int64 MetadataSize = GetInt64(HeaderByteCount_UL);
-
-	// Find the start of the index table
-	// DRAGONS: not the most efficient way - we could store a pointer to the end of the metadata
-	ParentFile->Seek(Object->GetLocation() + 16);
-	Length Len = ParentFile->ReadBER();
-	Position Location = ParentFile->Tell() + Len;
-
-	if((sizeof(size_t) < 8) && IndexSize > 0xffffffff)
-	{
-		error("Maximum read size on this platform is 4Gbytes - However, requested to read index data at 0x%s which has size of 0x%s\n",
-			   Int64toHexString(Location,8).c_str(), Int64toHexString(IndexSize,8).c_str());
-
-		return Ret;
-	}
-
-	ParentFile->Seek(Location);
-	ULPtr FirstUL = ParentFile->ReadKey();
-	if(!FirstUL)
-	{
-		error("Error reading first KLV after %s at 0x%s in %s\n", FullName().c_str(), 
-			  Int64toHexString(GetLocation(),8).c_str(), GetSource().c_str());
-		return Ret;
-	}
-
-	MDOTypePtr FirstType = MDOType::Find(FirstUL);
-	if(FirstType->IsA(KLVFill_UL))
-	{
-		// Skip over the filler
-		Len = ParentFile->ReadBER();
-		Location = ParentFile->Tell() + Len;
-	}
-
-	// Move to the start of the index table segments
-	ParentFile->Seek(Location + MetadataSize);
-
 	// Read the specified number of bytes
-	Ret = ParentFile->Read(static_cast<size_t>(IndexSize));
+	Ret = Object->GetParentFile()->Read(static_cast<size_t>(IndexSize));
 
 	/* Remove any trailing filler */
 
@@ -751,7 +710,7 @@ bool mxflib::Partition::SeekEssence(void)
 	Length IndexSize = GetInt64(IndexByteCount_UL);
 
 	// Skip over Partition Pack (and any trailing filler)
-	File->Seek( Object->GetLocation() + 16 );
+	File->Seek( GetUInt64(ThisPartition_UL) + 16 );
 	Length Len = File->ReadBER();
 	BodyLocation = SkipFill( File->Tell() + Len );
 	if(!BodyLocation) return false;
@@ -764,6 +723,63 @@ bool mxflib::Partition::SeekEssence(void)
 
 	// Perform the seek
 	File->Seek(BodyLocation);
+
+	return true;
+}
+
+
+//! Locate start of Index Table data in this partition
+/*! Moves the file pointer for the parent file to the start of the index data in this partition
+ *  \note If there is no index table data in this partition the pointer will not be moved
+ */
+bool mxflib::Partition::SeekIndex(void)
+{
+	Int64 IndexSize = GetInt64(IndexByteCount_UL);
+	if(IndexSize == 0) return false;
+
+	MXFFilePtr ParentFile = Object->GetParentFile();
+
+	if(!ParentFile)
+	{
+		error("Call to Partition::SeekIndex() on a partition that is not read from a file\n");
+		return false;
+	}
+
+	Int64 MetadataSize = GetInt64(HeaderByteCount_UL);
+
+	// Find the start of the index table
+	// DRAGONS: not the most efficient way - we could store a pointer to the end of the metadata
+	ParentFile->Seek(Object->GetLocation() + 16);
+	Length Len = ParentFile->ReadBER();
+	Position Location = ParentFile->Tell() + Len;
+
+	if((sizeof(size_t) < 8) && IndexSize > 0xffffffff)
+	{
+		error("Maximum read size on this platform is 4Gbytes - However, requested to read index data at 0x%s which has size of 0x%s\n",
+			   Int64toHexString(Location,8).c_str(), Int64toHexString(IndexSize,8).c_str());
+
+		return false;
+	}
+
+	ParentFile->Seek(Location);
+	ULPtr FirstUL = ParentFile->ReadKey();
+	if(!FirstUL)
+	{
+		error("Error reading first KLV after %s at 0x%s in %s\n", FullName().c_str(), 
+			  Int64toHexString(GetLocation(),8).c_str(), GetSource().c_str());
+		return false;
+	}
+
+	MDOTypePtr FirstType = MDOType::Find(FirstUL);
+	if(FirstType->IsA(KLVFill_UL))
+	{
+		// Skip over the filler
+		Len = ParentFile->ReadBER();
+		Location = ParentFile->Tell() + Len;
+	}
+
+	// Move to the start of the index table segments
+	ParentFile->Seek(Location + MetadataSize);
 
 	return true;
 }
@@ -905,6 +921,12 @@ MetadataPtr Partition::ParseMetadata(void)
 {
 	MetadataPtr Ret;
 
+	// If the metadata has not yet been read, read it
+	if(AllMetadata.empty() && (GetInt64(HeaderByteCount_UL) != 0))
+	{
+		ReadMetadata();
+	}
+
 	// Locate the preface
 	MDObjectList::iterator it = TopLevelMetadata.begin();
 	while(it != TopLevelMetadata.end())
@@ -912,8 +934,9 @@ MetadataPtr Partition::ParseMetadata(void)
 		// If we find the preface, parse it
 		if((*it)->IsA(Preface_UL))
 		{
-			Ret = Metadata::Parse(*it);
-			Ret->Partition = this;
+				Ret = Metadata::Parse(*it);
+
+			if( Ret ) Ret->Partition = this;
 			return Ret;
 		}
 
@@ -927,8 +950,9 @@ MetadataPtr Partition::ParseMetadata(void)
 		// If we find the preface, parse it
 		if((*it)->IsA(Preface_UL))
 		{
-			Ret = Metadata::Parse(*it);
-			Ret->Partition = this;
+				Ret = Metadata::Parse(*it);
+
+			if( Ret ) Ret->Partition = this;
 			return Ret;
 		}
 
@@ -962,6 +986,7 @@ bool Partition::IsClosed(void)
 
 
 //! Locate the set that refers to the given set (with a strong reference)
+// TODO: This should check OwningLink now
 MDObjectParent Partition::FindLinkParent(MDObjectPtr &Child)
 {
 	MDObjectList::iterator it = AllMetadata.begin();
