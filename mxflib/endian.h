@@ -99,6 +99,5 @@ namespace mxflib
 	inline Int16 GetI16_LE(const unsigned char *src) { return (Int16)GetU16_LE(src); }
 	inline Int32 GetI32_LE(const unsigned char *src) { return (Int32)GetU32_LE(src); }
 	inline Int64 GetI64_LE(const unsigned char *src) { return (Int64)GetU64_LE(src); }
+
 }
-
-

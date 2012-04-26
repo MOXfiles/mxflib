@@ -870,13 +870,11 @@ MDObjectPtr DV_DIF_EssenceSubParser::BuildCDCIEssenceDescriptor(FileHandle InFil
 		if((Buffer[0x1c7] & 0x07) == 2) isWide = true;
 	}
 
-#ifdef omit_PLUS
 	if(DataRate != 25)
 	{
 		error("Not currently supporting %dmbps DV essence\n", DataRate);
 		return Ret;
 	}
-#endif // omit_PLUS
 
 	/* Build the essence descriptor, filling in all known values */
 
