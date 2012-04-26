@@ -31,10 +31,12 @@
 #define _PROCESS_H_
 
 #include <list>
+
 #include "mxflib/mxflib.h"
+using namespace mxflib;
+
 #include "opmap.h"
 
-using namespace mxflib;
 
 
 
@@ -53,6 +55,27 @@ enum PartitionMode {		//!< Allowed modes of body partition insertion
 			Body_Size 
 			};	
 
+struct _EssenceStreamInfo
+{
+	GCStreamID EssenceID;						// Essence stream ID for each essence stream
+	TimecodeComponentPtr FPTimecodeComponent;	// Timecode component for each file package
+	TrackPtr MPTrack;							// Material Package track for each essence stream
+	TrackList MPSubTracks;						// Any extra Material Package tracks linked to the same essence (such as DV audio)
+	TrackPtr SPEdgecodeTrack;					// Material Package track for edgecode if DPX name is used
+	TrackPtr FPTrack;							// File Package track for each essence stream
+	TrackList FPSubTracks;						// Any extra File Package tracks linked to the same essence (such as DV audio)
+	TrackPtr TSPTrack;							// Physical Source Package track for each essence stream
+	TrackPtr FSPTrack;							// Physical Source Package track for each essence stream
+	TrackPtr SoundRollTrack;					// Track in Avid special Sound source package
+	SourceClipPtr MPClip;						// Material Package SourceClip for each essence stream 
+	ComponentPtr FPClip;						// File Package SourceClip for each essence stream 
+	ComponentPtr TSPClip;						// Physical Source Package SourceClip for each essence stream 
+	ComponentPtr FSPClip;						// Physical Source Package SourceClip for each essence stream 
+	BodyStreamPtr Stream;						// BodyStream for each stream being built (master stream if frame-grouping)
+
+};
+typedef struct _EssenceStreamInfo  EssenceStreamInfo;
+
 enum  TestFrameFormat {
 	Test_None,
 	Test_Bars,
@@ -62,7 +85,9 @@ enum  TestFrameFormat {
 	Test_Random,
 	Test_TrianglePlus,
 	Test_FastBars,
-	Test_SingleColour
+	Test_SingleColour,
+	Test_FieldOrder,
+	Test_16MIRE
 };
 
 
@@ -138,7 +163,6 @@ public:
 	bool OPAtom;				//!< Is OP-Atom mode being forced?
 	bool OPAtom2Part;			//!< Has a 2-partition OP-Atom file been requested (only works for VBR)
 
-	bool AvidMXF;				//!< Require special tweaks to fast import into Avid 
 
 	/*********************************************************
 	***
@@ -155,21 +179,22 @@ public:
 
 	//set limits on the number of files we can handle
 	const static int MaxInFiles=32;
-	const static int MaxOutFiles=16;
+	const static int MaxOutFiles=17; //16 audio and 1 video
 	const static int MaxFilenameLen=256;
-	char InFilenameSet[1024];				     //!< The set of input filenames
-	char InFilename[MaxInFiles][MaxFilenameLen]; //!< The list of input filenames
-	int InFileGangCount;					     //!< The number of sets of ganged files to process
-	int InFileGangSize;						     //!< The number of ganged files to process at a time
-	std::string AudioFilename;				     //!< The name of the input audio file
-	std::string P2VideoFilename;			     //!< Name of directory at top or P2 essence tree.
+	char InFilenameSet[MaxInFiles*MaxFilenameLen];	//!< The set of input filenames
+	char InFilename[MaxInFiles][MaxFilenameLen];	//!< The list of input filenames
+	int InFileGangCount;							//!< The number of sets of ganged files to process
+	int InFileGangSize;								//!< The number of ganged files to process at a time
+	std::string AudioFilename;						//!< The name of the input audio file
+	std::string P2VideoFilename;					//!< Name of directory at top or P2 essence tree.
 
-	std::string MXFVideoFilename;			     //!< Name of directory at top or P2 essence tree.
-	std::string MXFAudioFilename[MaxInFiles];    //!< Name of MXF file for audio input
+	std::string MXFVideoFilename;					//!< Name of directory at top or P2 essence tree.
+	std::string MXFAudioFilename[MaxInFiles];		//!< Name of MXF file for audio input
 	
-	char OutFilenameSet[512];				     //!< The set of output filenames
+	char OutFilenameSet[MaxOutFiles*MaxFilenameLen];//!< The set of output filenames
 	char OutFilename[MaxOutFiles][MaxFilenameLen];	//!< The output filename
-	int OutFileCount;						     //!< The number of files to output
+	int OutFileCount;								//!< The number of files to output
+
 
 
 
@@ -201,10 +226,12 @@ public:
 	bool SprinkledIndex ;					//!< Write segmented index tables (one set per partition)
 	bool IsolatedIndex ;					//!< Don't write essence and index in same partition
 	bool VeryIsolatedIndex ;				//!< Don't write metadata and index in same partition
+	bool IsolatedEssence ;					//!< Don't write essence and header metadata in same partition
 
 	bool IncludeSubstreams;					//!< Should sub-streams also be wrapped
 
 	bool PutTCTrack;						//!< If false suppresses the output or Timecode tracks
+
 
 	bool ExtractTimecode;					//!< Should we attempt to set FP timecodes from extracted timecode?
 
@@ -215,6 +242,8 @@ public:
 
 
 	Rational ForceEditRate;					//!< Edit rate to try and force
+	Rational AudioEditRate;					//!< Edit rate to set the audio rate if different form force edit rate
+
 
 	int SelectedWrappingOption;				//!< Selected wrapping option: -1 = auto, 0 = list choices
 	std::string SelectedWrappingOptionText;	//!< Selected wrapping option name
@@ -296,7 +325,6 @@ public:
 
 		OPAtom=false;		
 		OPAtom2Part=false;	
-		AvidMXF=false;	
 		FrameGroup=false;
 		ZeroPad = false;
 		StreamMode=false;
@@ -305,16 +333,18 @@ public:
 		SprinkledIndex=false ;	
 		IsolatedIndex=false ;		
 		VeryIsolatedIndex=false ;
+		IsolatedEssence=false ;		
 		EditAlign=false;
 
 		IncludeSubstreams = true;
 
 		PutTCTrack=true;
 
-		// DRAGONS: Force extraction of timecode to FP tracks if possible
-		ExtractTimecode = true;
+		// DRAGONS: deselect extraction of timecode to FP tracks
+		ExtractTimecode = false;
 
 		ForceEditRate = Rational(0,1);
+		AudioEditRate = Rational(0,1);
 
 		BodyRate=0;
 		BodyMode=Body_None;
@@ -323,8 +353,7 @@ public:
 
 		MobName = "Material Package" ;	// Default Name of material package
 
-//		RGB=true;							// Receiving RGB  frames;
-//		YCrCb=false;						// Getting YCrCb FRames
+
 
 
 		//zero out all character strings
@@ -380,10 +409,8 @@ Length Process(
 				Rational			EditRate,   //!< The edit rate that is right for the master package.
 				UMIDPtr				MPUMID,     //!< The UMID for the master package
 				UMIDPtr				*FPUMID,    //!< An array of UMIDs for each file package. There should be as many UMIDs as there are stream of essence to wrap
-				UMIDPtr				*SPUMID,    //!< An array of UMIDs for each file package. There should be as many UMIDs as there are stream of essence to wrap
+				UMIDPtr				*SPUMID,    //!< An pair of UMIDs for the source packages.
 				bool				*pReadyForEssenceFlag=NULL  //!A pointer to a common flag used to synchronize multiple wrapping threads
 			);
-
-
 
 #endif //_PROCESS_H_

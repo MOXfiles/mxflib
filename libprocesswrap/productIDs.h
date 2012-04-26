@@ -26,33 +26,23 @@
  */
 
 // Product UUID and version text for this release
+// {B658A3F9-280D-463c-9C12-FD6DAA6E1213}
+UInt8 Product_UUID_Data[16] = { 0xb6, 0x58, 0xa3, 0xf9, 0x28, 0x0d, 0x46, 0x3c, 0x9c, 0x12, 0xfd, 0x6d, 0xaa, 0x6e, 0x12, 0x13 };
+
+mxflib::UUID Product_UUID(Product_UUID_Data);
 
 std::string CompanyName = "freeMXF.org";
 
 std::string ProductName = "MXFWrap File Wrapper";
 
-// {B658A3F9-280D-463c-9C12-FD6DAA6E1213}
-UInt8 Product_UL_Data[16] = { 0xb6, 0x58, 0xa3, 0xf9, 0x28, 0x0d, 0x46, 0x3c, 0x9c, 0x12, 0xfd, 0x6d, 0xaa, 0x6e, 0x12, 0x13 };
-
 
 #ifndef PRODUCT_VERSION_MAJOR
 #define PRODUCT_VERSION_MAJOR "1"
 #define PRODUCT_VERSION_MINOR "0"
-#define PRODUCT_VERSION_TWEAK "0"
+#define PRODUCT_VERSION_TWEAK "2"
 #define PRODUCT_VERSION_BUILD "0"
-#define PRODUCT_VERSION_REL 1
+#define PRODUCT_VERSION_REL 4
 #endif
-
-
-
-std::string PlatformName = LibraryName() + "(" + OSName() + ")";
-
-//now superseded by version.h
-//#define PRODUCT_VERSION_MAJOR "2"
-//#define PRODUCT_VERSION_MINOR "0"
-//#define PRODUCT_VERSION_TWEAK "0"
-//#define PRODUCT_VERSION_BUILD "5"
-//#define PRODUCT_VERSION_REL    1
 
 // Convert the above into suitable form for setting the Ident
 // Convention for version string is
@@ -67,8 +57,6 @@ std::string PlatformName = LibraryName() + "(" + OSName() + ")";
 //		4	Beta
 //		5	Private
 
-mxflib::UUID Product_UL(Product_UL_Data);
-
 std::string ProductVersionString  = std::string("V"   PRODUCT_VERSION_MAJOR "." PRODUCT_VERSION_MINOR "."
 			                                     PRODUCT_VERSION_TWEAK "." PRODUCT_VERSION_BUILD )
 			                 + std::string(      MXFLIB_VERSION_RELTEXT(PRODUCT_VERSION_REL) );
@@ -76,4 +64,3 @@ std::string ProductVersionString  = std::string("V"   PRODUCT_VERSION_MAJOR "." 
 std::string ProductProductVersion = std::string( "\"" PRODUCT_VERSION_MAJOR "\",\"" PRODUCT_VERSION_MINOR "\",\"" 
 			                                     PRODUCT_VERSION_TWEAK "\",\"" PRODUCT_VERSION_BUILD "\",\"")
 							 + std::string(      MXFLIB_VERSION_RELNUMBER(PRODUCT_VERSION_REL)) + std::string("\"");
-
