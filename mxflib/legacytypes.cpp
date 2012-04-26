@@ -128,7 +128,9 @@ namespace
 		TypeRecordPtr Parent;				//!< The current compound or enum being built (or NULL)
 		SymbolSpacePtr DefaultSymbolSpace;	//!< Default symbol space to use for all types (in current MXFTypes section)
 		bool LabelsOnly;					//!< True if this is a labels section rather than a full types section
-											// ** DRAGONS: Labels are treated as types rather than defining a third kind (types, classes and labels)
+											// ** DRAGONS: Labels are treated as types rather than defining a third section (types, classes and labels)
+		bool KindType;						//!< True if the category of type we are currently processing is defined by a "kind" attribute and it has sub-items
+											// ** DRAGONS: When the category is defined by "kind", and sub-items exist, the state machine has to skip back to StateTypes after the sub-items
 	};
 }
 
@@ -150,6 +152,7 @@ int mxflib::LoadTypes(char *TypesFile, SymbolSpacePtr DefaultSymbolSpace /*=MXFL
 	State.State = StateIdle;
 	State.DefaultSymbolSpace = DefaultSymbolSpace;
 	State.LabelsOnly = false;
+	State.KindType = false;
 
 	// Get the qualified filename
 	std::string XMLFilePath = LookupDictionaryPath(TypesFile);
@@ -173,6 +176,606 @@ int mxflib::LoadTypes(char *TypesFile, SymbolSpacePtr DefaultSymbolSpace /*=MXFL
 
 namespace
 {
+	void ParseTypeBasic(TypesParserState *State, const char *name, const char **attrs)
+	{
+		const char *Detail = "";
+		const char *TypeUL = NULL;
+		const char *SymSpace = NULL;
+		TypeRef RefType = TypeRefUndefined;
+		const char *RefTarget = NULL;
+		int Size = 1;
+		bool Endian = false;
+		bool IsCharacter = false;
+		bool IsBaseline = false;
+		
+		/* Process attributes */
+		if(attrs != NULL)
+		{
+			int this_attr = 0;
+			while(attrs[this_attr])
+			{
+				char const *attr = attrs[this_attr++];
+				char const *val = attrs[this_attr++];
+				
+				if(strcmp(attr, "detail") == 0)
+				{
+					Detail = val;
+				}
+				else if(strcmp(attr, "size") == 0)
+				{
+					Size = atoi(val);
+				}
+				else if(strcmp(attr, "endian") == 0)
+				{
+					if(strcasecmp(val,"yes") == 0) Endian = true;
+					else if(strcasecmp(val,"true") == 0) Endian = true;
+				}
+				else if(strcmp(attr, "baseline") == 0)
+				{
+					if((strcasecmp(val, "true") == 0) || (strcasecmp(val, "yes") == 0)) IsBaseline = true;
+					else IsBaseline = false;
+				}
+				else if(strcmp(attr, "character") == 0)
+				{
+					if(strcasecmp(val,"yes") == 0) IsCharacter = true;
+					else if(strcasecmp(val,"true") == 0) IsCharacter = true;
+				}
+				else if(strcmp(attr, "ul") == 0)
+				{
+					TypeUL = val;
+				}
+				else if(strcmp(attr, "symSpace") == 0)
+				{
+					SymSpace = val;
+				}
+				else if(strcmp(attr, "ref") == 0)
+				{
+					if(strcasecmp(val,"strong") == 0) RefType = TypeRefStrong;
+					else if(strcasecmp(val,"target") == 0) RefType = TypeRefTarget;
+					else if(strcasecmp(val,"weak") == 0) RefType = TypeRefWeak;
+					else if(strcasecmp(val,"meta") == 0) RefType = TypeRefMeta;
+					else if(strcasecmp(val,"dict") == 0) RefType = TypeRefDict;
+					else if(strcasecmp(val,"none") == 0) RefType = TypeRefNone;
+					else if(strcasecmp(val,"nested") == 0) RefType = TypeRefNested;
+					else if(strcasecmp(val,"global") == 0) RefType = TypeRefGlobal;
+					else
+					{
+						XML_warning(State, "Unknown ref value ref=\"%s\" in <%s/>\n", val, name);
+					}
+				}
+				else if(strcmp(attr, "target") == 0)
+				{
+					RefTarget = val;
+				}
+				else if(strcmp(attr, "kind") == 0)
+				{
+					// Ignore the type kind that possibly sent us here
+				}
+				else if(strcmp(attr, "doc") == 0)
+				{
+					// Ignore any documentation attributes
+				}
+				else
+				{
+					XML_warning(State, "Unexpected attribute \"%s\" in basic type \"%s\"\n", attr, name);
+				}
+			}
+		}
+
+		// Build a new type record
+		TypeRecordPtr ThisType = new TypeRecord;
+
+		ThisType->Class = TypeBasic;
+		ThisType->Type = name;
+		ThisType->Detail = Detail;
+		ThisType->Base = "";
+		if(TypeUL) ThisType->UL = StringToUL(TypeUL);
+		if(SymSpace)
+		{
+			// A symbol space has been specified - look it up
+			ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
+
+			// If it does not already exist, create it
+			if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
+		}
+		else
+		{
+			ThisType->SymSpace = State->DefaultSymbolSpace;
+		}
+		ThisType->Size = Size;
+		ThisType->Endian = Endian;
+		ThisType->IsBaseline = IsBaseline;
+		if(IsCharacter) ThisType->ArrayClass = ARRAYSTRING; else ThisType->ArrayClass = ARRAYIMPLICIT;
+		ThisType->RefType = RefType;
+		if(RefTarget) ThisType->RefTarget = RefTarget;
+
+		// Add this type record
+		State->Types.push_back(ThisType);
+	}
+
+
+	void ParseTypeInterpretation(TypesParserState *State, const char *name, const char **attrs)
+	{
+		const char *Detail = "";
+		const char *Base = "";
+		const char *TypeUL = NULL;
+		const char *SymSpace = NULL;
+		TypeRef RefType = TypeRefUndefined;
+		const char *RefTarget = NULL;
+		int Size = 0;
+		bool IsCharacter = false;
+		bool IsBaseline = false;
+		
+		/* Process attributes */
+		if(attrs != NULL)
+		{
+			int this_attr = 0;
+			while(attrs[this_attr])
+			{
+				char const *attr = attrs[this_attr++];
+				char const *val = attrs[this_attr++];
+				
+				if(strcmp(attr, "detail") == 0)
+				{
+					Detail = val;
+				}
+				else if(strcmp(attr, "base") == 0)
+				{
+					Base = val;
+				}
+				else if(strcmp(attr, "size") == 0)
+				{
+					Size = atoi(val);
+				}
+				else if(strcmp(attr, "ul") == 0)
+				{
+					TypeUL = val;
+				}
+				else if(strcmp(attr, "baseline") == 0)
+				{
+					if((strcasecmp(val, "true") == 0) || (strcasecmp(val, "yes") == 0)) IsBaseline = true;
+					else IsBaseline = false;
+				}
+				else if(strcmp(attr, "character") == 0)
+				{
+					if(strcasecmp(val,"yes") == 0) IsCharacter = true;
+					else if(strcasecmp(val,"true") == 0) IsCharacter = true;
+				}
+				else if(strcmp(attr, "symSpace") == 0)
+				{
+					SymSpace = val;
+				}
+				else if(strcmp(attr, "ref") == 0)
+				{
+					if(strcasecmp(val,"strong") == 0) RefType = TypeRefStrong;
+					else if(strcasecmp(val,"target") == 0) RefType = TypeRefTarget;
+					else if(strcasecmp(val,"weak") == 0) RefType = TypeRefWeak;
+					else if(strcasecmp(val,"meta") == 0) RefType = TypeRefMeta;
+					else if(strcasecmp(val,"dict") == 0) RefType = TypeRefDict;
+					else if(strcasecmp(val,"none") == 0) RefType = TypeRefNone;
+					else if(strcasecmp(val,"nested") == 0) RefType = TypeRefNested;
+					else if(strcasecmp(val,"global") == 0) RefType = TypeRefGlobal;
+					else
+					{
+						XML_warning(State, "Unknown ref value ref=\"%s\" in <%s/>\n", val, name);
+					}
+				}
+				else if(strcmp(attr, "target") == 0)
+				{
+					RefTarget = val;
+				}
+				else if(strcmp(attr, "kind") == 0)
+				{
+					// Ignore the type kind that possibly sent us here
+				}
+				else if(strcmp(attr, "doc") == 0)
+				{
+					// Ignore any documentation attributes
+				}
+				else
+				{
+					XML_error(State, "Unexpected attribute \"%s\" in basic type \"%s\"\n", attr, name);
+				}
+			}
+		}
+
+		// Build a new type record
+		TypeRecordPtr ThisType = new TypeRecord;
+
+		ThisType->Class = TypeInterpretation;
+		ThisType->Type = name;
+		ThisType->Detail = Detail;
+		ThisType->Base = Base;
+		if(TypeUL) ThisType->UL = StringToUL(TypeUL);
+		if(SymSpace)
+		{
+			// A symbol space has been specified - look it up
+			ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
+
+			// If it does not already exist, create it
+			if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
+		}
+		else
+		{
+			ThisType->SymSpace = State->DefaultSymbolSpace;
+		}
+		ThisType->Size = Size;
+		ThisType->Endian = false;
+		ThisType->IsBaseline = IsBaseline;
+		if(IsCharacter) ThisType->ArrayClass = ARRAYSTRING; else ThisType->ArrayClass = ARRAYIMPLICIT;
+		ThisType->RefType = RefType;
+		if(RefTarget) ThisType->RefTarget = RefTarget;
+
+		// Add this type record
+		State->Types.push_back(ThisType);
+	}
+
+
+	void ParseTypeMultiple(TypesParserState *State, const char *name, const char **attrs)
+	{
+		const char *Detail = "";
+		const char *Base = "";
+		const char *TypeUL = NULL;
+		const char *SymSpace = NULL;
+		TypeRef RefType = TypeRefUndefined;
+		const char *RefTarget = NULL;
+		MDArrayClass ArrayClass = ARRAYIMPLICIT;
+		int Size = 0;
+		bool IsBaseline = false;
+
+		/* Process attributes */
+		if(attrs != NULL)
+		{
+			int this_attr = 0;
+			while(attrs[this_attr])
+			{
+				char const *attr = attrs[this_attr++];
+				char const *val = attrs[this_attr++];
+				
+				if(strcmp(attr, "detail") == 0)
+				{
+					Detail = val;
+				}
+				else if(strcmp(attr, "base") == 0)
+				{
+					Base = val;
+				}
+				else if(strcmp(attr, "size") == 0)
+				{
+					Size = atoi(val);
+				}
+				else if(strcmp(attr, "type") == 0)
+				{
+					if((strcasecmp(val, "Batch") == 0) || (strcasecmp(val, "Explicit") == 0)) ArrayClass = ARRAYEXPLICIT;
+					if(strcasecmp(val, "String") == 0) ArrayClass = ARRAYSTRING;
+				}
+				else if(strcmp(attr, "ul") == 0)
+				{
+					TypeUL = val;
+				}
+				else if(strcmp(attr, "baseline") == 0)
+				{
+					if((strcasecmp(val, "true") == 0) || (strcasecmp(val, "yes") == 0)) IsBaseline = true;
+					else IsBaseline = false;
+				}
+				else if(strcmp(attr, "symSpace") == 0)
+				{
+					SymSpace = val;
+				}
+				else if(strcmp(attr, "ref") == 0)
+				{
+					if(strcasecmp(val,"strong") == 0) RefType = TypeRefStrong;
+					else if(strcasecmp(val,"target") == 0) RefType = TypeRefTarget;
+					else if(strcasecmp(val,"weak") == 0) RefType = TypeRefWeak;
+					else if(strcasecmp(val,"meta") == 0) RefType = TypeRefMeta;
+					else if(strcasecmp(val,"dict") == 0) RefType = TypeRefDict;
+					else if(strcasecmp(val,"none") == 0) RefType = TypeRefNone;
+					else if(strcasecmp(val,"nested") == 0) RefType = TypeRefNested;
+					else if(strcasecmp(val,"global") == 0) RefType = TypeRefGlobal;
+					else
+					{
+						XML_warning(State, "Unknown ref value ref=\"%s\" in <%s/>\n", val, name);
+					}
+				}
+				else if(strcmp(attr, "target") == 0)
+				{
+					RefTarget = val;
+				}
+				else if(strcmp(attr, "kind") == 0)
+				{
+					// Ignore the type kind that possibly sent us here
+				}
+				else if(strcmp(attr, "doc") == 0)
+				{
+					// Ignore any documentation attributes
+				}
+				else
+				{
+					XML_error(State, "Unexpected attribute \"%s\" in basic type \"%s\"\n", attr, name);
+				}
+			}
+		}
+
+		// Build a new type record
+		TypeRecordPtr ThisType = new TypeRecord;
+
+		ThisType->Class = TypeMultiple;
+		ThisType->Type = name;
+		ThisType->Detail = Detail;
+		ThisType->Base = Base;
+		if(TypeUL) ThisType->UL = StringToUL(TypeUL);
+		if(SymSpace)
+		{
+			// A symbol space has been specified - look it up
+			ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
+
+			// If it does not already exist, create it
+			if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
+		}
+		else
+		{
+			ThisType->SymSpace = State->DefaultSymbolSpace;
+		}
+		ThisType->Size = Size;
+		ThisType->Endian = false;
+		ThisType->IsBaseline = IsBaseline;
+		ThisType->ArrayClass = ArrayClass;
+		ThisType->RefType = RefType;
+		if(RefTarget) ThisType->RefTarget = RefTarget;
+
+		// Add this type record
+		State->Types.push_back(ThisType);
+	}
+
+
+	void ParseTypeCompound(TypesParserState *State, const char *name, const char **attrs)
+	{
+		const char *Detail = "";
+		const char *TypeUL = NULL;
+		const char *SymSpace = NULL;
+		bool IsBaseline = false;
+
+		/* Process attributes */
+		if(attrs != NULL)
+		{
+			int this_attr = 0;
+			while(attrs[this_attr])
+			{
+				char const *attr = attrs[this_attr++];
+				char const *val = attrs[this_attr++];
+				
+				if(strcmp(attr, "detail") == 0)
+				{
+					Detail = val;
+				}
+				else if(strcmp(attr, "ul") == 0)
+				{
+					TypeUL = val;
+				}
+				else if(strcmp(attr, "baseline") == 0)
+				{
+					if((strcasecmp(val, "true") == 0) || (strcasecmp(val, "yes") == 0)) IsBaseline = true;
+					else IsBaseline = false;
+				}
+				else if(strcmp(attr, "symSpace") == 0)
+				{
+					SymSpace = val;
+				}
+				else if(strcmp(attr, "kind") == 0)
+				{
+					// Ignore the type kind that possibly sent us here
+				}
+				else if(strcmp(attr, "doc") == 0)
+				{
+					// Ignore any documentation attributes
+				}
+				else
+				{
+					XML_error(State, "Unexpected attribute \"%s\" in compound type \"%s\"\n", attr, name);
+				}
+			}
+		}
+
+		// Build a new type record
+		TypeRecordPtr ThisType = new TypeRecord;
+
+		ThisType->Class = TypeCompound;
+		ThisType->Type = name;
+		ThisType->Detail = Detail;
+		ThisType->Base = "";
+		if(TypeUL) ThisType->UL = StringToUL(TypeUL);
+		if(SymSpace)
+		{
+			// A symbol space has been specified - look it up
+			ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
+
+			// If it does not already exist, create it
+			if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
+		}
+		else
+		{
+			ThisType->SymSpace = State->DefaultSymbolSpace;
+		}
+		ThisType->Size = 0;
+		ThisType->Endian = false;
+		ThisType->ArrayClass = ARRAYIMPLICIT;
+
+		// Add this type record
+		State->Types.push_back(ThisType);
+
+		State->State = StateTypesCompoundItem;
+		State->Parent = ThisType;
+	}
+
+
+	void ParseTypeEnum(TypesParserState *State, const char *name, const char **attrs)
+	{
+		const char *Detail = "";
+		const char *Base = NULL;
+		const char *TypeUL = NULL;
+		const char *SymSpace = NULL;
+		bool IsBaseline = false;
+
+		/* Process attributes */
+		if(attrs != NULL)
+		{
+			int this_attr = 0;
+			while(attrs[this_attr])
+			{
+				char const *attr = attrs[this_attr++];
+				char const *val = attrs[this_attr++];
+				
+				if(strcmp(attr, "detail") == 0)
+				{
+					Detail = val;
+				}
+				else if(strcmp(attr, "type") == 0)
+				{
+					Base = val;
+				}
+				else if(strcmp(attr, "ul") == 0)
+				{
+					TypeUL = val;
+				}
+				else if(strcmp(attr, "baseline") == 0)
+				{
+					if((strcasecmp(val, "true") == 0) || (strcasecmp(val, "yes") == 0)) IsBaseline = true;
+					else IsBaseline = false;
+				}
+				else if(strcmp(attr, "symSpace") == 0)
+				{
+					SymSpace = val;
+				}
+				else if(strcmp(attr, "kind") == 0)
+				{
+					// Ignore the type kind that possibly sent us here
+				}
+				else if(strcmp(attr, "doc") == 0)
+				{
+					// Ignore any documentation attributes
+				}
+				else
+				{
+					XML_error(State, "Unexpected attribute \"%s\" in enumeration type \"%s\"\n", attr, name);
+				}
+			}
+		}
+
+		if(!Base)
+		{
+			error("No value type specified for enumerated type %s\n", name);
+		}
+
+		// Build a new type record
+		TypeRecordPtr ThisType = new TypeRecord;
+
+		ThisType->Class = TypeEnum;
+		ThisType->Type = name;
+		ThisType->Detail = Detail;
+		if(Base) ThisType->Base = Base;
+		if(TypeUL) ThisType->UL = StringToUL(TypeUL);
+		if(SymSpace)
+		{
+			// A symbol space has been specified - look it up
+			ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
+
+			// If it does not already exist, create it
+			if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
+		}
+		else
+		{
+			ThisType->SymSpace = State->DefaultSymbolSpace;
+		}
+		ThisType->Size = 0;
+		ThisType->Endian = false;
+		ThisType->IsBaseline = IsBaseline;
+		ThisType->ArrayClass = ARRAYIMPLICIT;
+
+		// Add this type record
+		State->Types.push_back(ThisType);
+
+		State->State = StateTypesEnumValue;
+		State->Parent = ThisType;
+	}
+
+
+	void ParseLabel(TypesParserState *State, const char *name, const char **attrs)
+	{
+		const char *Detail = "";
+		const char *TypeUL = NULL;
+		const char *Mask = NULL;
+		const char *SymSpace = NULL;
+
+		/* Process attributes */
+		if(attrs != NULL)
+		{
+			int this_attr = 0;
+			while(attrs[this_attr])
+			{
+				char const *attr = attrs[this_attr++];
+				char const *val = attrs[this_attr++];
+				
+				if(strcmp(attr, "detail") == 0)
+				{
+					Detail = val;
+				}
+				else if(strcmp(attr, "ul") == 0)
+				{
+					TypeUL = val;
+				}
+				else if(strcmp(attr, "mask") == 0)
+				{
+					Mask = val;
+				}
+				else if(strcmp(attr, "symSpace") == 0)
+				{
+					SymSpace = val;
+				}
+				else if(strcmp(attr, "kind") == 0)
+				{
+					// Ignore the type kind that possibly sent us here
+				}
+				else if(strcmp(attr, "doc") == 0)
+				{
+					// Ignore any documentation attributes
+				}
+				else
+				{
+					XML_error(State, "Unexpected attribute \"%s\" in label \"%s\"\n", attr, name);
+				}
+			}
+		}
+
+		// Build a new type record
+		TypeRecordPtr ThisType = new TypeRecord;
+
+		ThisType->Class = TypeLabel;
+		ThisType->Type = name;
+		ThisType->Detail = Detail;
+		if(TypeUL) ThisType->UL = StringToUL(TypeUL);
+		if(Mask) ThisType->Value = Mask;
+
+		if(SymSpace)
+		{
+			// A symbol space has been specified - look it up
+			ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
+
+			// If it does not already exist, create it
+			if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
+		}
+		else
+		{
+			ThisType->SymSpace = State->DefaultSymbolSpace;
+		}
+		ThisType->Size = 0;
+		ThisType->Endian = false;
+		ThisType->ArrayClass = ARRAYIMPLICIT;
+
+		// Add this type record
+		State->Types.push_back(ThisType);
+	}
+
+
 	//! XML callback - Deal with start tag of an element
 	void DefTypes_startElement(void *user_data, const char *name, const char **attrs)
 	{
@@ -241,427 +844,59 @@ namespace
 					State->State = StateTypesLabel;
 				}
 				else
-					XML_error(user_data, "Tag <%s> found when types class expected\n", name);
+				{
+					// Check for attribute "kind" used to specify the kind of this type
+					bool KindFound = false;
+					int this_attr = 0;
+					while(attrs[this_attr])
+					{
+						char const *attr = attrs[this_attr++];
+						char const *val = attrs[this_attr++];
+						
+						if(strcmp(attr, "kind") == 0)
+						{
+							if(strcasecmp(val, "basic") == 0) ParseTypeBasic(State, name, attrs);
+							else if(strcasecmp(val, "interpretation") == 0) ParseTypeInterpretation(State, name, attrs);
+							else if(strcasecmp(val, "multiple") == 0) ParseTypeMultiple(State, name, attrs);
+							else if(strcasecmp(val, "compound") == 0)
+							{
+								State->KindType = true;
+								ParseTypeCompound(State, name, attrs);
+							}
+							else if((strcasecmp(val, "enum") == 0) || (strcasecmp(val, "enumeration") == 0))
+							{
+								State->KindType = true;
+								ParseTypeEnum(State, name, attrs);
+							}
+							else
+								XML_error(user_data, "Unknown type kind \"%s\" in type \"%s\"\n", val, name);
+
+							KindFound = true;
+							break;
+						}
+					}
+
+					if(!KindFound) XML_error(user_data, "Tag <%s> found when types class or item with attribute \"kind\" expected\n", name);
+				}
 
 				break;
 			}
 
 			case StateTypesBasic:
-			{
-				const char *Detail = "";
-				const char *TypeUL = NULL;
-				const char *SymSpace = NULL;
-				TypeRef RefType = TypeRefUndefined;
-				const char *RefTarget = NULL;
-				int Size = 1;
-				bool Endian = false;
-				bool IsCharacter = false;
-				bool IsBaseline = false;
-				
-				/* Process attributes */
-				if(attrs != NULL)
-				{
-					int this_attr = 0;
-					while(attrs[this_attr])
-					{
-						char const *attr = attrs[this_attr++];
-						char const *val = attrs[this_attr++];
-						
-						if(strcmp(attr, "detail") == 0)
-						{
-							Detail = val;
-						}
-						else if(strcmp(attr, "size") == 0)
-						{
-							Size = atoi(val);
-						}
-						else if(strcmp(attr, "endian") == 0)
-						{
-							if(strcasecmp(val,"yes") == 0) Endian = true;
-							else if(strcasecmp(val,"true") == 0) Endian = true;
-						}
-						else if(strcmp(attr, "baseline") == 0)
-						{
-							if((strcasecmp(val, "true") == 0) || (strcasecmp(val, "yes") == 0)) IsBaseline = true;
-							else IsBaseline = false;
-						}
-						else if(strcmp(attr, "character") == 0)
-						{
-							if(strcasecmp(val,"yes") == 0) IsCharacter = true;
-							else if(strcasecmp(val,"true") == 0) IsCharacter = true;
-						}
-						else if(strcmp(attr, "ul") == 0)
-						{
-							TypeUL = val;
-						}
-						else if(strcmp(attr, "symSpace") == 0)
-						{
-							SymSpace = val;
-						}
-						else if(strcmp(attr, "ref") == 0)
-						{
-							if(strcasecmp(val,"strong") == 0) RefType = TypeRefStrong;
-							else if(strcasecmp(val,"target") == 0) RefType = TypeRefTarget;
-							else if(strcasecmp(val,"weak") == 0) RefType = TypeRefWeak;
-							else if(strcasecmp(val,"meta") == 0) RefType = TypeRefMeta;
-							else if(strcasecmp(val,"dict") == 0) RefType = TypeRefDict;
-							else if(strcasecmp(val,"none") == 0) RefType = TypeRefNone;
-							else if(strcasecmp(val,"global") == 0) RefType = TypeRefGlobal;
-							else
-							{
-								XML_warning(user_data, "Unknown ref value ref=\"%s\" in <%s/>\n", val, name);
-							}
-						}
-						else if(strcmp(attr, "target") == 0)
-						{
-							RefTarget = val;
-						}
-						else if(strcmp(attr, "doc") == 0)
-						{
-							// Ignore any documentation attributes
-						}
-						else
-						{
-							XML_warning(user_data, "Unexpected attribute \"%s\" in basic type \"%s\"\n", attr, name);
-						}
-					}
-				}
-
-				// Build a new type record
-				TypeRecordPtr ThisType = new TypeRecord;
-
-				ThisType->Class = TypeBasic;
-				ThisType->Type = name;
-				ThisType->Detail = Detail;
-				ThisType->Base = "";
-				if(TypeUL) ThisType->UL = StringToUL(TypeUL);
-				if(SymSpace)
-				{
-					// A symbol space has been specified - look it up
-					ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
-
-					// If it does not already exist, create it
-					if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
-				}
-				else
-				{
-					ThisType->SymSpace = State->DefaultSymbolSpace;
-				}
-				ThisType->Size = Size;
-				ThisType->Endian = Endian;
-				ThisType->IsBaseline = IsBaseline;
-				if(IsCharacter) ThisType->ArrayClass = ARRAYSTRING; else ThisType->ArrayClass = ARRAYIMPLICIT;
-				ThisType->RefType = RefType;
-				if(RefTarget) ThisType->RefTarget = RefTarget;
-
-				// Add this type record
-				State->Types.push_back(ThisType);
-
+				ParseTypeBasic(State, name, attrs);
 				break;
-			}
 
 			case StateTypesInterpretation:
-			{
-				const char *Detail = "";
-				const char *Base = "";
-				const char *TypeUL = NULL;
-				const char *SymSpace = NULL;
-				TypeRef RefType = TypeRefUndefined;
-				const char *RefTarget = NULL;
-				int Size = 0;
-				bool IsCharacter = false;
-				bool IsBaseline = false;
-				
-				/* Process attributes */
-				if(attrs != NULL)
-				{
-					int this_attr = 0;
-					while(attrs[this_attr])
-					{
-						char const *attr = attrs[this_attr++];
-						char const *val = attrs[this_attr++];
-						
-						if(strcmp(attr, "detail") == 0)
-						{
-							Detail = val;
-						}
-						else if(strcmp(attr, "base") == 0)
-						{
-							Base = val;
-						}
-						else if(strcmp(attr, "size") == 0)
-						{
-							Size = atoi(val);
-						}
-						else if(strcmp(attr, "ul") == 0)
-						{
-							TypeUL = val;
-						}
-						else if(strcmp(attr, "baseline") == 0)
-						{
-							if((strcasecmp(val, "true") == 0) || (strcasecmp(val, "yes") == 0)) IsBaseline = true;
-							else IsBaseline = false;
-						}
-						else if(strcmp(attr, "character") == 0)
-						{
-							if(strcasecmp(val,"yes") == 0) IsCharacter = true;
-							else if(strcasecmp(val,"true") == 0) IsCharacter = true;
-						}
-						else if(strcmp(attr, "symSpace") == 0)
-						{
-							SymSpace = val;
-						}
-						else if(strcmp(attr, "ref") == 0)
-						{
-							if(strcasecmp(val,"strong") == 0) RefType = TypeRefStrong;
-							else if(strcasecmp(val,"target") == 0) RefType = TypeRefTarget;
-							else if(strcasecmp(val,"weak") == 0) RefType = TypeRefWeak;
-							else if(strcasecmp(val,"meta") == 0) RefType = TypeRefMeta;
-							else if(strcasecmp(val,"dict") == 0) RefType = TypeRefDict;
-							else if(strcasecmp(val,"none") == 0) RefType = TypeRefNone;
-							else if(strcasecmp(val,"global") == 0) RefType = TypeRefGlobal;
-							else
-							{
-								XML_warning(user_data, "Unknown ref value ref=\"%s\" in <%s/>\n", val, name);
-							}
-						}
-						else if(strcmp(attr, "target") == 0)
-						{
-							RefTarget = val;
-						}
-						else if(strcmp(attr, "doc") == 0)
-						{
-							// Ignore any documentation attributes
-						}
-						else
-						{
-							XML_error(user_data, "Unexpected attribute \"%s\" in basic type \"%s\"\n", attr, name);
-						}
-					}
-				}
-
-				// Build a new type record
-				TypeRecordPtr ThisType = new TypeRecord;
-
-				ThisType->Class = TypeInterpretation;
-				ThisType->Type = name;
-				ThisType->Detail = Detail;
-				ThisType->Base = Base;
-				if(TypeUL) ThisType->UL = StringToUL(TypeUL);
-				if(SymSpace)
-				{
-					// A symbol space has been specified - look it up
-					ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
-
-					// If it does not already exist, create it
-					if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
-				}
-				else
-				{
-					ThisType->SymSpace = State->DefaultSymbolSpace;
-				}
-				ThisType->Size = Size;
-				ThisType->Endian = false;
-				ThisType->IsBaseline = IsBaseline;
-				if(IsCharacter) ThisType->ArrayClass = ARRAYSTRING; else ThisType->ArrayClass = ARRAYIMPLICIT;
-				ThisType->RefType = RefType;
-				if(RefTarget) ThisType->RefTarget = RefTarget;
-
-				// Add this type record
-				State->Types.push_back(ThisType);
-
+				ParseTypeInterpretation(State, name, attrs);
 				break;
-			}
 
 			case StateTypesMultiple:
-			{
-				const char *Detail = "";
-				const char *Base = "";
-				const char *TypeUL = NULL;
-				const char *SymSpace = NULL;
-				TypeRef RefType = TypeRefUndefined;
-				const char *RefTarget = NULL;
-				MDArrayClass ArrayClass = ARRAYIMPLICIT;
-				int Size = 0;
-				bool IsBaseline = false;
-
-				/* Process attributes */
-				if(attrs != NULL)
-				{
-					int this_attr = 0;
-					while(attrs[this_attr])
-					{
-						char const *attr = attrs[this_attr++];
-						char const *val = attrs[this_attr++];
-						
-						if(strcmp(attr, "detail") == 0)
-						{
-							Detail = val;
-						}
-						else if(strcmp(attr, "base") == 0)
-						{
-							Base = val;
-						}
-						else if(strcmp(attr, "size") == 0)
-						{
-							Size = atoi(val);
-						}
-						else if(strcmp(attr, "type") == 0)
-						{
-							if((strcasecmp(val, "Batch") == 0) || (strcasecmp(val, "Explicit") == 0)) ArrayClass = ARRAYEXPLICIT;
-							if(strcasecmp(val, "String") == 0) ArrayClass = ARRAYSTRING;
-						}
-						else if(strcmp(attr, "ul") == 0)
-						{
-							TypeUL = val;
-						}
-						else if(strcmp(attr, "baseline") == 0)
-						{
-							if((strcasecmp(val, "true") == 0) || (strcasecmp(val, "yes") == 0)) IsBaseline = true;
-							else IsBaseline = false;
-						}
-						else if(strcmp(attr, "symSpace") == 0)
-						{
-							SymSpace = val;
-						}
-						else if(strcmp(attr, "ref") == 0)
-						{
-							if(strcasecmp(val,"strong") == 0) RefType = TypeRefStrong;
-							else if(strcasecmp(val,"target") == 0) RefType = TypeRefTarget;
-							else if(strcasecmp(val,"weak") == 0) RefType = TypeRefWeak;
-							else if(strcasecmp(val,"meta") == 0) RefType = TypeRefMeta;
-							else if(strcasecmp(val,"dict") == 0) RefType = TypeRefDict;
-							else if(strcasecmp(val,"none") == 0) RefType = TypeRefNone;
-							else if(strcasecmp(val,"global") == 0) RefType = TypeRefGlobal;
-							else
-							{
-								XML_warning(user_data, "Unknown ref value ref=\"%s\" in <%s/>\n", val, name);
-							}
-						}
-						else if(strcmp(attr, "target") == 0)
-						{
-							RefTarget = val;
-						}
-						else if(strcmp(attr, "doc") == 0)
-						{
-							// Ignore any documentation attributes
-						}
-						else
-						{
-							XML_error(user_data, "Unexpected attribute \"%s\" in basic type \"%s\"\n", attr, name);
-						}
-					}
-				}
-
-				// Build a new type record
-				TypeRecordPtr ThisType = new TypeRecord;
-
-				ThisType->Class = TypeMultiple;
-				ThisType->Type = name;
-				ThisType->Detail = Detail;
-				ThisType->Base = Base;
-				if(TypeUL) ThisType->UL = StringToUL(TypeUL);
-				if(SymSpace)
-				{
-					// A symbol space has been specified - look it up
-					ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
-
-					// If it does not already exist, create it
-					if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
-				}
-				else
-				{
-					ThisType->SymSpace = State->DefaultSymbolSpace;
-				}
-				ThisType->Size = Size;
-				ThisType->Endian = false;
-				ThisType->IsBaseline = IsBaseline;
-				ThisType->ArrayClass = ArrayClass;
-				ThisType->RefType = RefType;
-				if(RefTarget) ThisType->RefTarget = RefTarget;
-
-				// Add this type record
-				State->Types.push_back(ThisType);
-
+				ParseTypeMultiple(State, name, attrs);
 				break;
-			}
 
 			case StateTypesCompound:
-			{
-				const char *Detail = "";
-				const char *TypeUL = NULL;
-				const char *SymSpace = NULL;
-				bool IsBaseline = false;
-
-				/* Process attributes */
-				if(attrs != NULL)
-				{
-					int this_attr = 0;
-					while(attrs[this_attr])
-					{
-						char const *attr = attrs[this_attr++];
-						char const *val = attrs[this_attr++];
-						
-						if(strcmp(attr, "detail") == 0)
-						{
-							Detail = val;
-						}
-						else if(strcmp(attr, "ul") == 0)
-						{
-							TypeUL = val;
-						}
-						else if(strcmp(attr, "baseline") == 0)
-						{
-							if((strcasecmp(val, "true") == 0) || (strcasecmp(val, "yes") == 0)) IsBaseline = true;
-							else IsBaseline = false;
-						}
-						else if(strcmp(attr, "symSpace") == 0)
-						{
-							SymSpace = val;
-						}
-						else if(strcmp(attr, "doc") == 0)
-						{
-							// Ignore any documentation attributes
-						}
-						else
-						{
-							XML_error(user_data, "Unexpected attribute \"%s\" in compound type \"%s\"\n", attr, name);
-						}
-					}
-				}
-
-				// Build a new type record
-				TypeRecordPtr ThisType = new TypeRecord;
-
-				ThisType->Class = TypeCompound;
-				ThisType->Type = name;
-				ThisType->Detail = Detail;
-				ThisType->Base = "";
-				if(TypeUL) ThisType->UL = StringToUL(TypeUL);
-				if(SymSpace)
-				{
-					// A symbol space has been specified - look it up
-					ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
-
-					// If it does not already exist, create it
-					if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
-				}
-				else
-				{
-					ThisType->SymSpace = State->DefaultSymbolSpace;
-				}
-				ThisType->Size = 0;
-				ThisType->Endian = false;
-				ThisType->ArrayClass = ARRAYIMPLICIT;
-
-				// Add this type record
-				State->Types.push_back(ThisType);
-
-				State->State = StateTypesCompoundItem;
-				State->Parent = ThisType;
-
+				ParseTypeCompound(State, name, attrs);
 				break;
-			}
 
 			case StateTypesCompoundItem:
 			{
@@ -734,92 +969,8 @@ namespace
 			}
 
 			case StateTypesEnum:
-			{
-				const char *Detail = "";
-				const char *Base = NULL;
-				const char *TypeUL = NULL;
-				const char *SymSpace = NULL;
-				bool IsBaseline = false;
-
-				/* Process attributes */
-				if(attrs != NULL)
-				{
-					int this_attr = 0;
-					while(attrs[this_attr])
-					{
-						char const *attr = attrs[this_attr++];
-						char const *val = attrs[this_attr++];
-						
-						if(strcmp(attr, "detail") == 0)
-						{
-							Detail = val;
-						}
-						else if(strcmp(attr, "type") == 0)
-						{
-							Base = val;
-						}
-						else if(strcmp(attr, "ul") == 0)
-						{
-							TypeUL = val;
-						}
-						else if(strcmp(attr, "baseline") == 0)
-						{
-							if((strcasecmp(val, "true") == 0) || (strcasecmp(val, "yes") == 0)) IsBaseline = true;
-							else IsBaseline = false;
-						}
-						else if(strcmp(attr, "symSpace") == 0)
-						{
-							SymSpace = val;
-						}
-						else if(strcmp(attr, "doc") == 0)
-						{
-							// Ignore any documentation attributes
-						}
-						else
-						{
-							XML_error(user_data, "Unexpected attribute \"%s\" in enumeration type \"%s\"\n", attr, name);
-						}
-					}
-				}
-
-				if(!Base)
-				{
-					error("No value type specified for enumerated type %s\n", name);
-				}
-
-				// Build a new type record
-				TypeRecordPtr ThisType = new TypeRecord;
-
-				ThisType->Class = TypeEnum;
-				ThisType->Type = name;
-				ThisType->Detail = Detail;
-				if(Base) ThisType->Base = Base;
-				if(TypeUL) ThisType->UL = StringToUL(TypeUL);
-				if(SymSpace)
-				{
-					// A symbol space has been specified - look it up
-					ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
-
-					// If it does not already exist, create it
-					if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
-				}
-				else
-				{
-					ThisType->SymSpace = State->DefaultSymbolSpace;
-				}
-				ThisType->Size = 0;
-				ThisType->Endian = false;
-				ThisType->IsBaseline = IsBaseline;
-				ThisType->ArrayClass = ARRAYIMPLICIT;
-
-				// Add this type record
-				State->Types.push_back(ThisType);
-
-				State->State = StateTypesEnumValue;
-				State->Parent = ThisType;
-
+				ParseTypeEnum(State, name, attrs);
 				break;
-			}
 
 			case StateTypesEnumValue:
 			{
@@ -884,78 +1035,8 @@ namespace
 			}
 
 			case StateTypesLabel:
-			{
-				const char *Detail = "";
-				const char *TypeUL = NULL;
-				const char *Mask = NULL;
-				const char *SymSpace = NULL;
-
-				/* Process attributes */
-				if(attrs != NULL)
-				{
-					int this_attr = 0;
-					while(attrs[this_attr])
-					{
-						char const *attr = attrs[this_attr++];
-						char const *val = attrs[this_attr++];
-						
-						if(strcmp(attr, "detail") == 0)
-						{
-							Detail = val;
-						}
-						else if(strcmp(attr, "ul") == 0)
-						{
-							TypeUL = val;
-						}
-						else if(strcmp(attr, "mask") == 0)
-						{
-							Mask = val;
-						}
-						else if(strcmp(attr, "symSpace") == 0)
-						{
-							SymSpace = val;
-						}
-						else if(strcmp(attr, "doc") == 0)
-						{
-							// Ignore any documentation attributes
-						}
-						else
-						{
-							XML_error(user_data, "Unexpected attribute \"%s\" in label \"%s\"\n", attr, name);
-						}
-					}
-				}
-
-				// Build a new type record
-				TypeRecordPtr ThisType = new TypeRecord;
-
-				ThisType->Class = TypeLabel;
-				ThisType->Type = name;
-				ThisType->Detail = Detail;
-				if(TypeUL) ThisType->UL = StringToUL(TypeUL);
-				if(Mask) ThisType->Value = Mask;
-
-				if(SymSpace)
-				{
-					// A symbol space has been specified - look it up
-					ThisType->SymSpace = SymbolSpace::FindSymbolSpace(SymSpace);
-
-					// If it does not already exist, create it
-					if(!ThisType->SymSpace) ThisType->SymSpace = new SymbolSpace(SymSpace);
-				}
-				else
-				{
-					ThisType->SymSpace = State->DefaultSymbolSpace;
-				}
-				ThisType->Size = 0;
-				ThisType->Endian = false;
-				ThisType->ArrayClass = ARRAYIMPLICIT;
-
-				// Add this type record
-				State->Types.push_back(ThisType);
-
+				ParseLabel(State, name, attrs);
 				break;
-			}
 
 			default:		// Should not be possible
 			case StateDone:
@@ -987,7 +1068,10 @@ namespace
 
 			case StateTypes:
 			{
-				State->State = StateDone;
+				if(strcmp(name,"MXFTypes") == 0) State->State = StateDone;
+				else if(strcmp(name,"Labels") == 0) State->State = StateDone;
+				else if(strcmp(name,"MXFLabels") == 0) State->State = StateDone;
+
 				break;
 			}
 
@@ -1015,8 +1099,9 @@ namespace
 			{
 				if(strcmp(name,State->Parent->Type.c_str()) == 0)
 				{
-					State->State = StateTypesCompound;
+					State->State = State->KindType ? StateTypes : StateTypesCompound;
 					State->Parent = NULL;
+					State->KindType = false;
 				}
 				break;
 			}
@@ -1029,8 +1114,9 @@ namespace
 			{
 				if(strcmp(name,State->Parent->Type.c_str()) == 0)
 				{
-					State->State = StateTypesEnum;
+					State->State = State->KindType ? StateTypes : StateTypesEnum;
 					State->Parent = NULL;
+					State->KindType = false;
 				}
 				break;
 			}
@@ -1096,6 +1182,12 @@ int mxflib::LoadLegacyDictionary(const char *DictFile, SymbolSpacePtr DefaultSym
 	State.DefaultSymbolSpace = DefaultSymbolSpace;
 	State.DictSymbolSpace = DefaultSymbolSpace;
 
+	// Initialize the Types parser state
+	State.ClassState.State = StateIdle;
+	State.ClassState.DefaultSymbolSpace = DefaultSymbolSpace;
+	State.ClassState.LabelsOnly = false;
+	State.ClassState.KindType = false;
+
 	std::string XMLFilePath = LookupDictionaryPath(DictFile);
 
 	// Parse the file
@@ -1139,6 +1231,12 @@ int mxflib::LoadLegacyDictionaryFromXML(std::string & strXML, bool FastFail)
 	State.State = DictStateIdle;
 	State.DefaultSymbolSpace = MXFLibSymbols;
 	State.DictSymbolSpace = MXFLibSymbols;
+
+	// Initialize the Types parser state
+	State.ClassState.State = StateIdle;
+	State.ClassState.DefaultSymbolSpace = MXFLibSymbols;
+	State.ClassState.LabelsOnly = false;
+	State.ClassState.KindType = false;
 
 	// Parse the file
 	bool result = false;
@@ -1349,9 +1447,10 @@ namespace
 		// Set our name
 		ThisClass->Name = name;
 
-		// The two keys
+		// The two keys and a tag for when "tag=" is used
 		DataChunkPtr Key;
 		DataChunkPtr GlobalKey;
+		Tag LocalTag = 0;
 
 		// Used to determine if we need to copy the main key to the global key
 		bool HasGlobalKey = false;
@@ -1388,23 +1487,72 @@ namespace
 				char const *attr = attrs[this_attr++];
 				char const *val = attrs[this_attr++];
 				
-				if(strcmp(attr, "key") == 0)
+				if(strcmp(attr, "tag") == 0)
 				{
 					int Size;
-					const char *p = val;
 					UInt8 Buffer[32];
 
-					Size = ReadHexStringOrUL(p, 32, Buffer, " \t.");
+					/* "Tag" values may be decimal values or hex - determine which */
+					bool IsHexValue = ((val[0] == '0') && (tolower(val[1]) == 'x'));
+					bool IsDecimal = !IsHexValue;
+					if(!IsHexValue)
+					{
+						const char *pTest = val;
+						while(*pTest)
+						{
+							if(!isdigit(*(pTest++)))
+							{
+								IsDecimal = false;
+								break;
+							}
+						}
+					}
 
-					Key = new DataChunk(Size, Buffer);
+					/* DRAGONS: By now we should have isHexValue=true, or isDecimal=true, or neither (i.e. hex string) */
+
+					if(IsDecimal || IsHexValue)
+					{
+						// DRAGONS: Force radix to prevent leading zero causing octal!
+						LocalTag = strtoul(val, NULL, IsDecimal ? 10 : 16);
+					}
+					else
+					{
+						Size = ReadHexStringOrUL(val, 32, Buffer, " \t.");
+						
+						// Tags > 4 bytes are regarded as pre-rendered keys, otherwise we decode as a big-endian tag
+						if(Size > 4) Key = new DataChunk(Size, Buffer);
+						else
+						{
+							LocalTag = 0;
+							size_t Count = Size;
+							UInt8 *p = Buffer;
+							while(Count--) LocalTag = (LocalTag << 8) + *(p++);
+						}
+					}
 				}
-				else if(strcmp(attr, "globalKey") == 0)
+				else if(strcmp(attr, "key") == 0)
 				{
 					int Size;
-					const char *p = val;
 					UInt8 Buffer[32];
 
-					Size = ReadHexStringOrUL(p, 32, Buffer, " \t.");
+					Size = ReadHexStringOrUL(val, 32, Buffer, " \t.");
+
+					// Keys > 4 bytes are regarded as pre-rendered keys, otherwise we decode as a big-endian tag
+					if(Size > 4) Key = new DataChunk(Size, Buffer);
+					else
+					{
+						LocalTag = 0;
+						size_t Count = Size;
+						UInt8 *p = Buffer;
+						while(Count--) LocalTag = (LocalTag << 8) + *(p++);
+					}
+				}
+				else if(strcmp(attr, "ul") == 0 || strcmp(attr, "globalKey") == 0)
+				{
+					int Size;
+					UInt8 Buffer[32];
+
+					Size = ReadHexStringOrUL(val, 32, Buffer, " \t.");
 
 					GlobalKey = new DataChunk(Size, Buffer);
 
@@ -1436,6 +1584,7 @@ namespace
 					else if(strcasecmp(val,"meta") == 0) ThisClass->RefType = ClassRefMeta;
 					else if(strcasecmp(val,"dict") == 0) ThisClass->RefType = ClassRefDict;
 					else if(strcasecmp(val,"none") == 0) ThisClass->RefType = ClassRefNone;
+					else if(strcasecmp(val,"nested") == 0) ThisClass->RefType = ClassRefNested;
 					else if(strcasecmp(val,"global") == 0) ThisClass->RefType = ClassRefGlobal;
 					else
 					{
@@ -1446,7 +1595,9 @@ namespace
 				{
 					if(strcasecmp(val,"universalSet") == 0) 
 					{
-						XML_error(user_data, "Class %s is unsupported type %s\n", name, val);
+						ThisClass->Class = ClassSet;
+						ThisKeyFormat = (unsigned int)DICT_KEY_AUTO;
+						ThisLenFormat = (unsigned int)DICT_LEN_BER;
 					}
 					else if(   (strcasecmp(val,"localSet") == 0)
 							|| (strcasecmp(val,"subLocalSet") == 0) )
@@ -1490,9 +1641,16 @@ namespace
 				{
 					ThisClass->MaxSize = atoi(val);
 				}
-				else if(strcmp(attr, "keyFormat") == 0)
+				else if(strcmp(attr, "tagFormat") == 0 || strcmp(attr, "keyFormat") == 0)
 				{
-					ThisKeyFormat = (unsigned int)atoi(val);
+					if(strcasecmp(val, "BER")==0)
+					{
+						ThisKeyFormat = (unsigned int)DICT_KEY_BER;
+					}
+					else
+					{
+						ThisKeyFormat = (unsigned int)atoi(val);
+					}
 				}
 				else if(strcmp(attr, "lengthFormat") == 0)
 				{
@@ -1578,16 +1736,27 @@ namespace
 			}
 		}
 
-		// Build local tag from key (if local)
-		if(Key && (Key->Size != 16))
+		// Use a specified local tag
+		if(LocalTag != 0)
 		{
-			if(Key->Size != 2)
+			ThisClass->LocalTag = LocalTag;
+		}
+		// Or build local tag from key (if local)
+		else if(Key && (Key->Size != 16))
+		{
+			if(Key->Size > 4)
 			{
-				error("Only 2-byte local tags currently supported, tag size for %s is %d\n", ThisClass->Name.c_str(), (int)Key->Size);
+				error("Local tags are currently limited to 4 bytes, even with BER, tag size for %s is %d\n", ThisClass->Name.c_str(), (int)Key->Size);
 			}
 			else
 			{
-				ThisClass->Tag = Key->Data[1] + (Key->Data[0] << 8);
+				// Load the local tag into the tag property
+				const UInt8 *pData = Key->Data;
+				Tag Temp = 0;
+				int Count = static_cast<int>(Key->Size);
+				while(--Count) Temp = (Temp << 8) + *(pData++);
+
+				ThisClass->LocalTag = Temp;
 			}
 		}
 
