@@ -235,6 +235,38 @@ void ANCVBILine::WriteData(UInt8 *Buffer)
 }
 
 
+//! Has the end been signalled - either by our position, or by the master
+bool ANCVBISource::EndSignalled(void)
+{
+	// First time through, initialize
+	if(EndAtPosition < 0)
+	{
+		// No master - panic!
+		if(!MasterSource) return true;
+
+		// If the master has already ended, we are building separate streams (such as linked atoms) so get the length from the master
+		if(MasterSource->EndOfData()) EndAtPosition = MasterSource->GetCurrentPosition();
+		// ...otherwise we will slave out end from them
+		else EndAtPosition = 0;
+
+		// Start out at zero
+		CurrentPosition = 0;
+
+	}
+
+	// Check for scheduled end
+	if(EndAtPosition)
+	{
+		if(CurrentPosition >= EndAtPosition) return true;
+		else return false;
+	}
+
+	// Slave out end from the master
+	return MasterSource->EndOfData();
+}
+
+
+
 //! Get the size of the essence data in bytes
 /*! \note There is intentionally no support for an "unknown" response */
 size_t ANCVBISource::GetEssenceDataSize(void)
@@ -242,7 +274,7 @@ size_t ANCVBISource::GetEssenceDataSize(void)
 	// If we don't yet have any data prepared, prepare some (even if this will be an "empty" chunk)
 	if(BufferedData.empty())
 	{
-		if((!MasterSource) || (MasterSource->EndOfData())) return 0;
+		if(EndSignalled()) return 0;
 
 		BufferedData.push_back(BuildChunk());
 	}
@@ -265,16 +297,23 @@ size_t ANCVBISource::GetEssenceDataSize(void)
  */
 DataChunkPtr ANCVBISource::GetEssenceData(size_t Size /*=0*/, size_t MaxSize /*=0*/)
 {
-	// Once this read is done we will be in sync with the master stream position
-	CurrentPosition = MasterSource->GetCurrentPosition();
+	// Get the current position - if possible by querying the BodyStream so we don't get an off-by-one error due to some streams being updated and some not
+	if(BodyParent) CurrentPosition = BodyParent->GetPosition();
+	else if(MasterSource) CurrentPosition = MasterSource->GetCurrentPosition() - 1;
 
 	// If we don't yet have any data prepared, prepare some (even if this will be an "empty" chunk)
 	if(BufferedData.empty())
 	{
-		if((!MasterSource) || (MasterSource->EndOfData())) return NULL;
+		if(EndSignalled()) return NULL;
 
 		BufferedData.push_back(BuildChunk());
 	}
+
+	// If we are indexing, set simple index flags
+	if(IndexMan) IndexMan->OfferEditUnit(IndexStreamID, CurrentPosition, 0, 0x80);
+
+	// Increment our position - in case we end up being the only source in a BodyStream (this ensures we increment the one we read at the top)
+	CurrentPosition++;
 
 	/* Handle the simple case first:
 	 * - We are allowed to decide how much data to return (one frame)
@@ -374,7 +413,7 @@ EssenceParser::WrappingConfigPtr ANCVBISource::MakeWrappingConfig(WrappingConfig
 	SubCfg->WrapOpt->GCElementType = GetGCElementType();
 	SubCfg->WrapOpt->ThisWrapType = MasterCfg->WrapOpt->ThisWrapType;
 	SubCfg->WrapOpt->CanSlave = false;
-	SubCfg->WrapOpt->CanIndex = false;
+	SubCfg->WrapOpt->CanIndex = true;
 	SubCfg->WrapOpt->CBRIndex = false;
 	SubCfg->WrapOpt->BERSize = 4;
 	SubCfg->WrapOpt->BytesPerEditUnit = 0;

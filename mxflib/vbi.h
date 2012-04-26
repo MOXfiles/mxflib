@@ -233,6 +233,20 @@ namespace mxflib
 	
 		//! Set the owning ANCVBISource
 		void SetParent(EssenceSource *ParentSource) { Parent = ParentSource; }
+
+		//! Get a pointer to the current master source for the owning ANCVBISource, this may be NULL if it is not yet defined
+		EssenceSource *GetMaster(void)
+		{
+			EssenceSubSource *pParent = SmartPtr_Cast(Parent, EssenceSubSource);
+			if(pParent) return pParent->GetMaster();
+			return NULL;
+		}
+
+		//! Get a pointer to the current owning ANCVBISource
+		EssenceSubSource *GetParent(void)
+		{
+			return SmartPtr_Cast(Parent, EssenceSubSource);
+		}
 	};
 
 	//! Smart pointer to an ANCVBILineSource
@@ -257,13 +271,15 @@ namespace mxflib
 
 		size_t BufferOffset;				//!< An offset into the current data buffer if we are returning a partial chunk in GetEssenceData()
 
-		Position CurrentPosition;			//!< Our current position
+		Position CurrentPosition;			//!< Our current position. This is relative to the start of the stream, so the first edit unit is always 0
 
 		int F2Offset;						//!< The offset to add to field 2 line numbers (0 if no field 2, -1 if unknown)
 
+		Position EndAtPosition;				//!< The position at which we end (0 for slave from master, -1 for not yet set)
+
 	public:
 		//! Base constructor
-		ANCVBISource(EssenceSource *Master = NULL) : EssenceSubSource(Master), BufferOffset(0), CurrentPosition(0), F2Offset(-1) {};
+		ANCVBISource(EssenceSource *Master = NULL) : EssenceSubSource(Master), BufferOffset(0), CurrentPosition(0), F2Offset(-1), EndAtPosition(-1) {};
 
 		//! Virtual destructor to allow polymorphism
 		virtual ~ANCVBISource() {};
@@ -302,7 +318,7 @@ namespace mxflib
 		virtual bool EndOfItem(void) { return (BufferOffset == 0); }
 
 		//! Get the GCEssenceType to use when wrapping this essence in a Generic Container
-		virtual UInt8 GetGCEssenceType(void) const { return 0x17; }
+		virtual UInt8 GetGCEssenceType(void) { return 0x17; }
 
 		//! Get the current position in GetEditRate() sized edit units
 		/*! This is relative to the start of the stream, so the first edit unit is always 0.
@@ -313,6 +329,11 @@ namespace mxflib
 		{
 			return CurrentPosition;
 		}
+
+		//! Can this stream provide indexing
+		/*! If true then SetIndex Manager can be used to set the index manager that will receive indexing data
+		 */
+		virtual bool CanIndex() { return true; }
 
 		//! Get the preferred BER length size for essence KLVs written from this source, 0 for auto
 		virtual int GetBERSize(void) { return 4; }
@@ -377,6 +398,9 @@ namespace mxflib
 		int Field2Offset(void);
 
 	protected:
+		//! Has the end been signalled - either by our position, or by the master
+		bool EndSignalled(void);
+
 		//! Build the ANC or VBI data for this frame in SMPTE-436M format
 		DataChunkPtr BuildChunk(void);
 
