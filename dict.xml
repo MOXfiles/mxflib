@@ -22,13 +22,13 @@
 <!-- 																			 -->
 <!--   3. This notice may not be removed or altered from any source				 -->
 <!--      distribution.															 -->
-<!-- 																			 -->
+
 <MXFDictionary>
 	<MXFTypes>
 		<Basic>
-			<Float32 detail="32 bit IEEE Floating Point" size="4" endian="no" doc="IEEE 754-1985"/>
-			<Float64 detail="64 bit IEEE Floating Point" size="8" endian="no" doc="IEEE 754-1985"/>
-			<Float80 detail="80 bit IEEE Floating Point" size="10" endian="no" doc="IEEE 754-1985"/>
+			<Float32 ul="urn:smpte:ul:060e2b34.01040101.01020100.00000000" detail="32 bit IEEE Floating Point" size="4" endian="no" doc="IEEE 754-1985"/>
+      		<Float64 ul="urn:smpte:ul:060e2b34.01040101.01020300.00000000" detail="64 bit IEEE Floating Point" size="8" endian="no" doc="IEEE 754-1985"/>
+      		<Float80 detail="80 bit IEEE Floating Point" size="10" endian="no" doc="IEEE 754-1985"/>
 			<Int8 detail="8 bit integer" size="1" endian="no" baseline="yes" ul="urn:x-ul:060E2B34.0104.0101.01010500.00000000"/>
 			<Int16 detail="16 bit integer" size="2" endian="yes" baseline="yes" ul="urn:x-ul:060E2B34.0104.0101.01010600.00000000"/>
 			<Int24 detail="24 bit integer" size="3" endian="yes"/>
@@ -42,7 +42,7 @@
 		</Basic>
 		<Basic>
 			<UUID detail="Universally Unique ID, as per RFC 4122" size="16" baseline="yes" ul="urn:x-ul:060E2B34.0104.0101.01030300.00000000"/>
-      <UL detail="SMPTE Universal Label" size="16" endian="no" baseline="yes" ul="urn:x-ul:060E2B34.0104.0101.01030400.00000000"/>
+      		<UL detail="SMPTE Universal Label" size="16" endian="no" baseline="yes" ul="urn:x-ul:060E2B34.0104.0101.01030400.00000000"/>
 			<UID detail="Generic Unique ID, used by DMS-1" size="16" endian="no"/>
 			<UMID detail="SMPTE UMID" size="32" baseline="yes" ul="urn:x-ul:060E2B34.0104.0101.01300100.00000000"/>
 		</Basic>
@@ -100,6 +100,7 @@
 			<RAW detail="Raw data bytes, unknown representation" base="UInt8"/>
 			<RAWBatch detail="Batch of Raw data items" base="RAW" type="Explicit"/>
 			<ChannelStatusModeTypeBatch detail="Batch of ChannelStatusModeTypes" base="ChannelStatusModeType" type="Explicit"/>
+			<DataValue detail="Data represented as AAF varying array of UInt8" base="UInt8" type="Implicit" ul="urn:x-ul:060E2B34.0104.0101.04100100.00000000"/>
 		</Multiple>
 		<Enumeration>
 			<LayoutType detail="Frame Layout Type" type="UInt8" baseline="yes" ul="urn:x-ul:060e2b34.0104.0101.02010108.00000000">
@@ -129,8 +130,7 @@
     </Enumeration>
     <Interpretation>
       <Stream detail="Data mapped to AAF Stream, MXF represents using a SID" base="RAW" ul="urn:x-ul:060E2B34.0104.0101.04100200.00000000"/>
-      <DataValue detail="Data represented as AAF varying array of UInt8" base="UInt8Array" ul="urn:x-ul:060E2B34.0104.0101.04100100.00000000"/>
-      <Opaque detail="Opaque Data" base="UInt8Array" ul="urn:x-ul:060E2B34.0104.0101.04100400.00000000"/>
+       <Opaque detail="Opaque Data" base="UInt8Array" ul="urn:x-ul:060E2B34.0104.0101.04100400.00000000"/>
       <LocalTagType detail="Local Tag for 2-byte tagged SMPTE 336M set" base="UInt16" baseline="yes" ul="urn:x-ul:060E2B34.0104.0101.01012004.00000000"/>
     </Interpretation>
     <Interpretation>
@@ -176,6 +176,7 @@
       <StrongReferenceVectorSubDescriptor detail="Vector of StrongReferences to SubDescriptor sets" type="Explicit" base="StrongRef" target="SubDescriptor" ul="urn:x-ul:060E2B34.0104.0101.05060e00.00000000"/>
       <StrongReferenceVectorLocator detail="Vector of StrongReferences to Locator sets" baseline="yes" type="Explicit" base="StrongReferenceLocator" ul="urn:x-ul:060E2B34.0104.0101.05060400.00000000"/>
 			<StrongReferenceVectorFileDescriptor detail="Vector of StrongReferences to File Descriptor sets" baseline="yes" type="Explicit" base="StrongRef" target="FileDescriptor" ul="urn:x-ul:060E2B34.0104.0101.05060B00.00000000"/>
+      <StrongReferenceVectorKLVData detail="Vector of StrongReferences to StructuralComponent sets" type="Explicit" base="StrongReferenceKLVData" ul="urn:x-ul:060E2B34.0104.0101.05060900.00000000"/>
     </Multiple>
     <Multiple>
       <StrongReferenceVectorParameter detail="Vector of StrongReferences to ParameterDefinition sets" type="Explicit" base="StrongReferenceParameter" ul="urn:x-ul:060E2B34.0104.0101.05060a00.00000000"/>
@@ -284,8 +285,9 @@
 		<ClosedBodyPartition detail="Closed Body Partition Pack" base="PartitionMetadata" baseline="yes" key="06 0e 2b 34 02 05 01 01  0d 01 02 01 01 03 02 00"/>
 		<ClosedCompleteBodyPartition detail="Closed Complete Body Partition Pack" base="PartitionMetadata" baseline="yes" key="06 0e 2b 34 02 05 01 01  0d 01 02 01 01 03 04 00"/>
 		<Footer detail="Footer Partition Pack" base="PartitionMetadata" baseline="yes" key="06 0e 2b 34 02 05 01 01  0d 01 02 01 01 04 02 00"/>
-		<CompleteFooter detail="Complete Footer Partition Pack" base="PartitionMetadata" baseline="yes" key="06 0e 2b 34 02 05 01 01  0d 01 02 01 01 04 04 00"/>
-		<Primer detail="Primer Pack" type="fixedPack" baseline="yes" key="06 0e 2b 34 02 05 01 01  0d 01 02 01 01 05 01 00">
+    <CompleteFooter detail="Complete Footer Partition Pack" base="PartitionMetadata" baseline="yes" key="06 0e 2b 34 02 05 01 01  0d 01 02 01 01 04 04 00"/>
+    <GenericStreamPartition detail="Generic Stream Partition Pack" base="PartitionMetadata" baseline="no" key="06 0e 2b 34 02 05 01 01  0d 01 02 01 01 03 11 00"/>
+    <Primer detail="Primer Pack" type="fixedPack" baseline="yes" key="06 0e 2b 34 02 05 01 01  0d 01 02 01 01 05 01 00">
 			<LocalTagEntries detail="Local Tag Entry Batch" use="required" type="LocalTagEntryBatch" globalKey="06 0e 2b 34 01 01 01 05  06 01 01 07 15 00 00 00"/>
 		</Primer>
 		<AbstractObject type="localSet" keyFormat="2" lengthFormat="2" baseline="yes" key="urn:x-ul:060E2B34.0253.0101.0D010101.01017f00">
@@ -317,7 +319,7 @@
 		<RandomIndexMetadataV10 detail="Random Index Pack (v10)" base="RandomIndexMetadata" key="06 0e 2b 34 02 05 01 01  0d 01 02 01 01 11 00 00"/>
 		<Preface base="InterchangeObject" detail="Preface Set" type="localSet" keyFormat="2" lengthFormat="2" baseline="yes" key="06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 2f 00">
 			<LastModifiedDate detail="Date &amp; time of the last modification of the file" use="required" type="Timestamp" minLength="8" maxLength="8" key="3b 02" globalKey="06 0e 2b 34 01 01 01 02  07 02 01 10 02 04 00 00"/>
-			<Version detail="The value shall be 258 (i.e. v1.2)" use="required" type="VersionType" minLength="2" maxLength="2" key="3b 05" globalKey="06 0e 2b 34 01 01 01 02  03 01 02 01 05 00 00 00" default="258"/>
+      <Version detail="The value shall be 258 (i.e. v1.2)" use="required" type="VersionType" minLength="2" maxLength="2" key="3b 05" globalKey="06 0e 2b 34 01 01 01 02  03 01 02 01 05 00 00 00" default="258"/>
 			<ObjectModelVersion detail="Simple integer version number of Object Model" use="optional" type="UInt32" minLength="4" maxLength="4" key="3b 07" globalKey="06 0e 2b 34 01 01 01 02  03 01 02 01 04 00 00 00"/>
 			<PrimaryPackage detail="The primary Package in this file" use="optional" type="UUID" minLength="16" maxLength="16" key="3b 08" globalKey="06 0e 2b 34 01 01 01 04  06 01 01 04 01 08 00 00" ref="weak" target="GenericPackage"/>
 			<Identifications detail="Ordered array of strong references to Identification sets recording all modifications to the file" use="encoder required" type="StrongReferenceVectorIdentification" key="3b 06" globalKey="06 0e 2b 34 01 01 01 02  06 01 01 04 06 04 00 00"/>
@@ -377,7 +379,7 @@
 		</EventTrack>
 		<StructuralComponent base="InterchangeObject" detail="Structural Component Superclass" type="localSet" baseline="yes" key="urn:x-ul:060E2B34.0253.0101.0D010101.01010200">
 			<ComponentDataDefinition detail="current~DataDefinition The kind of data or metadata this structure refers to" use="required" type="DictReferenceDataDefinition" key="02 01" globalKey="06 0e 2b 34 01 01 01 02  04 07 01 00 00 00 00 00"/>
-      <ComponentLength detail="Duration (in units of edit rate)" use="best effort" dvalue="-1" type="LengthType" minLength="8" maxLength="8" key="02 02" globalKey="06 0e 2b 34 01 01 01 02  07 02 02 01 01 03 00 00"/>
+      <ComponentLength detail="Duration (in units of edit rate)" use="optional" type="LengthType" minLength="8" maxLength="8" key="02 02" globalKey="06 0e 2b 34 01 01 01 02  07 02 02 01 01 03 00 00"/>
 		</StructuralComponent>
 		<Segment key="06 0E 2B 34 02 53 01 01 0d 01 01 01 01 01 03 00" base="StructuralComponent" baseline="yes" />
 		<Sequence base="Segment" detail="Sequence of Segments" type="localSet" baseline="yes" key="06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 0f 00">
@@ -755,14 +757,25 @@
 		<DMS1Scene detail="MXF DMS-1 Scene Framework constrained to the standard version" ul="06.0E.2B.34.04.01.01.04.0D.01.04.01.01.02.03.01"/>
 		<DMS1SceneExtended detail="MXF DMS-1 Scene Framework constrained to the extended version" ul="06.0E.2B.34.04.01.01.04.0D.01.04.01.01.02.03.02"/>
 		<ATSCA52 detail="ATSC A/52 Compressed Audio" ul="06.0E.2B.34.04.01.01.01.04.02.02.02.03.02.01.00"/>
+    <DCinemaTimedText detail="SMPTE ST429-5 D-Cinema Timed Text Stream" ul="06.0E.2B.34.04.01.01.0A.0D.01.03.01.02.13.01.01"/>
   </MXFLabels>
   
 
   <MXFClasses>
     <Preface>
         <Dictionaries detail="Link to KXS 377-2 Dictionary" globalKey="06 0E 2B 34 01 01 01 02 06 01 01 04 02 02 00 00" key="3B 04" use="optional" type="StrongReferenceDictionary"/>
+        <!-- ByteOrder use="required" in AAF -->
+        <ByteOrder detail="AAF only" globalKey="06 0E 2B 34 01 01 01 01 03 01 02 01 02 00 00 00" key="3B 01" type="Int16" use="optional"/>
     </Preface>
   </MXFClasses>
+  
+
+
+
+
+
+
+
 
   <MXFTypes>
     <Interpretation>
