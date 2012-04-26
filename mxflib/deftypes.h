@@ -69,7 +69,8 @@ namespace mxflib
 		TypeRefMeta,						//!< A metadictionary reference (either a reference into a metadictionary, or just a value)
 		TypeRefDict,						//!< A dictionary reference (either a reference into a dictionary, or just a value)
 		TypeRefGlobal,						//!< A global reference - may be to a definition in the file, or to a published definition (outside the scope of the file)
-		TypeRefTarget						//!< A target of a reference
+		TypeRefTarget,						//!< A target of a reference
+		TypeRefNested						//!< A nested strong reference - never stored in a type, but used in dictionaries. When loaded this becomes TypeRefStrong with Nested=true
 	};
 
 	//! Is a given reference type a reference source?
@@ -543,6 +544,9 @@ namespace mxflib
 	//! ClassRef version of TypeRefDict
 	const ClassRef ClassRefDict = TypeRefDict;
 
+	//! ClassRef version of TypeRefNested
+	const ClassRef ClassRefNested = TypeRefNested;
+
 	//! ClassRef version of TypeRefGlobal
 	const ClassRef ClassRefGlobal = TypeRefGlobal;
 
@@ -563,7 +567,7 @@ namespace mxflib
 		const char *Detail;					//!< The human readable description of this type
 		ClassUsage Usage;					//!< The usage type for this class
 		const char *Base;					//!< The type of an item, or base type if redefining
-		UInt16 Tag;							//!< The 2-byte tag, or zero
+		Tag LocalTag;							//!< The local tag, or zero
 		const char *UL;						//!< The UL for this class or item (if known)
 		const char *Default;				//!< Default value as a string, or NULL if none
 		const char *DValue;					//!< Distinguished value as a string, or NULL if none
@@ -596,7 +600,7 @@ namespace mxflib
 		std::string Detail;					//!< The human readable description of this type
 		ClassUsage Usage;					//!< The usage type for this class
 		std::string Base;					//!< The type of an item, or base type if redefining
-		UInt16 Tag;							//!< The 2-byte tag, or zero
+		Tag LocalTag;							//!< The local tag, or zero
 		ULPtr UL;							//!< The UL for this class or item (or NULL if not known)
 		bool HasDefault;					//!< True if the item has a default value
 		std::string Default;				//!< Default value as a string
@@ -620,7 +624,7 @@ namespace mxflib
 			MinSize = 0;
 			MaxSize = 0;
 			Usage = ClassUsageNULL;
-			Tag = 0;
+			LocalTag = 0;
 			HasDefault = false;
 			HasDValue = false;
 			RefType = ClassRefUndefined;
