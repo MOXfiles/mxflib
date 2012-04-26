@@ -147,16 +147,13 @@ Tag Primer::Lookup(ULPtr ItemUL, Tag TryTag /*=0*/)
 	MDOTypePtr Type = MDOType::Find(ItemUL);
 	if(Type)
 	{
-		if(Type->GetKey().Size != 2)
+		if(Type->GetTag() != 0)
 		{
-			// No static tag supplied - fall through and use a dynamic tag
+			insert(Primer::value_type(Type->GetTag(), ItemUL));
+			return Type->GetTag();
 		}
-		else
-		{
-			Tag ThisTag = (Type->GetKey().Data[0] << 8) + Type->GetKey().Data[1];
-			insert(Primer::value_type(ThisTag, ItemUL));
-			return ThisTag;
-		}
+
+		// No static tag supplied - fall through and use a dynamic tag
 	}
 
 	// Generate a dynamic tag
