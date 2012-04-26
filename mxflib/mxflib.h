@@ -53,28 +53,30 @@ namespace mxflib
 #define MXFLIB_VERSION_MAJOR "1"
 #define MXFLIB_VERSION_MINOR "2"
 #define MXFLIB_VERSION_TWEAK "0"
-#define MXFLIB_VERSION_BUILD "16"	// odd numbers are for freeMXF mxflib
-#define MXFLIB_VERSION_REL   5
+#define MXFLIB_VERSION_BUILD "19"
+#define MXFLIB_VERSION_REL   4
 #define MXFLIB_VERSION_RELTEXT(REL) (REL==1?"-Release":(REL==2?"-Development":(REL==3?"-Patched":(REL==4?"-Beta":(REL==5?"-Private":"")))))
 #define MXFLIB_VERSION_RELNUMBER(REL) (REL==1?"1":(REL==2?"2":(REL==3?"3":(REL==4?"4":(REL==5?"5":"0")))))
 
 	//! Get a human readable version of the library name
 	inline std::string LibraryName(void) { return std::string("MXFLib"); }
 
+	//! Get a human readable version of the Platform name
+	inline std::string PlatformName(void) { return LibraryName() + "(" + OSName() + ")"; }
+
 	//! Get a human readable version of the library version
 	inline std::string LibraryVersion(void) 
 	{ 
-		return std::string("MXFLib " MXFLIB_VERSION_MAJOR "." MXFLIB_VERSION_MINOR "."
-			                MXFLIB_VERSION_TWEAK "(" MXFLIB_VERSION_BUILD ")")
-			 + std::string( MXFLIB_VERSION_RELTEXT(MXFLIB_VERSION_REL) ); 
+		return LibraryName() 
+			   + std::string( " " MXFLIB_VERSION_MAJOR "." MXFLIB_VERSION_MINOR "." MXFLIB_VERSION_TWEAK "(" MXFLIB_VERSION_BUILD ")")
+			   + std::string( MXFLIB_VERSION_RELTEXT(MXFLIB_VERSION_REL) ); 
 	}
 
-	//! Get a version of the library version suitable for setting ProductVersion
+	//! Get a version of the library version suitable for setting ToolkitVersion
 	inline std::string LibraryProductVersion(void) 
 	{ 
-		return std::string( "\""    MXFLIB_VERSION_MAJOR "\",\"" MXFLIB_VERSION_MINOR 
-			                "\",\"" MXFLIB_VERSION_TWEAK "\",\"" MXFLIB_VERSION_BUILD "\",\"")
-							+ std::string( MXFLIB_VERSION_RELNUMBER(MXFLIB_VERSION_REL)) + std::string("\""); 
+		return std::string( "\"" MXFLIB_VERSION_MAJOR "\",\"" MXFLIB_VERSION_MINOR "\",\"" MXFLIB_VERSION_TWEAK "\",\"" MXFLIB_VERSION_BUILD "\",\"")
+			   + std::string( MXFLIB_VERSION_RELNUMBER(MXFLIB_VERSION_REL)) + std::string("\""); 
 	}
 }
 
@@ -89,11 +91,11 @@ namespace mxflib
 
 #include "mxflib/endian.h"
 
+#include "mxflib/forward.h"
 #include "mxflib/types.h"
 
 #include "mxflib/datachunk.h"
 
-#include "mxflib/forward.h"
 
 #include "mxflib/helper.h"
 
@@ -110,8 +112,6 @@ namespace mxflib
 #include "mxflib/mdtype.h"
 #include "mxflib/mdobject.h"
 
-#include "mxflib/metadata.h"
-
 #include "mxflib/rip.h"
 
 #include "mxflib/mxffile.h"
@@ -124,6 +124,8 @@ namespace mxflib
 
 #include "mxflib/crypto.h"
 
+#include "mxflib/metadata.h"
+
 #include "mxflib/vbi.h"
 
 #include "mxflib/audiomux.h"
@@ -132,8 +134,6 @@ namespace mxflib
 #include "mxflib/xmlparser.h"
 
 #include "mxflib/metadict.h"
-
-#include "mxflib/metabuilder.h"
 
 #endif // MXFLIB__MXFLIB_H
 
