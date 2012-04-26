@@ -46,6 +46,7 @@ mxflib::Metadata::Metadata()
 {
 	ModificationTime = Now2String();
 
+
 	Init();
 }
 
@@ -53,6 +54,7 @@ mxflib::Metadata::Metadata()
 mxflib::Metadata::Metadata(std::string TimeStamp)
 {
 	ModificationTime = TimeStamp;
+
 
 	Init();
 }
@@ -62,6 +64,7 @@ mxflib::Metadata::Metadata(std::string TimeStamp)
 void Metadata::Init(void)
 {
 	Object = new MDObject(Preface_UL);
+	Object->SetOuter(this);
 
 	// Even though it isn't used the preface needs an InstanceUID
 	// as it is derived from InterchangeObject
@@ -69,7 +72,7 @@ void Metadata::Init(void)
 	Object->AddChild(InstanceUID_UL)->SetValue(DataChunk(16, ThisInstance->GetValue()));
 
 	Object->AddChild(LastModifiedDate_UL)->SetString(ModificationTime);
-	Object->AddChild(Version_UL)->SetInt(258);
+	Object->AddChild(Version_UL)->SetInt(MXFVersion() == 2004 ? 258 : 259);
 
 	Object->AddChild(Identifications_UL);
 	// To set later: OperationalPattern
@@ -83,7 +86,9 @@ void Metadata::Init(void)
 	Content->AddChild(EssenceDataObjects_UL);
 
 	Object->AddChild(ContentStorageObject_UL)->MakeRef(Content);
+
 }
+
 
 
 //! Add a DMScheme to the listed schemes
@@ -115,40 +120,48 @@ void Metadata::AddDMScheme(ULPtr Scheme)
 
 
 // Add a package of the specified type to the matadata
-PackagePtr mxflib::Metadata::AddPackage(const UL &PackageType, std::string PackageName, UMIDPtr PackageUMID, UInt32 BodySID /*=0*/)
+PackagePtr mxflib::Metadata::AddPackage(const UL &PackageType, std::string PackageName, UMIDPtr PackageUID, UInt32 BodySID /*=0*/)
 {
 	PackagePtr Ret;
-
-	// If no UMID is supplied generate a general purpose UMID
-	if(!PackageUMID) PackageUMID = MakeUMID(4);
 
 	// Build the new package
 	Ret = new Package(PackageType);
 	if(!Ret) return Ret;
 
-	// Set the package name if one supplied
-	if(PackageName.length()) Ret->SetString(PackageName_UL, PackageName);
-
-	// Set the package's properties
-	Ret->AddChild(PackageUID_UL)->SetValue(PackageUMID->GetValue(), 32);
-	Ret->SetString(PackageCreationDate_UL, ModificationTime);
-	Ret->SetString(PackageModifiedDate_UL, ModificationTime);
-	Ret->AddChild(Tracks_UL);
-
-	// Add to the content storage set
-	MDObjectPtr Ptr = Object->Child(ContentStorageObject_UL);
-	if(Ptr) Ptr = Ptr->GetLink();
-	if(Ptr) Ptr = Ptr[Packages_UL];
-	if(Ptr) Ptr->AddChild()->MakeRef(Ret->Object);
-
-	if(BodySID) AddEssenceContainerData(PackageUMID, BodySID);
-
 	Ret->SetParent(this);
+
+	Ret->InitPackage(PackageName, PackageUID, BodySID);
 
 	// Add this package to our "owned" packages
 	Packages.push_back(Ret);
 
 	return Ret;
+}
+
+
+// Set up a new package object
+void Package::InitPackage(std::string PackageName, UMIDPtr PackageUID, UInt32 BodySID /*=0*/, std::string ModificationTime /*=""*/)
+{
+	// If no UMID is supplied generate a general purpose UMID
+	// TODO: Can we determine the type here
+	if(!PackageUID) PackageUID = MakeUMID(0x0f);
+
+	// Set the package name if one supplied
+	if(PackageName.length()) SetString(PackageName_UL, PackageName);
+
+	// Set the package's properties
+	if(ModificationTime.empty()) ModificationTime = Parent->ModificationTime;
+	AddChild(PackageUID_UL)->SetValue(PackageUID->GetValue(), 32);
+	SetString(PackageCreationDate_UL, ModificationTime);
+	SetString(PackageModifiedDate_UL, ModificationTime);
+	AddChild(Tracks_UL);
+
+	// Add to the content storage set
+	MDObjectPtr Ptr = Parent->GetRef(ContentStorageObject_UL);
+	if(Ptr) Ptr = Ptr[Packages_UL];
+	if(Ptr) Ptr->AddChild()->MakeRef(Object);
+
+	if(BodySID) Parent->AddEssenceContainerData(PackageUID, BodySID);
 }
 
 
@@ -201,6 +214,7 @@ bool SourceClip::MakeLink(TrackPtr SourceTrack, Int64 StartPosition /*=0*/)
 {
 	if(!SourceTrack) return false;
 
+	
 	SetInt64(StartPosition_UL, StartPosition);
 	SetUInt(SourceTrackID_UL, SourceTrack->GetInt(TrackID_UL));
 	SetValue(SourcePackageID_UL,SourceTrack->GetParent()[PackageUID_UL]);
@@ -264,7 +278,33 @@ bool Metadata::AddEssenceContainerData(UMIDPtr TheUMID, UInt32 BodySID, UInt32 I
 
 	Ptr->AddChild()->MakeRef(EssenceContainerData);
 
+
 	return true;
+}
+
+
+//! Make an Identification object with info filled in and initial defaults
+MDObjectPtr Metadata::MakeIdent( const std::string CompanyName,
+								 const mxflib::UUID Product_UUID,
+							     const std::string ProductName,
+							     const std::string ProductVersionString,
+							     const std::string ProductProductVersion /* = "" */ )
+{
+	MDObjectPtr Ident = new MDObject(Identification_UL);
+
+	Ident->AddChild(ProductUID_UL,true)->SetValue(Product_UUID.GetValue(), 16);
+
+	Ident->SetString(CompanyName_UL, CompanyName);
+	Ident->SetString(ProductName_UL, ProductName);
+
+	Ident->SetString(VersionString_UL, ProductVersionString);
+
+	if( ProductProductVersion.size() ) Ident->SetString(ProductVersion_UL, ProductProductVersion);
+
+	Ident->SetString(ToolkitVersion_UL, LibraryProductVersion());
+	Ident->SetString(Platform_UL, PlatformName());
+
+	return Ident;
 }
 
 
@@ -442,36 +482,33 @@ SourceClipPtr Track::AddSourceClip(Int64 Duration /*=-1*/)
 	// Initially assume the SourceClip starts at the start of the referenced essence
 	Ret->AddChild(StartPosition_UL, 0);
 
-	// Add this SourceClip to the sequence for this track
-	MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
-	Sequence[StructuralComponents_UL]->AddChild()->MakeRef(Ret->Object);
+		// Add this SourceClip to the sequence for this track
+		MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
+		Sequence[StructuralComponents_UL]->AddChild()->MakeRef(Ret->Object);
+	
+		// Copy the data definition from the sequence
+		Ret->AddChild(ComponentDataDefinition_UL)->SetValue(Sequence[ComponentDataDefinition_UL]->PutData());
+	
+		// Add this sequence to the list of "owned" components
+		Components.push_back(SmartPtr_Cast(Ret, Component));
 
-	// Copy the data definition from the sequence
-	Ret->AddChild(ComponentDataDefinition_UL)->SetValue(Sequence[ComponentDataDefinition_UL]->PutData());
-
-	// Add this sequence to the list of "owned" components
-	Components.push_back(SmartPtr_Cast(Ret, Component));
-//	Components.push_back(Ret);
-
-	// Record the track as the parent of the new SourceClip
-	Ret->SetParent(this);
-
-	// Update the duration in the sequence
-	if(Duration < 0) 
-	{
-		Sequence->SetDValue(ComponentLength_UL);
-	}
-	else
-	{
-		UpdateDuration();
-	}
-
-	// Add this SourceClip to the list of components
-	Component *pComp = Ret;
-	Components.push_back(pComp);
+		// Record the track as the parent of the new SourceClip
+		Ret->SetParent(this);
+	
+		// Update the duration in the sequence
+		if(Duration < 0) 
+		{
+			Sequence->SetDValue(ComponentLength_UL);
+		}
+		else
+		{
+			UpdateDuration();
+		}
 
 	return Ret;
 }
+
+
 
 
 //! Add a Timecode Component to a track
@@ -482,6 +519,7 @@ SourceClipPtr Track::AddSourceClip(Int64 Duration /*=-1*/)
  */
 TimecodeComponentPtr Track::AddTimecodeComponent(UInt16 FPS, bool DropFrame, Int64 Start /*=0*/, Int64 Duration /*=-1*/)
 {
+
 	// DRAGONS: If the track is a DM track should we add a DM SourceClip?
 	TimecodeComponentPtr Ret = new TimecodeComponent(TimecodeComponent_UL);
 	if(!Ret) return Ret;
@@ -499,31 +537,27 @@ TimecodeComponentPtr Track::AddTimecodeComponent(UInt16 FPS, bool DropFrame, Int
 	else
 		Ret->SetInt64(ComponentLength_UL, Duration);
 
-	// Add this Timecode Component to the sequence for this track
-	MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
-	MDObjectPtr S1=Sequence[StructuralComponents_UL];
-	MDObjectPtr C1=S1->AddChild();
-	C1->MakeRef(Ret->Object);
+		// Add this Timecode Component to the sequence for this track
+		MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
+		MDObjectPtr S1=Sequence[StructuralComponents_UL];
+		MDObjectPtr C1=S1->AddChild();
+		C1->MakeRef(Ret->Object);
 
-	// Copy the data definition from the sequence
-	Ret->AddChild(ComponentDataDefinition_UL)->SetValue(Sequence[ComponentDataDefinition_UL]->PutData());
+		// Copy the data definition from the sequence
+		Ret->AddChild(ComponentDataDefinition_UL)->SetValue(Sequence[ComponentDataDefinition_UL]->PutData());
 
-	// Record the track as the parent of the new Timecode Component
-	Ret->SetParent(this);
+		// Record the track as the parent of the new Timecode Component
+		Ret->SetParent(this);
 
-	// Update the duration in the sequence
-	if(Duration < 0) 
-	{
-		Sequence->SetDValue(ComponentLength_UL);
-	}
-	else
-	{
-		UpdateDuration();
-	}
-
-	// Add this Timecode Component to the list of components
-	Component *pComp = Ret;
-	Components.push_back(pComp);
+		// Update the duration in the sequence
+		if(Duration < 0) 
+		{
+			Sequence->SetDValue(ComponentLength_UL);
+		}
+		else
+		{
+			UpdateDuration();
+		}
 
 	return Ret;
 }
@@ -566,10 +600,6 @@ DMSegmentPtr Track::AddDMSegment(Int64 EventStart /*=-1*/,Int64 Duration /*=-1*/
 		UpdateDuration();
 	}
 
-	// Add this DM Segment to the list of components
-	Component *pComp = Ret;
-	Components.push_back(pComp);
-
 	return Ret;
 }
 
@@ -579,9 +609,11 @@ DMSegmentPtr Track::AddDMSegment(Int64 EventStart /*=-1*/,Int64 Duration /*=-1*/
 /*! \return The duration, or -1 if unknown */
 Length Track::GetDuration(void)
 {
+
 	Length SeqDuration = 0;
-	MDObjectPtr Sequence = Child(TrackSegment_UL)->GetLink();
-	MDObjectPtr Structs = Sequence ? Sequence[StructuralComponents_UL] : NULL;
+	MDObjectPtr Sequence = Child(TrackSegment_UL);
+	if(Sequence) Sequence = Sequence->GetLink();
+	MDObjectPtr Structs = Sequence ? Sequence[StructuralComponents_UL] : MDObjectPtr(NULL);
 
 	// If the Sequence is not a valid sequence, exit now
 	if( !Structs ) return -1;
@@ -632,7 +664,6 @@ Length Track::UpdateDuration(void)
 	return SeqDuration;
 }
 
-
 namespace
 {
 	//! Locate the DataDef with a given Identification
@@ -645,7 +676,7 @@ namespace
 			while(it != DataDefs->end())
 			{
 				MDObjectPtr ThisDef = (*it).second->GetRef();
-				MDObjectPtr Ident = ThisDef ? ThisDef->Child(DefinitionObjectIdentification_UL) : NULL;
+				MDObjectPtr Ident = ThisDef ? ThisDef->Child(DefinitionObjectIdentification_UL) : MDObjectPtr(NULL);
 				if(Ident)
 				{
 					DataChunkPtr IDValue = Ident->PutData();
@@ -668,27 +699,54 @@ namespace
 /*! \note If the TrackID is set manually it is the responsibility of the caller to prevent clashes */
 TrackPtr Package::AddTrack(ULPtr DataDef, UInt32 TrackNumber, Rational EditRate, std::string TrackName /*=""*/, UInt32 TrackID /*=0*/)
 {
+	TrackPtr Ret = new Track(Track_UL);
+	if(!Ret) return Ret;
+
+	// Record this package as the parent of the new track
+	Ret->SetParent(this);
+
+	// Initialize the new track object
+	Ret->InitTrack(DataDef, TrackNumber, EditRate, TrackName, TrackID);
+
+	// Add this track to the package
+	AddRef(Tracks_UL, Ret->Object);
+
+	// Add this track to our "owned" tracks
+	Tracks.push_back(Ret);
+
+	return Ret;
+}
+
+
+//! Initialize newly added timeline track
+/*! \note If the TrackID is set manually it is the responsibility of the caller to prevent clashes */
+bool Track::InitTrack(ULPtr DataDef, UInt32 TrackNumber, Rational EditRate, std::string TrackName /*=""*/, UInt32 TrackID /*=0*/)
+{
 	mxflib_assert(DataDef);
+
+	if(!Parent)
+	{
+		error("Parent not set before calling Track::InitTrack()\n");
+		return false;
+	}
 
 	// Smart pointer to the dictionary definition to make the target of this dict ref (or NULL for 337-1 style DataDef)
 	MDObjectPtr DictRef = NULL;
 
 	/* Check if this file uses a dictionary for track definitions */
-	MetadataParent const &Meta = GetParent();
+	Package *Package = GetParent();
+	Metadata *Meta = Package ? Package->GetParent() : NULL;
 	if(Meta)
 	{
 		MDObjectPtr Dictionary = Meta->GetRef(Dictionaries_UL);
 		if(Dictionary) DictRef = DictionaryLocate(Dictionary, DataDef);
 	}
 
-	TrackPtr Ret = new Track(Track_UL);
-	if(!Ret) return Ret;
+	if(TrackName.length()) SetString(TrackName_UL, TrackName);
+	SetInt(TrackNumber_UL, TrackNumber);
+	SetInt64(Origin_UL, 0);
 
-	if(TrackName.length()) Ret->SetString(TrackName_UL, TrackName);
-	Ret->SetInt(TrackNumber_UL, TrackNumber);
-	Ret->SetInt64(Origin_UL, 0);
-
-	MDObjectPtr Ptr = Ret->AddChild(EditRate_UL);
+	MDObjectPtr Ptr = AddChild(EditRate_UL);
 	if(Ptr)
 	{
 		Ptr->SetInt("Numerator", EditRate.Numerator);
@@ -698,17 +756,17 @@ TrackPtr Package::AddTrack(ULPtr DataDef, UInt32 TrackNumber, Rational EditRate,
 	// Auto set the track ID if not supplied
 	if(TrackID == 0)
 	{
-		mxflib_assert(LastTrackID < 0xffffffff);
+		mxflib_assert(Parent->LastTrackID < 0xffffffff);
 
-		LastTrackID++;
-		TrackID = LastTrackID;
+		Parent->LastTrackID++;
+		TrackID = Parent->LastTrackID;
 	}
 	else
 	{
-		// save manually set TrackID
-		LastTrackID = TrackID;
+		// Save manually set TrackID
+		Parent->LastTrackID = TrackID;
 	}
-	Ret->SetInt(TrackID_UL, TrackID);
+	SetUInt(TrackID_UL, TrackID);
 
 
 	{
@@ -726,26 +784,18 @@ TrackPtr Package::AddTrack(ULPtr DataDef, UInt32 TrackNumber, Rational EditRate,
 		Sequence->AddChild(StructuralComponents_UL);
 
 		// Add the sequence
-		Ret->AddChild(TrackSegment_UL)->MakeRef(Sequence);
+		AddChild(TrackSegment_UL)->MakeRef(Sequence);
 	}
 
 
-	// Add this track to the package
-	AddRef(Tracks_UL, Ret->Object);
-
-	// Add this track to our "owned" tracks
-	Tracks.push_back(Ret);
-
-	// Record this package as the parent of the new track
-	Ret->SetParent(this);
-
-	return Ret;
+	return true;
 }
 
 
 //! Add an appropriate essence track for the given source, using a specified edit rate
 TrackPtr Package::AddEssenceTrack(EssenceSource *Source, UInt32 TrackNumber, Rational EditRate, std::string TrackName /*= ""*/, UInt32 TrackID /*= 0*/)
 {
+
 	if(EditRate.Numerator == 0) EditRate = Source->GetEditRate();
 
 	ULPtr DataDef;
@@ -940,7 +990,7 @@ void Package::RemoveTrack(TrackPtr &Track)
  */
 SourceClipPtr SourceClip::GetSourceClip(MDObjectPtr Object)
 {
-	return Object->GetOuter() ? SourceClipPtr(dynamic_cast<SourceClip*>(Object->GetOuter())) : NULL;
+	return Object->GetOuter() ? SourceClipPtr(dynamic_cast<SourceClip*>(Object->GetOuter())) : SourceClipPtr(NULL);
 }
 
 
@@ -950,7 +1000,7 @@ SourceClipPtr SourceClip::GetSourceClip(MDObjectPtr Object)
  */
 DMSourceClipPtr DMSourceClip::GetDMSourceClip(MDObjectPtr Object)
 {
-	return Object->GetOuter() ? DMSourceClipPtr(dynamic_cast<DMSourceClip*>(Object->GetOuter())) : NULL;
+	return Object->GetOuter() ? DMSourceClipPtr(dynamic_cast<DMSourceClip*>(Object->GetOuter())) : DMSourceClipPtr(NULL);
 }
 
 
@@ -959,7 +1009,7 @@ DMSourceClipPtr DMSourceClip::GetDMSourceClip(MDObjectPtr Object)
  */
 TimecodeComponentPtr TimecodeComponent::GetTimecodeComponent(MDObjectPtr Object)
 {
-	return Object->GetOuter() ? TimecodeComponentPtr(dynamic_cast<TimecodeComponent*>(Object->GetOuter())) : NULL;
+	return Object->GetOuter() ? TimecodeComponentPtr(dynamic_cast<TimecodeComponent*>(Object->GetOuter())) : TimecodeComponentPtr(NULL);
 }
 
 
@@ -968,7 +1018,7 @@ TimecodeComponentPtr TimecodeComponent::GetTimecodeComponent(MDObjectPtr Object)
  */
 DMSegmentPtr DMSegment::GetDMSegment(MDObjectPtr Object)
 {
-	return Object->GetOuter() ? DMSegmentPtr(dynamic_cast<DMSegment*>(Object->GetOuter())) : NULL;
+	return Object->GetOuter() ? DMSegmentPtr(dynamic_cast<DMSegment*>(Object->GetOuter())) : DMSegmentPtr(NULL);
 }
 
 
@@ -997,7 +1047,7 @@ bool DMSegment::MakeLink(MDObjectPtr DMFramework)
  */
 TrackPtr Track::GetTrack(MDObjectPtr Object)
 {
-	return Object->GetOuter() ? TrackPtr(dynamic_cast<Track*>(Object->GetOuter())) : NULL;
+	return Object->GetOuter() ? TrackPtr(dynamic_cast<Track*>(Object->GetOuter())) : TrackPtr(NULL);
 }
 
 
@@ -1006,7 +1056,7 @@ TrackPtr Track::GetTrack(MDObjectPtr Object)
  */
 PackagePtr Package::GetPackage(MDObjectPtr Object)
 {
-	return Object->GetOuter() ? PackagePtr(dynamic_cast<Package*>(Object->GetOuter())) : NULL;
+	return Object->GetOuter() ? PackagePtr(dynamic_cast<Package*>(Object->GetOuter())) : PackagePtr(NULL);
 }
 
 //! Return the containing "Metadata" object for this MDObject
@@ -1014,7 +1064,7 @@ PackagePtr Package::GetPackage(MDObjectPtr Object)
  */
 MetadataPtr Metadata::GetMetadata(MDObjectPtr Object)
 {
-	return Object->GetOuter() ? MetadataPtr(dynamic_cast<Metadata*>(Object->GetOuter())) : NULL;
+	return Object->GetOuter() ? MetadataPtr(dynamic_cast<Metadata*>(Object->GetOuter())) : MetadataPtr(NULL);
 }
 
 
@@ -1027,6 +1077,7 @@ MetadataPtr Metadata::Parse(MDObjectPtr BaseObject)
 	if(!BaseObject->IsA(Preface_UL)) return Ret;
 
 	// If this is already part of a Metadata object then return that object
+	// FIXME: What if we are asked for managed pasing and the current lot is not managed? Or vice-versa?
 	if(BaseObject->GetOuter()) return Metadata::GetMetadata(BaseObject);
 
 	// Build the basic Metadata object
@@ -1034,6 +1085,7 @@ MetadataPtr Metadata::Parse(MDObjectPtr BaseObject)
 
 	// Set the most recent modification time to now
 	// Not the value from the MDObject as anything we now do is a new modification
+	// FIXME: Is this a good idea? This means we can't simply read the modification time
 	Ret->ModificationTime = Now2String();
 
 	// Locate the content storage set
@@ -1061,7 +1113,8 @@ MetadataPtr Metadata::Parse(MDObjectPtr BaseObject)
 		if(LinkedPackage)
 		{
 			// Parse this package
-			PackagePtr ThisPackage = Package::Parse(LinkedPackage);
+			PackagePtr ThisPackage;
+			ThisPackage = Package::Parse(LinkedPackage);
 
 			// Add it to the list of packages for this metadata
 			if(ThisPackage) 
@@ -1076,8 +1129,12 @@ MetadataPtr Metadata::Parse(MDObjectPtr BaseObject)
 		it++;
 	}
 
+
+
 	return Ret;
 }
+
+
 
 
 //! Parse an existing MDObject into a Package object
@@ -1114,7 +1171,8 @@ PackagePtr Package::Parse(MDObjectPtr BaseObject)
 		if(LinkedTrack)
 		{
 			// Parse this track
-			TrackPtr ThisTrack = Track::Parse(LinkedTrack);
+			TrackPtr ThisTrack;
+			ThisTrack = Track::Parse(LinkedTrack);
 
 			if(ThisTrack)
 			{
@@ -1135,6 +1193,8 @@ PackagePtr Package::Parse(MDObjectPtr BaseObject)
 
 	return Ret;
 }
+
+
 
 
 //! Parse an existing MDObject into a Track object
@@ -1177,12 +1237,48 @@ TrackPtr Track::Parse(MDObjectPtr BaseObject)
 		{
 			ComponentPtr ThisComponent;
 
-			// Parse all the known component types
-			if(LinkedComponent->IsA(SourceClip_UL)) ThisComponent = SourceClip::Parse(LinkedComponent);
+			/* Parse all the known component types */
+
+			// SourceClip
+			if(LinkedComponent->IsA(SourceClip_UL)) 
+			{
+				ThisComponent = SourceClip::Parse(LinkedComponent);
+
+				// Set the essence type, if not yet known
+				if((Ret->ThisTrackType == TrackTypeUndetermined) || (Ret->ThisTrackType == TrackTypeUnknown))
+				{
+					MDObjectPtr DataDefObject = LinkedComponent[ComponentDataDefinition_UL];
+					if(DataDefObject)
+					{
+						DataChunkPtr DataDefData = DataDefObject->PutData();
+						if(DataDefData && (DataDefData->Size == 16))
+						{
+							ULPtr DataDef = new UL(DataDefData->Data);
+							if(DataDef->Matches(PictureEssenceTrack_UL)) Ret->ThisTrackType = TrackTypePictureEssence;
+							else if(DataDef->Matches(SoundEssenceTrack_UL)) Ret->ThisTrackType = TrackTypeSoundEssence;
+							else if(DataDef->Matches(DataEssenceTrack_UL)) Ret->ThisTrackType = TrackTypeDataEssence;
+							else 
+							{
+								// If we were unable to determine the track type using simple parsing, use the full-fat version in GetTrackType()
+								Ret->ThisTrackType = TrackTypeUndetermined;
+								Ret->GetTrackType();
+							}
+						}
+					}
+				}
+			}
 
 
-			else if(LinkedComponent->IsA(TimecodeComponent_UL)) ThisComponent = TimecodeComponent::Parse(LinkedComponent);
-			else if(LinkedComponent->IsA(DMSegment_UL)) ThisComponent = DMSegment::Parse(LinkedComponent);
+			else if(LinkedComponent->IsA(TimecodeComponent_UL)) 
+			{
+				ThisComponent = TimecodeComponent::Parse(LinkedComponent);
+				Ret->ThisTrackType = TrackTypeTimecode;
+			}
+			else if(LinkedComponent->IsA(DMSegment_UL))
+			{
+				ThisComponent = DMSegment::Parse(LinkedComponent);
+				Ret->ThisTrackType = TrackTypeDescriptiveMetadata;
+			}
 
 			if(ThisComponent)
 			{
@@ -1201,8 +1297,12 @@ TrackPtr Track::Parse(MDObjectPtr BaseObject)
 }
 
 
+
+
+
+
 //! Parse an existing MDObject into a SourceClip object
-SourceClipPtr SourceClip::Parse(MDObjectPtr BaseObject)
+SourceClipPtr SourceClip::Parse(MDObjectPtr BaseObject, bool Managed /*=false*/)
 {
 	SourceClipPtr Ret;
 
@@ -1275,9 +1375,44 @@ DMSegmentPtr DMSegment::Parse(MDObjectPtr BaseObject)
 }
 
 
+//! Get the DataDefinition UL of this track, or NULL on error
+ULPtr Track::GetDataDef(void)
+{
+	/* Find the data def in the sequence */
+
+	MDObjectPtr Sequence = Child(TrackSegment_UL);
+	if(Sequence) Sequence = Sequence->GetLink();
+	
+	MDObjectPtr DataDef;
+	if(Sequence) DataDef = Sequence[ComponentDataDefinition_UL];
+
+	// Check for dictionary reference
+	MDObjectPtr DataDefLink;
+	if(DataDef)	DataDefLink=DataDef->GetRef();
+
+	// Take the actual data def value from the dictionary entry
+	if(DataDefLink)	DataDef=DataDefLink[DefinitionObjectIdentification_UL];
+
+	// If we dont seem to have one return NULL
+	if(!DataDef) return NULL;
+
+	// Get the actual data definition bytes
+	DataChunkPtr Data = DataDef->PutData();
+
+	// Sanity check the result
+	if(Data && (Data->Size == 16))
+	{
+		return new UL(Data->Data);
+	}
+
+	return NULL;
+}
+
+
 //! Determine the type of this track
 Track::TrackType Track::GetTrackType(void)
 {
+
 	/* Find the data def in the sequence */
 
 	MDObjectPtr Sequence = Child(TrackSegment_UL);
@@ -1306,7 +1441,7 @@ Track::TrackType Track::GetTrackType(void)
 	DataChunkPtr Data = DataDef->PutData();
 
 	// Sanity check the result
-	if(!Data || Data->Size == 16)
+	if(Data && (Data->Size == 16))
 	{
 		// Initialise the track type list if required
 		if(!TrackTypesInited) InitTrackTypes();
@@ -1561,4 +1696,60 @@ Track::TrackType mxflib::Track::ParseTrackTypeText(std::string Text)
 	}
 
 	return TrackTypeUnknown;
+}
+
+
+//! Set the name of this track
+void Track::SetName(std::string Value)
+{
+    if(Object) Object->SetString(TrackName_UL, Value);
+}
+
+
+//! Get the name of this track
+std::string Track::GetName(std::string Default /*=""*/)
+{
+    if(Object) return Object->GetString(TrackName_UL, Default);
+	else return Default;
+}
+
+
+//! Get the track number this track
+UInt32 Track::GetTrackNumber(void)
+{
+    if(Object) return Object->GetUInt(TrackNumber_UL);
+	else return 0;
+}
+
+
+// Get the Package Name
+std::string Package::GetName(std::string Default /*=""*/)
+{
+    if(Object) return Object->GetString(PackageName_UL, Default);
+	else return Default;
+}
+
+
+
+//! Add an essence type UL to the listed essence types
+/*! Only added if it does not already appear in the list */
+void Metadata::AddEssenceType(const UL &ECType)
+{
+
+	DataChunk ECTypeValue;
+	ECTypeValue.Set(16, ECType.GetValue());
+
+	// Get a list of known containers
+	MDObjectPtr ECTypeList = Object->Child(EssenceContainers_UL);
+
+	// Scan the list to see if we already have this type
+	MDObjectULList::iterator it = ECTypeList->begin();
+	while(it != ECTypeList->end())
+	{
+		if(ECTypeValue == *((*it).second->PutData())) return;
+		it++;
+	}
+
+	// New type, so add it
+	Object->Child(EssenceContainers_UL)->AddChild()->SetValue(ECTypeValue);
 }

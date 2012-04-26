@@ -96,6 +96,7 @@ namespace mxflib
 	{
 	public:
 		PackageParent() : ParentPtr<Package>() {}
+		PackageParent(Package * ptr) : ParentPtr<Package>(ptr) {}
 		PackageParent(IRefCount<Package> * ptr) : ParentPtr<Package>(ptr) {}
 
 		//! Child access operators that overcome dereferencing problems with SmartPtrs
@@ -133,6 +134,7 @@ namespace mxflib
 	{
 	public:
 		TrackParent() : ParentPtr<Track>() {}
+		TrackParent(Track * ptr) : ParentPtr<Track>(ptr) {}
 		TrackParent(IRefCount<Track> * ptr) : ParentPtr<Track>(ptr) {}
 
 		//! Set value from a TrackPtr
@@ -149,6 +151,11 @@ namespace mxflib
 	};
 
 
+	class Component;
+
+	//! Smart pointer to a generic component super-class
+	typedef SmartPtr<Component> ComponentPtr;
+
 	//! Generic component super-class
 	/*! \note Derived classes MUST NOT be separately derived from RefCount<> */
 	class Component : public ObjectInterface, public RefCount<Component>
@@ -164,6 +171,7 @@ namespace mxflib
 		Component(MDOTypePtr BaseType) { Object = new MDObject(BaseType); if(Object) Object->SetOuter(this); }
 		Component(const UL &BaseUL) { Object = new MDObject(BaseUL); if(Object) Object->SetOuter(this); }
 		Component(ULPtr &BaseUL) { Object = new MDObject(BaseUL); if(Object) Object->SetOuter(this); }
+
 
 		//! Get the track containing this component
 		TrackParent GetParent(void) { return Parent; };
@@ -186,12 +194,11 @@ namespace mxflib
 		/*! \param Duration The duration of this Component, -1 or omitted for unknown */
 		virtual void SetDuration(Length Duration = -1);
 
+
 		//! Allow polymorphic destructors
 		virtual ~Component() {};
 	};
 
-	//! Smart pointer to a generic component super-class
-	typedef SmartPtr<Component> ComponentPtr;
 
 	//! List of smart pointers to generic component super-classes
 	typedef std::list<ComponentPtr> ComponentList;
@@ -284,14 +291,21 @@ namespace mxflib
 	class SourceClip : public Component
 	{
 	protected:
+
+		//! Common construction code
+		void Init(void)
+		{
+		}
+
 		//! Protected constructor used to create from an existing MDObject
-		SourceClip(MDObjectPtr BaseObject) : Component(BaseObject) {}
+		SourceClip(MDObjectPtr BaseObject) : Component(BaseObject) { Init(); }
 
 	public:
-		SourceClip(std::string BaseType) : Component(BaseType) {};
-		SourceClip(MDOTypePtr BaseType) : Component(BaseType) {};
-		SourceClip(const UL &BaseUL) : Component(BaseUL) {};
-		SourceClip(ULPtr &BaseUL) : Component(BaseUL) {};
+		SourceClip(std::string BaseType) : Component(BaseType) { Init(); };
+		SourceClip(MDOTypePtr BaseType) : Component(BaseType) { Init(); };
+		SourceClip(const UL &BaseUL) : Component(BaseUL) { Init(); };
+		SourceClip(ULPtr &BaseUL) : Component(BaseUL) { Init(); };
+
 
 		//! Make a link to a specified track
 		virtual bool MakeLink(TrackPtr SourceTrack, Int64 StartPosition = 0);
@@ -304,8 +318,13 @@ namespace mxflib
 		 */
 		static SourceClipPtr GetSourceClip(MDObjectPtr Object);
 
+
 		//! Parse an existing MDObject into a SourceClip object
-		static SourceClipPtr Parse(MDObjectPtr BaseObject);
+		static SourceClipPtr Parse(MDObjectPtr BaseObject, bool Managed = false);
+
+	protected:
+				
+
 	};
 }
 
@@ -345,11 +364,13 @@ namespace mxflib
 		//! Protected constructor used to create from an existing MDObject
 		TimecodeComponent(MDObjectPtr BaseObject) : Component(BaseObject) {}
 
+
 	public:
 		TimecodeComponent(std::string BaseType) : Component(BaseType) {};
 		TimecodeComponent(MDOTypePtr BaseType) : Component(BaseType) {};
 		TimecodeComponent(const UL &BaseUL) : Component(BaseUL) {};
 		TimecodeComponent(ULPtr &BaseUL) : Component(BaseUL) {};
+
 
 		//! Return the containing "TimecodeComponent" object for this MDObject
 		/*! \return NULL if MDObject is not contained in a TimecodeComponent object
@@ -358,6 +379,8 @@ namespace mxflib
 
 		//! Parse an existing MDObject into a TimecodeComponent object
 		static TimecodeComponentPtr Parse(MDObjectPtr BaseObject);
+
+	protected:
 	};
 }
 
@@ -429,11 +452,6 @@ namespace mxflib
 
 		TrackType ThisTrackType;				//!< The type of this track
 
-		//! Protected constructor used to create from an existing MDObject
-		Track(MDObjectPtr BaseObject) : ObjectInterface(BaseObject) 
-		{
-			ThisTrackType = TrackTypeUndetermined;
-		}
 
 		//! Structure for a single item in the track type map (for comparing data definitions)
 		struct TrackTypeMapItem
@@ -444,22 +462,37 @@ namespace mxflib
 
 		//! Map of track type definitions
 		typedef std::pair<UL,TrackTypeMapItem> TrackTypeMapItemPair;
-
+		
 		//! Map of track type definitions
 		typedef std::map<UL, TrackTypeMapItem> TrackTypeMap;
+
 
 		static TrackTypeMap TrackTypes;		//!< Map of known track type definitions
 
 		static bool TrackTypesInited;			//!< Set true once TrackTypeList has been initialized
 
+	protected:
+		//! Protected constructor used to create from an existing MDObject
+		Track(MDObjectPtr BaseObject) : ObjectInterface(BaseObject) 
+		{
+			Init();
+		}
+
+		//! Common constructor code
+		void Init(void)
+		{
+			ThisTrackType = TrackTypeUndetermined;
+		}
 	public:
-		Track(std::string BaseType) { Object = new MDObject(BaseType); ThisTrackType = TrackTypeUndetermined; }
-		Track(MDOTypePtr BaseType) { Object = new MDObject(BaseType); ThisTrackType = TrackTypeUndetermined; }
-		Track(const UL &BaseUL) { Object = new MDObject(BaseUL); ThisTrackType = TrackTypeUndetermined; }
-		Track(ULPtr &BaseUL) { Object = new MDObject(BaseUL); ThisTrackType = TrackTypeUndetermined; }
+		Track(std::string BaseType) { Object = new MDObject(BaseType); Init(); }
+		Track(MDOTypePtr BaseType) { Object = new MDObject(BaseType); Init(); }
+		Track(const UL &BaseUL) { Object = new MDObject(BaseUL); Init(); }
+		Track(ULPtr &BaseUL) { Object = new MDObject(BaseUL); Init(); }
+
 
 		//! Add a SourceClip to a track
 		SourceClipPtr AddSourceClip(Int64 Duration = -1);
+
 
 		//! Add a Timecode Component to a track, taking the FPS and Dropframe settings from the track
 		TimecodeComponentPtr AddTimecodeComponent(Int64 Start = 0, Int64 Duration = -1)
@@ -478,6 +511,10 @@ namespace mxflib
 		//! Add a Timecode Component to a track
 		TimecodeComponentPtr AddTimecodeComponent(UInt16 FPS, bool DropFrame, Int64 Start = 0, Int64 Duration = -1);
 
+
+
+
+
 		//! Add a DMSegment to a track
 		DMSegmentPtr AddDMSegment(Int64 EventStart = -1, Int64 Duration = -1);
 
@@ -491,6 +528,7 @@ namespace mxflib
 		//! Update the duration field in the sequence for this track based on component durations
 		Length UpdateDuration(void);
 
+		
 		//! Get the package containing this track
 		PackageParent GetParent(void) { return Parent; };
 
@@ -500,8 +538,21 @@ namespace mxflib
 		//! Set the package containing this track
 		void SetParent(IRefCount<Package> *NewParent) { Parent = PackageParent(NewParent); }
 
+		//! Get the DataDefinition UL of this track, or NULL on error
+		ULPtr GetDataDef(void);
+
 		//! Determine the type of this track
 		TrackType GetTrackType(void);
+
+
+		//! Set the name of this track
+		void SetName(std::string Value);
+
+		//! Get the name of this track
+		std::string GetName(std::string Default = "");
+
+		//! Get the track number this track
+		UInt32 GetTrackNumber(void);
 
 		//! Get the single word description for the type of this track
 		std::string GetTrackWord(void);
@@ -549,6 +600,7 @@ namespace mxflib
 		//! Parse an existing MDObject into a Track object
 		static TrackPtr Parse(MDObjectPtr BaseObject);
 
+
 		//! Add a new track type definition label
 		/*! \param Type The type of track that this new definition identifies
 		 *  \param Label The label to compare with the data definition
@@ -572,9 +624,19 @@ namespace mxflib
 		//! Determine the one-word Track name from the Track Type
 		static std::string GetTrackWord( const TrackType Trk );
 
+
 	protected:
+		//! Initialize newly added timeline track
+		/*! \note If the TrackID is set manually it is the responsibility of the caller to prevent clashes */
+		bool InitTrack(ULPtr DataDef, UInt32 TrackNumber, Rational EditRate, std::string TrackName = "", UInt32 TrackID = 0);
+
+
 		//! Initialise the TrackTypes list with known track types
 		static void InitTrackTypes(void);
+
+		// Allow related classes to acces our internals
+		friend class Metadata;
+		friend class Package;
 	};
 }
 
@@ -589,7 +651,6 @@ namespace mxflib
     };
 
 	//! Holds data relating to a package
-	/*! FIXME: There is currently no way to remove a track from a package */
 	class Package : public ObjectInterface, public RefCount<Package>
 	{
 	public:
@@ -599,19 +660,34 @@ namespace mxflib
 		UInt32 LastTrackID;						//!< Last auto-allocated track ID
 
 		//! Protected constructor used to create from an existing MDObject
-		Package(MDObjectPtr BaseObject) : ObjectInterface(BaseObject) {}
+		Package(MDObjectPtr BaseObject) : ObjectInterface(BaseObject) { Init(); }
 
 		MetadataParent Parent;					//!< The Metadata object containing this package
+
 
 	private:
 		// Can't create from nothing
 		Package();
 
+	protected:
+		//! Common constructor code
+		void Init(void)
+		{
+			if(Object) Object->SetOuter(this);
+		}
+
 	public:
-		Package(std::string BaseType) : LastTrackID(0) { Object = new MDObject(BaseType); if(Object) Object->SetOuter(this); }
-		Package(MDOTypePtr BaseType) : LastTrackID(0) { Object = new MDObject(BaseType); if(Object) Object->SetOuter(this); }
-		Package(const UL &BaseUL) : LastTrackID(0) { Object = new MDObject(BaseUL); if(Object) Object->SetOuter(this); }
-		Package(ULPtr &BaseUL) : LastTrackID(0) { Object = new MDObject(BaseUL); if(Object) Object->SetOuter(this); }
+		Package(std::string BaseType) : LastTrackID(0) { Object = new MDObject(BaseType); Init(); }
+		Package(MDOTypePtr BaseType) : LastTrackID(0) { Object = new MDObject(BaseType); Init(); }
+		Package(const UL &BaseUL) : LastTrackID(0) { Object = new MDObject(BaseUL); Init(); }
+		Package(ULPtr &BaseUL) : LastTrackID(0) { Object = new MDObject(BaseUL); Init(); }
+
+
+		// Get the Package Name
+		std::string GetName(std::string Default = "");
+
+
+
 
 
 		//! Add a timeline track to the package
@@ -629,6 +705,7 @@ namespace mxflib
 			Rational Zero(0,0);
 			return AddEssenceTrack(Source, Zero, TrackName, TrackID);
 		}
+
 
 		//! Add an appropriate essence track for the given source, using a specified edit rate
 		TrackPtr AddEssenceTrack(EssenceSource *Source,  Rational EditRate, std::string TrackName = "", UInt32 TrackID = 0) { return AddEssenceTrack(Source, 0, EditRate, TrackName, TrackID); }
@@ -704,6 +781,8 @@ namespace mxflib
 		//! Update the duration field in each sequence in each track for this package
 		void UpdateDurations(void);
 
+
+
 		//! Return the containing "Package" object for this MDObject
 		/*! \return NULL if MDObject is not contained in a Package object
 		 */
@@ -711,6 +790,16 @@ namespace mxflib
 
 		//! Parse an existing MDObject into a Package object
 		static PackagePtr Parse(MDObjectPtr BaseObject);
+
+
+	protected:
+		// Set up a new package object
+		void InitPackage(std::string PackageName, UMIDPtr PackageUID, UInt32 BodySID = 0, std::string ModificationTime = "");
+
+
+		// Allow related classes to acces our internals
+		friend class Metadata;
+		friend class Track;
 	};
 }
 
@@ -741,6 +830,7 @@ namespace mxflib
 		Metadata(std::string TimeStamp);
 		void Init(void);
 
+
 		// Update the modification time for this file and any new packages
 		void SetTime(void) { ModificationTime = Now2String(); }
 		void SetTime(std::string TimeStamp) { ModificationTime = TimeStamp; }
@@ -754,25 +844,7 @@ namespace mxflib
 
 		//! Add an essence type UL to the listed essence types
 		/*! Only added if it does not already appear in the list */
-		void AddEssenceType(const UL &ECType)
-		{
-			DataChunk ECTypeValue;
-			ECTypeValue.Set(16, ECType.GetValue());
-
-			// Get a list of known containers
-			MDObjectPtr ECTypeList = Object->Child(EssenceContainers_UL);
-
-			// Scan the list to see if we already have this type
-			MDObjectULList::iterator it = ECTypeList->begin();
-			while(it != ECTypeList->end())
-			{
-				if(ECTypeValue == *((*it).second->PutData())) return;
-				it++;
-			}
-
-			// New type, so add it
-			Object->Child(EssenceContainers_UL)->AddChild()->SetValue(ECTypeValue);
-		}
+		void AddEssenceType(const UL &ECType);
 
 		//! Set the operational pattern property of the preface
 		void SetOP(const UL &OP)
@@ -785,17 +857,42 @@ namespace mxflib
 		void SetOP(ULPtr OP) { SetOP(*OP); }
 
 
-		// Add a material package to the metadata
-		PackagePtr AddMaterialPackage(UMIDPtr PackageUMID) { return AddPackage(MaterialPackage_UL, "", PackageUMID); }
-		PackagePtr AddMaterialPackage(std::string PackageName = "", UMIDPtr PackageUMID = NULL) { return AddPackage(MaterialPackage_UL, PackageName, PackageUMID); }
+		//! Add a material package to the metadata
+		PackagePtr AddMaterialPackage(UMIDPtr PackageUID) 
+		{ 
+			return AddPackage(MaterialPackage_UL, "", PackageUID); 
+		}
 
-		// Add a top-level file package to the metadata
-		PackagePtr AddFilePackage(UInt32 BodySID, UMIDPtr PackageUMID) { return AddPackage(SourcePackage_UL, "", PackageUMID, BodySID); }
-		PackagePtr AddFilePackage(UInt32 BodySID, std::string PackageName = "", UMIDPtr PackageUMID = NULL) { return AddPackage(SourcePackage_UL, PackageName, PackageUMID, BodySID); }
+		//! Add a material package to the metadata
+		PackagePtr AddMaterialPackage(std::string PackageName = "", UMIDPtr PackageUID = NULL) 
+		{ 
+			return AddPackage(MaterialPackage_UL, PackageName, PackageUID); 
+		}
+
+		//! Add a top-level file package to the metadata
+		PackagePtr AddFilePackage(void)
+		{
+			UMIDPtr NULL_UMID;
+			return AddFilePackage(0, "", NULL_UMID);
+		}
+
+		//! Add a top-level file package to the metadata
+		PackagePtr AddFilePackage(UInt32 BodySID, UMIDPtr PackageUID) 
+		{
+			return AddFilePackage(BodySID, "", PackageUID); 
+		}
+
+		//! Add a top-level file package to the metadata
+		PackagePtr AddFilePackage(UInt32 BodySID, std::string PackageName = "", UMIDPtr PackageUID = NULL)
+		{
+			return AddPackage(SourcePackage_UL, PackageName, PackageUID, BodySID); 
+		}
+
+
 
 		// Add a lower-level source package to the metadata
-		PackagePtr AddSourcePackage(UInt32 BodySID, UMIDPtr PackageUMID) { return AddPackage(SourcePackage_UL, "", PackageUMID, BodySID); }
-		PackagePtr AddSourcePackage(UInt32 BodySID, std::string PackageName = "", UMIDPtr PackageUMID = NULL) { return AddPackage(SourcePackage_UL, PackageName, PackageUMID, BodySID); }
+		PackagePtr AddSourcePackage(UMIDPtr PackageUID) { return AddPackage(SourcePackage_UL, "", PackageUID, 0); }
+		PackagePtr AddSourcePackage(std::string PackageName = "", UMIDPtr PackageUID = NULL) { return AddPackage(SourcePackage_UL, PackageName, PackageUID, 0); }
 
 		//! Add an entry into the essence container data set for a given essence stream
 		bool AddEssenceContainerData(UMIDPtr TheUMID, UInt32 BodySID, UInt32 IndexSID = 0);
@@ -814,8 +911,17 @@ namespace mxflib
 		//! Get a pointer to the primary package
 		PackagePtr GetPrimaryPackage(void);
 
+		//! Make an Identification object with info filled in and initial defaults
+		static MDObjectPtr MakeIdent( const std::string CompanyName,
+									  const mxflib::UUID Product_UUID,
+								      const std::string ProductName,
+								      const std::string ProductVersionString,
+								      const std::string ProductProductVersion = "" );
+
 		//! Update the Generation UID of all modified sets and add the specified Ident set
 		bool UpdateGenerations(MDObjectPtr Ident, std::string UpdateTime = "");
+
+
 
 		//! Return the containing "Metadata" object for this MDObject
 		/*! \return NULL if MDObject is not contained in a Metadata object
@@ -825,15 +931,22 @@ namespace mxflib
 		//! Parse an existing MDObject into a Metadata object
 		static MetadataPtr Parse(MDObjectPtr BaseObject);
 
-	private:
+	protected:
 		//! Add a package of the specified type to the matadata
-		PackagePtr AddPackage(const UL &PackageType, std::string PackageName, UMIDPtr PackageUMID, UInt32 BidySID = 0);
+		PackagePtr AddPackage(const UL &PackageType, std::string PackageName, UMIDPtr PackageUID, UInt32 BodySID = 0);
+
 
 		//! Update the Generation UID of a set if modified - then iterate through strongly linked sets
 		bool UpdateGenerations_Internal(MDObjectPtr Obj, UUIDPtr ThisGeneration);
 
 		//! Clear all modified flags for this set and strongly linked sets - used when adding initial Identification set
 		void ClearModified_Internal(MDObjectPtr Obj);
+
+		//! Determine the next free SID (for use as BodySID, IndexSID or Generic Stream SID)
+		UInt32 FindNextSID(void);
+
+		// Allow contained objects to access our protected methods
+		friend class Package;
 	};
 }
 
