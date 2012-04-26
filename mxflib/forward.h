@@ -39,9 +39,13 @@
 
 namespace mxflib 
 {
+	class UL;
+	typedef SmartPtr<UL> ULPtr;
+
 	class MXFFile;
 	typedef SmartPtr<MXFFile> MXFFilePtr;					//!< A smart pointer to an MXFFile object
 	typedef ParentPtr<MXFFile> MXFFileParent;				//!< A parent pointer to an MXFFile object
+	typedef std::list<MXFFilePtr> MXFFileList;				//!< A list of smart pointers to MXFFile objects
 
 	// Forward declare so the class can include pointers to itself
 	class KLVObject;
@@ -197,6 +201,13 @@ namespace mxflib
 
 	//! Wrapping type
 	enum WrapType { UnknownWrap, FrameWrap, ClipWrap } ;
+
+
+
+	class MetadataPtr;
+	typedef std::list<MetadataPtr> MetadataList;
+
+
 }
 
 
