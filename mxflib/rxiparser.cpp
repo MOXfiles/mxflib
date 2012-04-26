@@ -1186,6 +1186,7 @@ else { warning("Found type kind %s - not yet supported\n", ThisLeaf.TypeKind.c_s
 				ThisClass->Class = ClassSet;
 				// DRAGONS: key format is carried in MinSize when defining a set
 				if((Type & 0x18) == 0x00) ThisClass->MinSize = DICT_KEY_1_BYTE;
+				else if((Type & 0x18) == 0x08) ThisClass->MinSize = DICT_KEY_BER;
 				else if((Type & 0x18) == 0x18) ThisClass->MinSize = DICT_KEY_4_BYTE;
 				else ThisClass->MinSize = DICT_KEY_2_BYTE;
 
@@ -1312,7 +1313,7 @@ else { warning("Found type kind %s - not yet supported\n", ThisLeaf.TypeKind.c_s
 					NewItem->Detail = (*Shoot_it).second.Item->Detail;
 					NewItem->MinSize = (*Shoot_it).second.Item->MinSize;
 					NewItem->MaxSize = (*Shoot_it).second.Item->MaxSize;
-					NewItem->Tag = (*Shoot_it).second.Item->Tag;
+					NewItem->LocalTag = (*Shoot_it).second.Item->LocalTag;
 					NewItem->RefType = ClassRefUndefined;
 
 					// Set as a rename of the original
@@ -1369,7 +1370,7 @@ else { warning("Found type kind %s - not yet supported\n", ThisLeaf.TypeKind.c_s
 				// Copy the basic info
 				NewCoding->Name = ThisClass->Name;
 				NewCoding->Detail = ThisClass->Detail;
-				NewCoding->Tag = ThisClass->Tag;
+				NewCoding->LocalTag = ThisClass->LocalTag;
 				NewCoding->RefType = ClassRefUndefined;
 
 				// Make the new item's UL be based on te 
