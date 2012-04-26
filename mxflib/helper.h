@@ -40,8 +40,24 @@ namespace mxflib
 	class MDObjectPtr;
 	class EssenceSource;
 
+	//! Return the MXF version as the year of the main MXF specification document
+	/*! /ret 2004 if we are writing files as per SMPTE 377M-2004
+	 *! /ret 2009 if we are writing files as per SMPTE 377-1-2009
+	 */
+	int MXFVersion(void);
+
+	//! Set the MXF version as the year of the main MXF specification document
+	/*! Use 2004 if we are writing files as per SMPTE 377M-2004
+	 *! Use 2009 if we are writing files as per SMPTE 377-1-2009
+	 */
+	void SetMXFVersion(int Year);
+
 	// Declare the global null-ul which is 16 zero bytes
 	extern const UL Null_UL;
+//_atoi64 is s wondows only - rewrite to linux version
+#ifndef _WIN32
+#define _atoi64 atoll
+#endif
 	
 	inline Int64 ato_Int64(const std::string str) { return _atoi64(str.c_str()); };
 	inline Int64 ato_UInt64(const std::string str) { return (UInt64)_atoi64(str.c_str()); };
@@ -87,12 +103,12 @@ namespace mxflib
 		char Buffer[32];
 		
 		if(StrictISO)
-			strftime(Buffer, 31, "%Y-%m-%dT%H:%M:%S.", gmtime( &Time.time ));
+			strftime(Buffer, 31, "%Y-%m-%dT%H:%M:%S", gmtime( &Time.time ));
 		else
-			strftime(Buffer, 31, "%Y-%m-%d %H:%M:%S.", gmtime( &Time.time ));
+			strftime(Buffer, 31, "%Y-%m-%d %H:%M:%S", gmtime( &Time.time ));
 
 		// Append the milliseconds
-		sprintf(&Buffer[strlen(Buffer)], "%03d", Time.msBy4 * 4);
+		sprintf(&Buffer[strlen(Buffer)], ".%03dZ", Time.msBy4 * 4);
 
 		return std::string(Buffer);
 	}
@@ -241,6 +257,7 @@ namespace mxflib
 	inline std::string SearchPath(std::string Path, std::string Filename) { return SearchPath(Path.c_str(), Filename.c_str()); }
 
 
+
 	// File read primitives
 
 	//! Read 8-bit unsigned integer
@@ -373,6 +390,11 @@ namespace mxflib
 
 	//! Read a complete line from a file and return it as a string, treats CR, LF, CRLF and LFCR as valid line ends
 	std::string FileGets(FileHandle File);
+
+	//! Check for a request for version number in the supplied arguments
+	/*! DRAGONS: Will display version message and call exit(0) if the "-ver" or "--ver" is found at the start of an option
+	 */
+	void HandleVersionRequest(int argc, char *argv[], std::string VersionText);
 
 #ifndef _WIN32
     //! Return an array of random bytes under linux. Uses the kernel random generator if possible

@@ -37,11 +37,34 @@ UInt64 mxflib::Features = MXFLIB_FEATURE_DEFAULT & MXFLIB_FEATURE_MASK;
 
 namespace
 {
+	//! The version year of the MXF specification being used to write files. Returned by MXFVersion() and set by SetMXFVersion()
+	int MXFVersionYear = 2004;
+
 	//! Data bytes for the null UL used as a magic number when no UL is specified for some function parameters
 	const UInt8 Null_UL_Data[16] = { 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0 };
 }
 //! Define the null UL used as a magic number when no UL is specified for some function parameters
 const UL mxflib::Null_UL(Null_UL_Data);
+
+
+//! Return the MXF version as the year of the main MXF specification document
+/*! /ret 2004 if we are writing files as per SMPTE 377M-2004
+ *! /ret 2009 if we are writing files as per SMPTE 377-1-2009
+ */
+int mxflib::MXFVersion(void)
+{
+	return MXFVersionYear;
+}
+
+//! Set the MXF version as the year of the main MXF specification document
+/*! Use 2004 if we are writing files as per SMPTE 377M-2004
+ *! Use 2009 if we are writing files as per SMPTE 377-1-2009
+ */
+void mxflib::SetMXFVersion(int Year)
+{
+	if((Year == 2004) || (Year == 2009)) MXFVersionYear = Year;
+	else error("Unknown MXFVersion %d\n", Year);
+}
 
 
 //! Build a BER length
@@ -183,8 +206,9 @@ int mxflib::EncodeOID( UInt8* presult, UInt64 subid, int length )
 
 	if( length>0 && count<=length )
 	{
+		int Ret = length-count;
 		do *presult++ = *--prev; while( --count );		// copy result
-		return length-count;
+		return Ret;
 	}
 	else if( length<0 )
 	{
@@ -640,11 +664,11 @@ int mxflib::ReadHexString(const char **Source, int Max, UInt8 *Dest, const char 
 	}
 
 
-	// Lets see if this is a urn:x-ul: format definition
+	// Lets see if this is a urn: format definition
 	// If so we skip over the lead-in
 	if(**Source == 'u')
 	{
-		const char *Pattern = "urn:x-ul:";
+		const char *Pattern = "urn:";
 
 		const char *pSrc = *Source;
 		const char *pPat = Pattern;
@@ -658,8 +682,17 @@ int mxflib::ReadHexString(const char **Source, int Max, UInt8 *Dest, const char 
 			pPat++;
 		}
 
-		// If we reached the end of the pattern then we have a match, so
-		if(!(*pPat)) *Source = pSrc;
+		// If we reached the end of the pattern then we have a match, so find the last : in the string
+		if(!(*pPat)) 
+		{
+			do
+			{
+				if(*pSrc == ':') *Source = pSrc;
+			} while(*(++pSrc));
+			
+			// Start at the byte following the last :
+			Source++;
+		}
 	}
 
 	int CharCount = 0;
@@ -1064,14 +1097,39 @@ namespace mxflib
 
 		return Line;
 	}
+
+
+	//! Check for a request for version number in the supplied arguments
+	/*! DRAGONS: Will display version message and call exit(0) if the "-ver" or "--ver" is found at the start of an option
+	 */
+	void HandleVersionRequest(int argc, char *argv[], std::string VersionText)
+	{
+		for(int i=0; i<argc; i++)
+		{
+			if(argv[i][0] == '-')
+			{
+				char const *p = &argv[i][1];
+				if(*p == '-') p++;
+
+				if(tolower(p[0] == 'v') && tolower(p[1] == 'e') && tolower(p[2] == 'r'))
+				{
+					printf("%s based on %s of %s %s\n", VersionText.c_str(), LibraryVersion().c_str(), __DATE__, __TIME__);
+					exit(0);
+				}
+			}
+		}
+	}
 }
 
 #ifndef _WIN32
 #include <sys/ioctl.h>
-#include <net/if.h>
+//#include <net/if.h>
 #include <sys/socket.h> /* for socket() and bind() */
 //#include <arpa/inet.h>  /* for sockaddr_in */
 #include <sys/file.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 static int  getRandomFD()
 {
@@ -1108,90 +1166,4 @@ void mxflib::getRandnumbers( Uint8 * buff, int nbytes)
 }
 #endif
 
-
-
-/*
-//! Safe printf
-
-inline std::string SafePrintf(const char *Fmt, ...)
-{
-	va_list args;
-	va_start(args, Fmt);
-	std::string Ret = SafePrintfInternal(Fmt, args);
-	va_end(args);
-}
-*/
-//! Safe printf
-/*! \note This implementation assumes that adding single characters to a std::string is efficient
-*/
-/*
-std::string mxflib::SafePrintf(const char *Fmt, va_list args)
-{
-	std::string Ret;
-
-	while(*Fmt)
-	{
-		if(ParsingPhase == ParsingFlag)
-		{
-			switch(*Fmt)
-			{
-			case '-':
-				Flag |= FlagMinus;
-				break;
-			case '+':
-				Flag |= FlagPlus;
-				break;
-			case '0':
-				Flag |= FlagZero;
-				break;
-			case ' ':
-				Flag |= FlagBlank;
-				break;
-			case '#':
-				Flag |= FlagHash;
-				break;
-			case '.':
-				ParsingPhase = ParsingPrecision;
-				break;
-
-			default:
-				if((*Fmt < '0') || (*Fmt > '9'))
-				{
-					ParsingPhase = ParsingType;
-					continue;
-				}
-
-				// Not a valid argument so we flip back to non-parsing
-				ParsingPhase = ParsingIdle;
-				continue;
-			}
-		}
-		else
-		{
-			// Parsing starts on '%' but not "%%"
-			if((*Fmt == '%') && (Fmt[1] != '%'))
-			{
-				ParsingItem = ParsingFlag;
-
-				Flags = 0;
-				Width = 0;
-				Precision = 0;
-
-				Fmt++;
-				continue;
-			}
-
-			// Add any non-field characters to the output string
-			Ret += *Fmt;
-
-			// If we are processing "%%" skip an extra byte
-			if(*Fmt == '%') Fmt++;
-		}
-
-		Fmt++;
-	}
-
-	return Ret;
-}
-*/
 
