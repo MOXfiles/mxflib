@@ -218,8 +218,28 @@ bool mxflib::MXFFile::Close(void)
 
 	isOpen = false;
 
+
 	return true;
 }
+
+//! Crop the file to to a new size (or the current position)
+bool mxflib::MXFFile::Crop(Position NewSize /*= -1 */)
+{
+	if(isOpen) 
+	{
+		if(isMemoryFile)
+		{
+			return false;;
+		}
+		else
+		{
+			if(!isHandleFile) FileTruncate(Handle, NewSize);
+		}
+	}
+
+	return true;
+}
+
 
 
 //! Read data from the file into a DataChunk
@@ -431,7 +451,7 @@ bool mxflib::MXFFile::ScanRIP(Length MaxScan /* = 1024*1024 */ )
 	
 	if(FooterPos == 0)
 	{
-		FooterPos = ScanRIP_FindFooter(MaxScan);
+		FooterPos = FindFooter(MaxScan);
 		if(FooterPos == 0) return false;
 	}
 
@@ -482,9 +502,11 @@ bool mxflib::MXFFile::ScanRIP(Length MaxScan /* = 1024*1024 */ )
 }
 
 
-//! Scan for the footer
-/*! \return The location of the footer, or 0 if scan failed */
-Position MXFFile::ScanRIP_FindFooter(Length MaxScan)
+//! Locate the file footer, scanning no more than the last MaxScan bytes of the file
+/*! \return The location of the footer, or 0 if scan failed
+ *! \note This does NOT check the value for FooterPosition in the header 
+ */
+Position MXFFile::FindFooter(Length MaxScan/*=1024*1024*/)
 {
 	Position FooterPos = 0;
 
@@ -1162,6 +1184,7 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 		if(MetadataBuffer->Size != 0) WritePreface = false;
 	}
 
+
 	// Write all objects
 	MDObjectList::iterator it = ThisPartition->TopLevelMetadata.begin();
 	while(it != ThisPartition->TopLevelMetadata.end())
@@ -1181,6 +1204,7 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 
 		it++;
 	}
+
 
 	if(Preface)
 	{
@@ -1210,7 +1234,18 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 	UInt32 KAGSize = ThisPartition->GetUInt(KAGSize_UL);
 
 	// Align if required (not if re-writing)
-	if((!ReWrite) && (KAGSize > 1)) Align(KAGSize);
+
+	//if((!ReWrite) && (KAGSize > 1)) Align(KAGSize);
+	
+	// DRAGONS if already pointing to {removed "a Footer"}{add "any"} PP, do not Align
+	// DRAGONS: We need to figure out what is going on here - if !ReWrite then the pointer should be at the end of the file!
+	if((!ReWrite) && (KAGSize > 1))
+	{
+		Position WritePoint = Tell();
+		ULPtr Key = ReadKey();
+		Seek( WritePoint );
+		if((!Key) || IsPartitionKey(Key->GetValue())) Align(KAGSize);
+	}
 
 	// Work out the index size
 	UInt64 IndexByteCount = 0;
@@ -1308,21 +1343,15 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 
 				// Add the padding to the required section
 				if(IndexData)
-
 				{
 					IndexByteCount = NewIndexByteCount + Padding;
-
 					HeaderByteCount = NewHeaderByteCount;
-
 				}
 				else
 					HeaderByteCount = NewHeaderByteCount + Padding;
 
-
 				// Prevent further padding
-
 				Padding = 0;
-
 			}
 
 			// We can't obey a MinPartitionSize request
@@ -1497,36 +1526,23 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 			ThisPartition->SetUInt(IndexSID_UL, 0);
 			ThisPartition->SetUInt64(IndexByteCount_UL, 0);
 		}
-
 	}
 
 	// Write the pack
 	WritePartitionPack(ThisPartition);
 
 	// If we will not be writting metadata or index, but padding has been requested, write the filler here
-
 	if((!IncludeMetadata) && (!IndexData) && (Padding > 0))
-
 	{
-
 		Align(KAGSize, Padding);
-
 	}
-
 	else
-
 	{
-
 		// Align if required
-
 		// All non-footer partitions pack are followed by KAG alignment
-
 		// Any partition with metadata or index has a KAG alignment after the partition pack
-
 		if((KAGSize > 1) && ((!IsFooter) || IncludeMetadata || IndexData) && !BlockAlign) Align(KAGSize);
-
 	}
-
 
 
 	// Ensure the correct size of filler for the already written header byte count - it is possible for duff values to force 2 fillers
@@ -1562,17 +1578,11 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 		Write(IndexData);
 
 		// Ensure the correct size of filler for the already written index byte count
-
 		UInt32 IndexPadding = static_cast<UInt32>(IndexByteCount - IndexData->Size);
 
-
-
 		// Write a filler of the required size
-
 		if(IndexPadding) Align((UInt32)1, IndexPadding);
-
 	}
-
 
 	return true;
 }
@@ -1651,12 +1661,10 @@ KLVObjectPtr MXFFile::ReadKLV(void)
 //! Locate and read a partition containing closed header metadata
 /*! \ret NULL if none found
  * TODO: Fix slightly iffy assumptions about RIP
- * DRAGONS: A significant number fo invalid files exist with a closed incomplete header and a closed complete footer. CheckForCompleteFooter=true will return the footer for these files.
  */
-PartitionPtr MXFFile::ReadMasterPartition(Length MaxScan, bool CheckForCompleteFooter /*=false*/)
+PartitionPtr MXFFile::ReadMasterPartition(Length MaxScan)
 {
 	PartitionPtr Ret;
-	PartitionPtr IncompleteHeader;
 
 	// Start by checking the header
 	Seek(0);
@@ -1665,15 +1673,8 @@ PartitionPtr MXFFile::ReadMasterPartition(Length MaxScan, bool CheckForCompleteF
 	Ret = ReadPartition();
 	if(!Ret) return Ret;
 
-	// If the header is closed and complete return it
-	if(Ret->IsA(ClosedCompleteHeader_UL)) return Ret;
-	
-	// If the header is closed and incomplete, see if this if OK, otherwise store and try the footer
-	if(Ret->IsA(ClosedHeader_UL))
-	{
-		if (!CheckForCompleteFooter) return Ret;
-		IncompleteHeader = Ret;
-	}
+	// If the header is closed return it
+	if(Ret->IsA(ClosedCompleteHeader_UL) || Ret->IsA(ClosedHeader_UL)) return Ret;
 
 	/* The header is open - so we must locate the footer */
 	Position FooterPos = 0;
@@ -1690,7 +1691,7 @@ PartitionPtr MXFFile::ReadMasterPartition(Length MaxScan, bool CheckForCompleteF
 			// If we didn't manage to read a RIP try scanning for the footer partition
 			if(!ReadRIP())
 			{
-				FooterPos = ScanRIP_FindFooter(MaxScan);
+				FooterPos = FindFooter(MaxScan);
 				if(FooterPos == 0) return NULL;
 			}
 		}
@@ -1714,18 +1715,8 @@ PartitionPtr MXFFile::ReadMasterPartition(Length MaxScan, bool CheckForCompleteF
 	{
 		if(Ret->GetInt64(HeaderByteCount_UL))
 		{
-			// Always return closed and complete header with metadata
-			if(Ret->IsA(CompleteFooter_UL)) return Ret;
-
-			// Closed but incomplete footer
-			if(Ret->IsA(Footer_UL))
-			{
-				// If the header was also closed but incomplete, return the header as the master
-				if(IncompleteHeader) return IncompleteHeader;
-
-				// Otherwise the header must have been open, so return this footer (even though it is incomplete)
-				return Ret;
-			}
+			// Return it if it is really a footer
+			if(Ret->IsA(CompleteFooter_UL) || Ret->IsA(Footer_UL)) return Ret;
 		}
 	}
 
@@ -1764,7 +1755,7 @@ PartitionPtr MXFFile::ReadFooterPartition(Length MaxScan /*=1024*1024*/)
 			// If we didn't manage to read a RIP try scanning for the footer partition
 			if(!ReadRIP())
 			{
-				FooterPos = ScanRIP_FindFooter(MaxScan);
+				FooterPos = FindFooter(MaxScan);
 				if(FooterPos == 0) return NULL;
 			}
 		}
@@ -1827,7 +1818,6 @@ void MXFFile::WriteRIP(void)
 		Write(Buffer->Data, Buffer->Size);
 	}
 }
-
 
 //! Is this file truncated?
 bool MXFFile::IsTruncated(std::string *Details /*=NULL*/)
@@ -1969,7 +1959,7 @@ bool MXFFile::IsTruncated(std::string *Details /*=NULL*/)
 							if((pScan[14] == 0x02) || (pScan[14] == 0x04))
 							{
 								// Found a valid footer key - calculate the start location of this key
-								FooterPos = ChunkPos + BytesToScan;
+								FooterPos = ChunkPos + (pScan - Buffer->Data);
 								break;
 							}
 						}
@@ -2351,7 +2341,7 @@ WrapType MXFFile::GetWrapType(UInt32 BodySID, PartitionPtr ThisPartition)
 	DataChunkPtr ECPackageID;
 
 	MDObjectPtr ContentStorage = MData->GetRef(ContentStorageObject_UL);
-	MDObjectPtr EssenceDataObjects = ContentStorage ? ContentStorage->Child(EssenceDataObjects_UL) : NULL;
+	MDObjectPtr EssenceDataObjects = ContentStorage ? ContentStorage->Child(EssenceDataObjects_UL) : MDObjectPtr(NULL);
 	UInt32 IndexSID = 0;
 	if(EssenceDataObjects)
 	{
@@ -2387,7 +2377,7 @@ WrapType MXFFile::GetWrapType(UInt32 BodySID, PartitionPtr ThisPartition)
 	while(Package_it != MData->Packages.end())
 	{
 		MDObjectPtr Ptr = (*Package_it)->Child(PackageUID_UL);
-		DataChunkPtr PackageID = Ptr ? Ptr->PutData() : NULL;
+		DataChunkPtr PackageID = Ptr ? Ptr->PutData() : DataChunkPtr(NULL);
 		if(PackageID && (PackageID->Size == 32) && (memcmp(ECPackageID->Data, PackageID->Data, 32) == 0))
 		{
 			// Located matching package

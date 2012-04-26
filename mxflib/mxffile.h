@@ -46,6 +46,7 @@ namespace mxflib
 
 namespace mxflib
 {
+	
 	//! Holds data relating to an MXF file
 	class MXFFile : public RefCount<MXFFile>
 	{
@@ -66,6 +67,7 @@ namespace mxflib
 		Int32 BlockAlignEssenceOffset;	//!< Fixed distance from the block grid at which to align essence (+ve is after the grid, -ve before)
 		Int32 BlockAlignIndexOffset;	//!< Fixed distance from the block grid at which to align index (+ve is after the grid, -ve before)
 
+
 		//DRAGONS: There should probably be a property to say that in-memory values have changed?
 		//DRAGONS: Should we have a flush() function
 	public:
@@ -82,6 +84,7 @@ namespace mxflib
 		virtual bool OpenMemory(DataChunkPtr Buff = NULL, Position Offset = 0);
 		virtual bool OpenFromHandle(FileHandle Handle);
 		virtual bool Close(void);
+		virtual bool Crop(Position NewSize = -1);
 
 		bool ReadRunIn(void);
 
@@ -91,21 +94,10 @@ namespace mxflib
 		bool BuildRIP(void);
 		bool GetRIP(Length MaxScan = 1024*1024);
 
-		
 		//! Locate and read a partition containing closed header metadata
 		/*! \ret NULL if none found
-		 *  DRAGONS: A significant number fo invalid files exist with a closed incomplete header and a closed complete footer. CheckForCompleteFooter=true will return the footer for these files.
 		 */
-		PartitionPtr ReadMasterPartition(bool CheckForCompleteFooter = false)
-		{
-			return ReadMasterPartition(1024 * 1024, CheckForCompleteFooter);
-		}
-
-		//! Locate and read a partition containing closed header metadata
-		/*! \ret NULL if none found
-		 *  DRAGONS: A significant number fo invalid files exist with a closed incomplete header and a closed complete footer. CheckForCompleteFooter=true will return the footer for these files.
-		 */
-		PartitionPtr MXFFile::ReadMasterPartition(Length MaxScan, bool CheckForCompleteFooter = false);
+		PartitionPtr ReadMasterPartition(Length MaxScan = 1024 * 1024);
 
 		//! Locate and read the footer partition
 		/*! \ret NULL if not found
@@ -188,7 +180,16 @@ namespace mxflib
 //		template<class TP, class T> TP ReadObjectBase(void) { TP x; return x; };
 //		template<> MDObjectPtr ReadObjectBase<MDObjectPtr, MDObject>(void) { MDObjectPtr x; return x; };
 		MDObjectPtr ReadObject(PrimerPtr UsePrimer = NULL) { return MXFFile__ReadObjectBase<MDObjectPtr, MDObject>(this, UsePrimer); };
-		PartitionPtr ReadPartition(void) { return MXFFile__ReadObjectBase<PartitionPtr, Partition>(this); };
+		PartitionPtr ReadPartition(void) 
+		{
+			PartitionPtr Ret = MXFFile__ReadObjectBase<PartitionPtr, Partition>(this);
+			if(Ret && (!IsPartitionKey(Ret->GetUL()->GetValue())))
+			{
+				error("ReadPartition() found %s at 0x%s where a Partition Pack was expected\n", Ret->FullName().c_str(), Int64toHexString(Ret->GetLocation(), 8).c_str());
+				Ret = NULL;
+			}
+			return Ret;
+		};
 
 		//! Read a KLVObject from the file
 		KLVObjectPtr ReadKLV(void);
@@ -245,6 +246,7 @@ namespace mxflib
 		/*! If Details != NULL, the file will be re-tested and a details written into the string for truncated files
 		 */
 		bool IsTruncated(std::string *Details = NULL);
+
 
 	protected:
 		//! Write or re-write a partition pack and associated metadata (and index table segments?)
@@ -407,9 +409,13 @@ namespace mxflib
 			return Ret;
 		}
 
-	protected:
-		Position ScanRIP_FindFooter(Length MaxScan);
+		//! Locate the file footer, scanning no more than the last MaxScan bytes of the file
+		/*! \return The location of the footer, or 0 if scan failed
+		 *! \note This does NOT check the value for FooterPosition in the header 
+		 */
+		Position FindFooter(Length MaxScan = 1024*1024);
 
+	protected:
 		//! Write to memory file buffer
 		/*! \note This can be overridden in classes derived from MXFFile to give different memory write behaviour */
 		virtual size_t MemoryWrite(UInt8 const *Data, size_t Size);
