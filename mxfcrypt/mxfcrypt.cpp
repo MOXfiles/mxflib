@@ -45,11 +45,12 @@ using namespace std;
 
 
 // Product GUID and version text for this release
-UInt8 ProductGUID_Data[16] = { 0x84, 0x62, 0x40, 0xf1, 0x47, 0xed, 0xde, 0x40, 0x86, 0xdc, 0xe0, 0x99, 0xda, 0x7f, 0xd0, 0x53 };
+UInt8 Product_UUID_Data[16] = { 0x84, 0x62, 0x40, 0xf1, 0x47, 0xed, 0xde, 0x40, 0x86, 0xdc, 0xe0, 0x99, 0xda, 0x7f, 0xd0, 0x53 };
+mxflib::UUID Product_UUID(Product_UUID_Data);
+
 string CompanyName = "freeMXF.org";
 string ProductName = "mxfcrypt file de/encrypt utility";
-string ProductVersion = "Based on " + LibraryVersion();
-string PlatformName = "MXFLib (" + OSName() + ")";
+string ProductVersionString = "Based on " + LibraryVersion();
 
 //! Plaintext offset to use when encrypting
 int PlaintextOffset = 0;
@@ -718,18 +719,10 @@ bool ProcessMetadata(bool DecryptMode, MetadataPtr HMeta, BodyReaderPtr BodyPars
 	}
 
 	// Build an Ident set describing us and link into the metadata
-	MDObjectPtr Ident = new MDObject(Identification_UL);
-	Ident->SetString(CompanyName_UL, CompanyName);
-	Ident->SetString(ProductName_UL, ProductName);
-	Ident->SetString(VersionString_UL, ProductVersion);
-	Ident->SetString(ToolkitVersion_UL, LibraryProductVersion());
-	Ident->SetString(Platform_UL, PlatformName);
-	UUIDPtr ProductUID = new mxflib::UUID(ProductGUID_Data);
-
-	// DRAGONS: -- Need to set a proper GUID per released version
-	//             Non-released versions currently use a random GUID
-	//			   as they are not a stable version...
-	Ident->SetValue(ProductUID_UL, DataChunk(16,ProductUID->GetValue()));
+	MDObjectPtr Ident=Metadata::MakeIdent( CompanyName,
+										   Product_UUID,
+										   ProductName,
+										   ProductVersionString );
 
 	// Link the new Ident set with all new metadata
 	// Note that this is done even for OP-Atom as the 'dummy' header written first
