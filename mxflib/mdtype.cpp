@@ -503,6 +503,11 @@ MDTypePtr MDType::EffectiveBase(void) const
 	if(Class == INTERPRETATION || Class == ENUM)
 	{
 		mxflib_assert(Base);
+
+		// If our base has no base then it must be the end of the chain
+		if(!Base->Base) return Base;
+
+		// otherwise, continue following the chain
 		return Base->EffectiveBase();
 	}
 
@@ -523,6 +528,23 @@ TypeRef MDType::EffectiveRefType(void) const
 	}
 
 	return TypeRefNone;
+}
+
+
+//! Report the if the effective reference type of this type is to be nested
+/*! Scans from here down through anu interpretation, enum or array base classes to see if any have Nested set to true */
+bool MDType::EffectiveRefNested(void) const
+{
+	if(Nested) return true;
+
+	// If we are an interpretation then see what of
+	if(Class == INTERPRETATION || Class == ENUM || Class == TYPEARRAY)
+	{
+		mxflib_assert(Base);
+		return Base->EffectiveRefNested();
+	}
+
+	return false;
 }
 
 

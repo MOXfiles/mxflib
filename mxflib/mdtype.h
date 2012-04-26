@@ -182,6 +182,7 @@ namespace mxflib
 		MDOTypePtr RefTargetType;		//!< The MDOType that is the target of this type (if known)
 		bool Baseline;					//!< True if this is a baseline type as defined in 377M or certain other specific standards (and so will not be added to the KXS metadictionary)
 		bool Character;					//!< True if this is a "character" type, this information is only required for the metadictionary
+		bool Nested;					//!< True if this is a nested strong reference
 
 	protected:
 		NamedValueList EnumValues;		//!< List of enumerated values, if this is an enum, each with its value name
@@ -200,7 +201,7 @@ namespace mxflib
 		*/
 		MDType(std::string TypeName, std::string Detail, MDTypeClass TypeClass, ULPtr &UL, MDTraitsPtr TypeTraits)
 			: TypeName(TypeName), Detail(Detail), Class(TypeClass), ArrayClass(ARRAYIMPLICIT), Traits(TypeTraits), TypeUL(UL), Endian(false),
-			  RefType(TypeRefUndefined), Baseline(false), Character(false)
+			  RefType(TypeRefUndefined), Baseline(false), Character(false), Nested(false)
 		{ };
  
 		//! Prevent auto construction by NOT having an implementation to this constructor
@@ -263,6 +264,9 @@ namespace mxflib
 		//! Get the reference type
 		TypeRef GetRefType(void) const { return RefType; }
 
+		//! Is this a nested reference?
+		bool IsNestedRef(void) const { return (RefType == ClassRefStrong) ? Nested : false; };
+
 		//! Get the reference target
 		const MDOTypePtr &GetRefTarget(void) const
 		{
@@ -311,7 +315,16 @@ namespace mxflib
 		void SetArrayClass(MDArrayClass Val) { ArrayClass = Val; }
 
 		//! Set the reference type
-		void SetRefType(TypeRef Val) { RefType = Val; }
+		void SetRefType(TypeRef Val) 
+		{ 
+			if(Val == TypeRefNested)
+			{
+				RefType = TypeRefStrong;
+				Nested = true;
+			}
+			else
+				RefType = Val; 
+		}
 
 		//! Set the reference target
 		void SetRefTarget(std::string Val) { RefTarget = Val; }
@@ -343,6 +356,9 @@ namespace mxflib
 
 		//! Report the effective reference type of this type
 		TypeRef EffectiveRefType(void) const;
+
+		//! Report the if the effective reference type of this type is to be nested
+		bool EffectiveRefNested(void) const;
 
 		//! Report the effective reference target of this type
 		MDOTypePtr EffectiveRefTarget(void) const;
