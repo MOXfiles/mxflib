@@ -53,6 +53,9 @@ namespace mxflib
 	//! Smart pointer to a BodyStream
 	typedef SmartPtr<BodyStream> BodyStreamPtr;
 
+	//! Parent pointer to a BodyStream
+	typedef ParentPtr<BodyStream> BodyStreamParent;
+
 	//! List of smart pointers to BodyStreams
 	typedef std::list<BodyStreamPtr> BodyStreamList;
 
@@ -161,9 +164,15 @@ namespace mxflib
 		 */
 		MDObjectPtr EssenceDescriptor;
 
+		//! If we are held in a BodyStream, a parent pointer to it is held here
+		BodyStreamParent BodyParent;
+
+
 	public:
 		//! Base constructor
-		EssenceSource() : StreamID(-1), LenToSend(-1) {};
+		EssenceSource() : StreamID(-1), LenToSend(-1) 
+		{
+		};
 
 		//! Virtual destructor to allow polymorphism
 		virtual ~EssenceSource() { };
@@ -302,7 +311,7 @@ namespace mxflib
 		 */
 		virtual DataChunkPtr &GetKey(void) { return SpecifiedKey; }
 
-		//! Get true if the default essence key has been overriden with  a key that does not use GC track number mechanism
+		//! Get true if the default essence key has been overriden with a key that does not use GC track number mechanism
 		/*  \note Defined EssenceSource sub-classes may always use a non-GC-type key, in which case
 		 *        they will always return true from this function
 		 */
@@ -313,6 +322,10 @@ namespace mxflib
 
 		//! Is this source a system item rather than an essence source?
 		virtual bool IsSystemItem(void) { return false; }
+
+		//! Is this source a generic stream item rather than an normal essence source?
+		virtual bool IsGStreamItem(void) { return false; }
+
 
 		//! Is this picture essence?
 		virtual bool IsPictureEssence(void)
@@ -343,6 +356,7 @@ namespace mxflib
 		{
 			return (GetGCEssenceType() == 0x18);
 		}
+
 
 		//! An indication of the relative write order to use for this stream
 		/*! Normally streams in a GC are ordered as follows:
@@ -442,6 +456,9 @@ namespace mxflib
 
 		//! Get a pointer to the essence descriptor for this source (if known) otherwise NULL
 		virtual MDObjectPtr GetDescriptor(void) { return EssenceDescriptor; }
+
+		//! Set the containing BodyStream
+		void SetBodyStream(BodyStream *pBodyStream);
 	};
 
 	// Smart pointer to an EssenceSource object
@@ -454,6 +471,226 @@ namespace mxflib
 	typedef std::list<EssenceSourcePtr> EssenceSourceList;
 }
 
+
+#include <cmath>
+
+namespace mxflib
+{
+	//! Class for essence source that supplies system items
+	class SystemSource : public EssenceSource
+	{
+	protected:
+		EssenceSourceParent Master;								//!< The master stream for this essence
+		GCStreamID SMPackID;									//!< Stream ID of the system metadata pack
+		GCStreamID PMPackID;									//!< Stream ID of the package metadata pack
+		UInt16 ContinuityCount;									//!< Continuity count as per SMPTE 385M
+		int FPS;												//!< Integer frame rate value (25 or 30)
+		bool Rate1001;											//!< True if FSP is a (n*1000) / 1001 rate
+		UInt8 EssenceLabel[16];									//!< The essence container label
+		bool DropFrame;											//!< True if timecode is using drop-frame counting
+		UInt8 EssenceBitmap;									//!< Bitmap flags for essence items, bit 1 = 1 if data, bit 2 = 1 if sound, bit 3 = 1 if picture
+		BodyStream *Stream;										//!< Our parent stream
+		DataChunk CreationDate;									//!< A pre-formatted 17-byte chunk holding the creation date/time, or an empty chunk if not set
+		DataChunk TimecodeData;									//!< A pre-formatted 17-byte chunk holding the timecode, or an empty chunk if not set
+		DataChunk UMIDData;										//!< A pre-formatted chunk holding the UMID data for the Package Item, or an empty chunk if not set
+		DataChunk KLVData;										//!< A pre-formatted chunk holding the KLV metadata for the Package Item, or an empty chunk if not set
+
+	public:
+		SystemSource(EssenceSource *MasterSource, ULPtr &WrappingUL) : EssenceSource()
+		{
+			Master = MasterSource;
+			SMPackID = -1;
+			PMPackID = -1;
+			ContinuityCount = 0;
+			EssenceBitmap = 0;
+			Stream = NULL;
+
+			// Record the frame rate and essence container label
+			if(Master->GetEditRate().Denominator == 1)
+			{
+				FPS = Master->GetEditRate().Numerator;
+			}
+			else
+			{
+				double FloatFPS = static_cast<double>(Master->GetEditRate().Numerator) / static_cast<double>(Master->GetEditRate().Denominator);
+				FPS = static_cast<int>(floor(FloatFPS + 0.5));
+			}
+
+			// Only set flag for exact (n*1000) / 1001 rate
+			Rate1001 = (Master->GetEditRate().Denominator == 1001);
+
+			// TODO: We don't yet set drop-frame for anything!
+			DropFrame = false;
+
+			memcpy(EssenceLabel, WrappingUL->GetValue(), 16);
+		}
+
+		//! Did the last call to GetEssenceData() return the end of a wrapping item
+		/*! \return true if the last call to GetEssenceData() returned an entire wrapping unit.
+		 *  \return true if the last call to GetEssenceData() returned the last chunk of a wrapping unit.
+		 *  \return true if the last call to GetEssenceData() returned the end of a clip-wrapped clip.
+		 *  \return false if there is more data pending for the current wrapping unit.
+		 *  \return false if the source is to be clip-wrapped and there is more data pending for the clip
+		 */
+		virtual bool EndOfItem(void) { return true; }
+
+		//! Is all data exhasted?
+		/*! \return false if a call to GetEssenceData() will return some valid essence data
+		 */
+		virtual bool EndOfData(void) { if(Master) return Master->EndOfData(); else return true; }
+
+		//! Get the GCEssenceType to use when wrapping this essence in a Generic Container
+		virtual UInt8 GetGCEssenceType(void) { return 0x04; };
+
+		//! Get the GCEssenceType to use when wrapping this essence in a Generic Container
+		virtual UInt8 GetGCElementType(void) { return 0x00; }
+
+		//! Get the edit rate of this wrapping of the essence
+		/*! \note This may not be the same as the original "native" edit rate of the
+		 *        essence if this EssenceSource is wrapping to a different edit rate 
+		 */
+		virtual Rational GetEditRate(void) { if(Master) return Master->GetEditRate(); else return Rational(1,1); }
+
+		//! Get the current position in GetEditRate() sized edit units
+		/*! This is relative to the start of the stream, so the first edit unit is always 0.
+		 *  This is the same as the number of edit units read so far, so when the essence is 
+		 *  exhausted the value returned shall be the size of the essence
+		 */
+		virtual Position GetCurrentPosition(void) { if(Master) return Master->GetCurrentPosition(); else return 0; }
+
+		//! Get the preferred BER length size for essence KLVs written from this source, 0 for auto
+		virtual int GetBERSize(void) { return 4; }
+
+		//! Get BytesPerEditUnit, if Constant
+		virtual UInt32 GetBytesPerEditUnit(UInt32 KAGSize = 1)
+		{
+			// Key, Len, standard value of 57 butes
+			UInt32 Ret = 16 + GetBERSize() + 57;
+
+			Ret += CalcFillerSize(Ret, KAGSize);
+
+			return Ret;
+		}
+
+		//! Is this source a system item rather than an essence source?
+		virtual bool IsSystemItem(void) { return true; }
+
+		//! Is this picture essence?
+		virtual bool IsPictureEssence(void) { return false; }
+
+		//! Is this sound essence?
+		virtual bool IsSoundEssence(void) { return false; }
+
+		//! Is this data essence?
+		virtual bool IsDataEssence(void) { return false; }
+
+		//! Is this compound essence?
+		virtual bool IsCompoundEssence(void) { return false; }
+
+		//! Get the size of the essence data in bytes
+		/*! \note There is intentionally no support for an "unknown" response 
+		 */
+		virtual size_t GetEssenceDataSize(void) { return 0; }
+
+		//! Get the next "installment" of essence data
+		/*! \return Pointer to a data chunk holding the next data or a NULL pointer when no more remains
+		 *	\note If there is more data to come but it is not currently available the return value will be a pointer to an empty data chunk
+		 *	\note If Size = 0 the object will decide the size of the chunk to return
+		 *	\note On no account will the returned chunk be larger than MaxSize (if MaxSize > 0)
+		 */
+		virtual DataChunkPtr GetEssenceData(size_t Size = 0, size_t MaxSize = 0) { return NULL; }
+
+
+		/* Methods that apply to system item sources */
+
+		//! Initialize this system item
+		virtual void InitSystem(BodyStream *Stream);
+
+		//! Get the number of KLVs in this system item
+		virtual int GetSystemItemCount(void)
+		{
+			// Return 0 when all done (so we don't keep adding empty system items)
+			if((!Master) || Master->EndOfData()) return 0;
+
+			return 2;
+		}
+
+		//! Get the stream ID for the given system item KLV for this content package
+		/*! \return The strema ID allocated to the item specified, or -1 if invalid
+		 *  \param Item The 0-based item number
+		 */
+		virtual GCStreamID GetSystemItemID(int Item)
+		{
+			if(Item == 0) return SMPackID;
+			else if(Item == 1) return PMPackID;
+			return -1;
+		}
+
+		//! Get the value for the given system item KLV for this content package
+		/*! \return The value of the item specified, or NULL if invalid
+		 *  \param Item The 0-based item number
+		 */
+		virtual DataChunkPtr GetSystemItemValue(int Item);
+
+
+		/* SystemSource Special functions */
+
+		//! Set the creation date/time
+		void SetCreationDateTime(std::string DateTime);
+
+		//! Set the timecode from a string
+		void SetTimecode(std::string TCString);
+
+
+		//! Set the UMID to write in the Package Item (NULL will clear the UMID)
+		void SetUMID(UMIDPtr Value = NULL);
+
+		//! Set the KLV Metadata to write in the Package Item (NULL will clear the KLV Metadata)
+		void SetKLVMetadata(MDObjectPtr Object = NULL);
+
+	protected:
+		//! Calculate the size of KLVFill required to align to the KAG from a given position
+		UInt32 CalcFillerSize(Position FillPos, UInt32 KAGSize, bool ForceBER4 = false)
+		{
+			if(KAGSize == 0) KAGSize = 1;
+
+			// Work out how far into a KAG we are
+			UInt32 Offset = (UInt32)(FillPos % KAGSize);
+
+			// Don't insert anything if we are already aligned
+			if(Offset == 0) return 0;
+
+			// Work out the required filler size
+			UInt32 Fill = KAGSize - Offset;
+
+			// Adjust so that the filler can fit
+			// Note that for very small KAGs the filler may be several KAGs long
+			if(ForceBER4)
+			{
+				while(Fill < 20) Fill += KAGSize;
+			}
+			else
+			{
+				while(Fill < 17) Fill += KAGSize;
+			}
+
+			if(Fill > 0x00ffffff)
+			{
+				error("Maximum supported filler is 0x00ffffff bytes long, "
+					  "but attempt to fill from 0x%s to KAG of 0x%08x "
+					  "requires a filler of size 0x%08x\n",
+					  Int64toHexString(FillPos, 8).c_str(), KAGSize, Fill);
+				Fill = 0x00ffffff;
+			}
+
+			return Fill;
+		}
+
+
+		//! Increment the internal timecode
+		void IncrementTimecode(void);
+	};
+}
 
 
 namespace mxflib
@@ -582,6 +819,8 @@ namespace mxflib
 											 *   can be changed by calling SetIndexEditUnit() before calling StartNewCP()
 											 */
 
+		Length PreCharge;					//!< The number of edit units of pre-charge at the start of the essence (required for indexing)
+
 		UInt64 StreamOffset;				//!< Current stream offset within this essence container
 
 		//! Map of all used write orders to stream ID - used to ensure no duplicates
@@ -590,7 +829,7 @@ namespace mxflib
 
 	public:
 		//! Constructor
-		GCWriter(MXFFilePtr File, UInt32 BodySID = 0, int Base = 0);
+		GCWriter(MXFFilePtr File, UInt32 BodySID = 0, int Base = 1);
 
 		//! Destructor
 		~GCWriter();
@@ -676,6 +915,16 @@ namespace mxflib
 
 		//! Set the index position for the current CP
 		void SetIndexEditUnit(Position EditUnit) { IndexEditUnit = EditUnit; }
+
+		//! Set the pre-charge size to allow the index table to be built correctly
+		void SetPreCharge(Length PreChargeSize)
+		{
+			// Record for any new streams
+			PreCharge = PreChargeSize;
+
+			// Set any existing streams
+			for(int i=0; i<StreamCount; i++) if(StreamTable[i].IndexMan) StreamTable[i].IndexMan->SetPreCharge(PreChargeSize);
+		}
 
 		//! Get the index position of the current CP
 		Position GetIndexEditUnit(void) { return IndexEditUnit; }
@@ -1001,6 +1250,13 @@ namespace mxflib
 			{
 				// Set the manager in our containing parser
 				Caller->SetIndexManager(Manager, StreamID);
+			}
+
+			//! Get the index manager
+			virtual IndexManagerPtr &GetIndexManager(void)
+			{
+				// Set the manager in our containing parser
+				return Caller->GetIndexManager();
 			}
 
 			//! Get the IndexManager StreamID for this essence stream
@@ -1338,6 +1594,9 @@ namespace mxflib
 		//! Smart pointer to a WrappingConfig object
 		typedef SmartPtr<WrappingConfig> WrappingConfigPtr;
 
+		//! Parent pointer to a WrappingConfig object
+		typedef ParentPtr<WrappingConfig> WrappingConfigParent;
+
 		//! List of smart pointers to WrappingConfig objects
 		typedef std::list<WrappingConfigPtr> WrappingConfigList;
 
@@ -1348,7 +1607,7 @@ namespace mxflib
 		{
 		public:
 			//! Construct with any optional items cleared
-			WrappingConfig() : StartTimecode(0), IsExternal(false), KAGSize(1) {}
+			WrappingConfig() : StartTimecode(0), IsExternal(false), KAGSize(1), File(FileInvalid) {}
 
 		public:
 			EssenceSubParserPtr Parser;					//!< The parser that parses this essence - true smart pointer not a parent pointer to keep parser alive
@@ -1360,6 +1619,33 @@ namespace mxflib
 			Position StartTimecode;						//!< The starting timecode of this essence, if known, or zero
 			bool IsExternal;							//!< True if this is actually going to become an external raw-essence stream
 			UInt32 KAGSize;								//!< The selected KAGSize for this wrapping
+
+		protected:		
+			FileHandle File;							//!< The handle of the file used as the source of this essence
+			EssenceSourcePtr Source;					//!< The source to use for wrapping this essence
+
+		public:
+			//! Get the essence source for this wrapping - building it if required
+			EssenceSourcePtr GetSource(void)
+			{
+				if(!Source)
+				{
+					if(!FileValid(File)) error("WrappingConfig::GetSource() called without a call to WrappingConfig::SetFile()\n");
+					else Source = Parser->GetEssenceSource(File, Stream);
+				}
+				return Source;
+			}
+
+			//! Set the source file
+			void SetFile(FileHandle InFile) { File = InFile; }
+
+			//! Set the essence source
+			/*! DRAGONS: When called, this wrapping config will take (shared) ownership of the source */
+			void SetSource(EssenceSourcePtr &Value) { Source = Value; }
+
+			//! Set the essence source
+			/*! DRAGONS: When called, this wrapping config will take (shared) ownership of the source */
+			void SetSource(EssenceSource *Value) { Source = Value; }
 		};
 
 		//! Produce a list of available wrapping options
@@ -1506,11 +1792,14 @@ namespace mxflib
 
 	/* Make top-level versions of EssenceParser::WrappingConfig typedefs */
 
-	//! Configuration data for an essence parser with a specific wrapping option
+	//! WrappingConfig object at the top level of mxflib
 	typedef EssenceParser::WrappingConfig WrappingConfig;
 
 	//! Smart pointer to a WrappingConfig object
 	typedef EssenceParser::WrappingConfigPtr WrappingConfigPtr;
+
+	//! Parent to a WrappingConfig object
+	typedef EssenceParser::WrappingConfigParent WrappingConfigParent;
 
 	//! List of smart pointers to WrappingConfig objects
 	typedef EssenceParser::WrappingConfigList WrappingConfigList;
@@ -1582,6 +1871,7 @@ namespace mxflib
 		{
 			SelectedWrapping = WrapOpt;
 		}
+
 	};
 }
 
@@ -2223,6 +2513,7 @@ namespace mxflib
 		WrappingOptionPtr CurrentWrapping;		//!< The currently selected wrapping options
 		EssenceSourceParent SeqSource;			//!< This parser's sequential source - which perversely owns the parser!
 
+
 		//! The essence descriptor describing this essence (if known) else NULL
 		MDObjectPtr EssenceDescriptor;
 
@@ -2260,8 +2551,9 @@ namespace mxflib
 		//! Clean up when we are destroyed
 		~FileParser()
 		{
-			if(CurrentFileOpen) FileClose(CurrentFile);
+			if(CurrentFileOpen && FileValid(CurrentFile)) FileClose(CurrentFile);
 		}
+
 
 		//! Identify the essence type in the first file in the set of possible files
 		ParserDescriptorListPtr IdentifyEssence(void);
@@ -2326,6 +2618,10 @@ namespace mxflib
 		 */
 		void Use(UInt32 Stream, WrappingOptionPtr &UseWrapping);
 
+		//! Set a non-native edit rate
+		/*! \return true if this rate is acceptable */
+		virtual bool SetEditRate(Rational EditRate);
+
 		//! Return the sequential EssenceSource for the main stream (already aquired internally, so no need to use the stream ID)
 		EssenceSourcePtr GetEssenceSource(UInt32 Stream);
 
@@ -2340,6 +2636,7 @@ namespace mxflib
 		{
 			CurrentFile = FileOpenRead(CurrentFileName.c_str());
 			CurrentFileOpen = FileValid(CurrentFile);
+
 			return CurrentFileOpen;
 		}
 
@@ -2572,9 +2869,16 @@ namespace mxflib
 				if(ValidSource()) return VBRIndexMode = CurrentSource->EnableVBRIndexMode(); else return false; 
 			}
 
+			//! Is this source a system item rather than an essence source?
+			virtual bool IsSystemItem(void) { if(ValidSource()) return CurrentSource->IsSystemItem(); else return false; }
+
+			//! Is this source a generic stream item rather than an normal essence source?
+			virtual bool IsGStreamItem(void) { if(ValidSource()) return CurrentSource->IsGStreamItem(); else return false; }
+
 			//! Attach a related System Item source to the owning BodyStream if required
 			/*! DRAGONS: This is currently a non-ideal fudge - do not assume this method will last long!!! */
 			virtual void AttachSystem(BodyStream *Stream)  { if(ValidSource()) CurrentSource->AttachSystem(Stream); }
+
 
 		protected:
 			//! Ensure that CurrentSource is valid and ready for reading - if not select the next source file
@@ -2827,6 +3131,11 @@ namespace mxflib
 		 */
 		bool MakeGCReader(UInt32 BodySID, GCReadHandlerPtr DefaultHandler = NULL, GCReadHandlerPtr FillerHandler = NULL);
 
+		//! Make a GCReader for the specified BodySID
+		/*! \return A pointer to the new Reader, or the NULL on error (such as there is already a GCReader for this BodySID)
+		 */
+		GCReader *NewGCReader(UInt32 BodySID, GCReadHandlerPtr DefaultHandler = NULL, GCReadHandlerPtr FillerHandler = NULL);
+
 		//! Get a pointer to the GCReader used for the specified BodySID
 		GCReaderPtr GetGCReader(UInt32 BodySID)
 		{
@@ -2919,6 +3228,9 @@ namespace mxflib
 	//! Determine if this is a system item
 	bool IsGCSystemItem(const ULPtr TheUL);
 
+	//! Determine if this is a generic stream item
+	bool IsGStreamItem(const ULPtr TheUL);
+
 	//! Get the track number of this essence key (if it is a GC Key)
 	/*! \return 0 if not a valid GC Key
 	 */
@@ -2991,7 +3303,7 @@ namespace mxflib
 
 		WrapType StreamWrap;										//!< The wrapping type of this stream
 
-		GCWriterPtr StreamWriter;									//!< The writer for this stream
+		GCWriter* StreamWriter;										//!< The writer for this stream
 
 		bool EssencePendingData;									//!< Is there any essence data pending in the writer?
 
@@ -3014,6 +3326,10 @@ namespace mxflib
 																	/*!< DRAGONS: This is set when the state moves from "start" because it is
 																	 *            important to wait for all sub-streams to be set up first
 																	 */
+
+		//! The fixed position for this stream, or (0 - 0x7fffffff) if not fixed
+		/*! This allows the position to be fixed at the start of processing an edit unit, then unfixed at the end */
+		Position FixedPosition;
 
 		Length OverallEssenceSize;									//!< The number of raw essence bytes written from this stream so far
 																	/*!< DRAGONS: This is only the raw bytes, not including keys, lengths or any filler
@@ -3051,6 +3367,7 @@ namespace mxflib
 			StreamIndex = StreamIndexNone;
 			FooterIndexFlags = StreamIndexNone;
 			StreamWrap = StreamWrapOther;
+			StreamWriter = NULL;
 			SubStreamRestart = true;
 			NextSprinkled = 0;
 			EssencePendingData = false;
@@ -3059,6 +3376,9 @@ namespace mxflib
 			ValueRelativeIndexing = false;
 			PrechargeSize = 0;
 			OverallEssenceSize = 0;
+
+			// Clear the fixed position
+			SetFixedPosition();
 
 			KAG = 0;
 			ForceBER4 = false;
@@ -3069,6 +3389,9 @@ namespace mxflib
 
 			// Set the master stream as one of the essence streams
 			push_back(Source);
+
+			// Inform the master stream that we are holding them
+			EssSource->SetBodyStream(this);
 
 			// Allow the master stream to attach a system item if required
 			EssSource->AttachSystem(this);
@@ -3142,7 +3465,7 @@ namespace mxflib
 		WrapType GetWrapType(void) { return StreamWrap; }
 
 		//! Set the current GCWriter
-		void SetWriter(GCWriterPtr &Writer);
+		void SetWriter(GCWriter* Writer);
 
 		//! Get the current index manager
 		IndexManagerPtr &GetIndexManager(void) 
@@ -3151,8 +3474,8 @@ namespace mxflib
 			return IndexMan; 
 		}
 
-		//! Get a reference to the current GCWriter
-		GCWriterPtr &GetWriter(void) { return StreamWriter; }
+		//! Get a pointer to the current GCWriter
+		GCWriter* GetWriter(void) { return StreamWriter; }
 
 		//! Get the track number associated with this stream
 		UInt32 GetTrackNumber(void) 
@@ -3246,6 +3569,16 @@ namespace mxflib
 		/*! DRAGONS: This is only the raw bytes, not including keys, lengths or any filler */
 		Length GetOverallEssenceSize(void) { return OverallEssenceSize; };
 
+
+		//! Get the position of the stream in edit units since the start of the stream
+		Position GetPosition(void);
+
+		//! Set or clear the fixed position for this stream
+		/*! This allows the position to be fixed at the start of processing an edit unit, then unfixed at the end */
+		void SetFixedPosition(Position Pos = (0 - 0x7fffffff))
+		{
+			FixedPosition = Pos;
+		}
 	};
 
 	// Forward declare BodyWriterPtr to allow it to be used in BodyWriterHandler
@@ -3378,6 +3711,9 @@ namespace mxflib
 		//! Is the next partition write going to have metadata?
 		bool PendingMetadata;
 
+		//! Is the pending partition pack for a generic stream?
+		bool PendingGeneric;
+
 		//! Pointer to a chunk of index table data for the pendinf partition or NULL if none is required
 		DataChunkPtr PendingIndexData;
 
@@ -3418,6 +3754,7 @@ namespace mxflib
 			PendingFooter = 0;
 			PendingMetadata = false;
 			PartitionBodySID = 0;
+			PendingGeneric = false;
 		}
 
 		//! Clear any stream details ready to call AddStream()
@@ -3535,6 +3872,16 @@ namespace mxflib
 
 		//! Initialize all required index managers
 		void InitIndexManagers(void);
+
+		//! Get the BodySID next in our internal list of streams, after the specified BodySID
+		/*! If the value of BodySID passed in is zero, the first BodySID in our list is returned.
+		 *  If there is no stream following the specified one, zero is returned
+		 *  DRAGONS: This allows our internal streams to be iterated
+		 */
+		UInt32 GetNextUsedBodySID(UInt32 BodySID = 0);
+
+		//! Get the BodyStream for the specified BodySID, or NULL if not one of our streams
+		BodyStreamPtr GetStream(UInt32 BodySID);
 
 	protected:
 		//! Move to the next active stream (will also advance State as required)
