@@ -574,9 +574,9 @@ bool mxflib::LoadMetadictionary(MDObjectPtr &Meta, SymbolSpacePtr &SymSpace)
 //								ThisProperty->UL = new UL(PropertyID);
 
 								if(KXSMetadict)
-									ThisProperty->Tag = 0;		// FIXME: Do we need to set this?
+									ThisProperty->LocalTag = 0;		// FIXME: Do we need to set this?
 								else
-									ThisProperty->Tag = PropertyDef->GetUInt(LocalIdentification_UL);
+									ThisProperty->LocalTag = PropertyDef->GetUInt(LocalIdentification_UL);
 
 								ThisProperty->HasDefault = false;
 								ThisProperty->HasDValue = false;
@@ -943,18 +943,19 @@ namespace
 				if(Classes.find(ItemUL) == Classes.end())
 				{
 					AddClass(ThisItem);
-					if(!ThisItem->empty())
+					// Add all properties of a class - even if not used in this file (too complex to selectively pick as the first instance may not have all)
+					if(Feature(FeatureUsedMetadict) && (ThisItem->GetType()))
 					{
-						if(Feature(FeatureUsedMetadict))
+						MDOType::const_iterator it = ThisItem->GetType()->begin();
+						while(it != ThisItem->GetType()->end())
 						{
-							MDObject::const_iterator it = ThisItem->begin();
-							while(it != ThisItem->end())
-							{
-								AddClassOrProperty((*it).second);
-								it++;
-							}
+							AddProperty((*it).second, ThisItem);
+							it++;
 						}
-						else if(Feature(FeatureSaveMetadict))
+					}
+					else if(!ThisItem->empty())
+					{
+						if(Feature(FeatureSaveMetadict))
 						{
 							MDObject::const_iterator it = ThisItem->begin();
 							while(it != ThisItem->end())
@@ -972,6 +973,8 @@ namespace
 		void AddClass(MDObject *ThisItem)
 		{
 			if(!ThisItem) return;
+
+
 			Classes[*(ThisItem->GetUL())] = ThisItem;
 			
 			const MDOType *ThisClass = ThisItem->GetType();
@@ -991,6 +994,7 @@ namespace
 		void AddClass(const MDOType *ThisClass)
 		{
 			if(!ThisClass) return;
+
 			Classes[*(ThisClass->GetUL())] = NULL;
 
 			if(ThisClass->GetBase())
@@ -1022,6 +1026,31 @@ namespace
 					if(TypeMap.find(ThisItem->GetTypeUL()) == TypeMap.end())
 					{
 						AddType(ThisItem->GetValueType());
+					}
+				}
+			}
+		}
+
+		//! Add a given property to the properties list by type
+		void AddProperty(MDOType *ThisType, MDObjectPtr Parent = NULL)
+		{
+			if(!ThisType) return;
+
+			MDObjectPtr Item = new MDObject(ThisType);
+			if(Parent) Item->SetParent(Parent, 0, 0);
+			Properties[*(ThisType->GetUL())] = Item;
+
+			// We will be using PropertyDefinitions
+			DefineMetadictClasses |= Def_PropertyDefinition;
+
+			if(true) // Allow for future expansion...
+			{
+				if(Feature(FeatureUsedMetadict) || (!ThisType->GetValueType()->IsBaseline()))
+				{
+					// Make sure that the type is listed for this property
+					if(TypeMap.find(ThisType->GetTypeUL()) == TypeMap.end())
+					{
+						AddType(ThisType->GetValueType());
 					}
 				}
 			}
@@ -1977,6 +2006,7 @@ namespace
 
 				case DefinitionExtEnum:
 				{
+
 					// FIXME: We are currently not adding the enumerated values to the dictionary
 					break;
 				}
