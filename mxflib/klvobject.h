@@ -261,6 +261,9 @@ namespace mxflib
 		//! Determine if this is a system item
 		virtual bool IsGCSystemItem(void) { return mxflib::IsGCSystemItem(TheUL); }
 
+		//! Determine if this is a generic stream item
+		virtual bool IsGStreamItem(void) { return mxflib::IsGStreamItem(TheUL); }
+
 		//! Get the track number of this KLVObject (if it is a GC KLV, else 0)
 		virtual UInt32 GetGCTrackNumber(void) { return mxflib::GetGCTrackNumber(TheUL); };
 
