@@ -57,6 +57,10 @@ MDObject::ULTranslator MDObject::UL2NameFunc = NULL;
 //! Translator function to translate unknown ULs to object names
 MDObject::ULTypeMaker MDObject::TypeMaker = NULL;
 
+// Object to use for returning references from methods called when Object == NULL
+MDObject *ObjectInterface::NullObject = NULL;
+
+
 //! Build a Primer object from built-in knowledge
 /*! This primer has the mappings of axiomatic tags to ULs from the dictionary
  *  /param SetStatic - If true the StaticPrimer will be set to this new primer
@@ -85,10 +89,10 @@ PrimerPtr MDOType::MakePrimer(bool SetStatic /*=false*/)
 	MDOTypeList::iterator it = AllTypes.begin();
 	while(it != AllTypes.end())
 	{
-		if((*it)->Key.Size == 2)
+		// We add local tags that are less than 0x10000
+		// TODO: Better test may be required later
+		if(((*it)->LocalTag != 0) && (((*it)->LocalTag & 0xffff0000) == 0))
 		{
-			Tag ThisTag = (*it)->Key.Data[1] + ((*it)->Key.Data[0] << 8);
-
 			// Don't barf if the dictionary entry is invalid!
 			if((*it)->GlobalKey.Size != 16)
 			{
@@ -97,7 +101,7 @@ PrimerPtr MDOType::MakePrimer(bool SetStatic /*=false*/)
 			else
 			{
 				mxflib::UL ThisUL((*it)->GlobalKey.Data);
-				Ret->insert(Primer::value_type(ThisTag, ThisUL));
+				Ret->insert(Primer::value_type((*it)->LocalTag, ThisUL));
 			}
 		}
 
@@ -124,6 +128,7 @@ MDOType::MDOType(void)
 	maxLength = (unsigned int)-1;
 	Use = DICT_USE_NONE;
 	RefType = DICT_REF_NONE;
+	Nested = false;
 
 	// Initially assume not a container
 	ContainerType = NONE;
@@ -274,7 +279,7 @@ MDObject::MDObject(std::string BaseType, SymbolSpacePtr &SymSpace /*=MXFLibSymbo
 	Parent = NULL;
 	ParentFile = NULL;
 	TheUL = Type->GetUL();
-	TheTag = 0;
+	TheTag = Type->GetTag();
 
 	Outer = NULL;
 
@@ -314,7 +319,7 @@ MDObject::MDObject(MDOTypePtr BaseType) : Type(BaseType)
 	Parent = NULL;
 	ParentFile = NULL;
 	TheUL = Type->GetUL();
-	TheTag = 0;
+	TheTag = Type->GetTag();
 
 	Outer = NULL;
 
@@ -543,8 +548,9 @@ void MDObject::UnknownCtor(void)
 //! MDObject typed constructor
 /*! Builds a "blank" metadata object of a specified type
  *	\note packs are built with defaut values
+ *	DRAGONS: The optional Parent property allows tag clashes to be sorted when the specified primer does not contain the tag
  */
-MDObject::MDObject(Tag BaseTag, PrimerPtr BasePrimer)
+MDObject::MDObject(Tag BaseTag, PrimerPtr BasePrimer, MDObject const *Parent /*=NULL*/)
 {
 	// Try and find the tag in the primer
 	if(BasePrimer) 
@@ -562,8 +568,24 @@ MDObject::MDObject(Tag BaseTag, PrimerPtr BasePrimer)
 				error("Metadata object with Tag \"%s\" doesn't exist in specified Primer\n", Tag2String(BaseTag).c_str());
 			}
 
-			// See if we know this tag anyway
-			Type = MDOType::Find(BaseTag, NULL);
+			// See if there is a know child with this tag
+			if(Parent)
+			{
+				const MDOTypeList &ChildList = Parent->GetChildList();
+				MDOTypeList::const_iterator cit = ChildList.begin();
+				while(cit != ChildList.end())
+				{
+					if((*cit)->GetTag() == BaseTag)
+					{
+						Type = *cit;
+						break;
+					}
+					cit++;
+				}
+			}
+
+			// If the type is still not located, see if the tag is known in the default primer
+			if(!Type) Type = MDOType::Find(BaseTag, NULL);
 
 			// If it is a "known" static then use it (but still give the error)
 			if(Type) TheUL = Type->GetTypeUL();
@@ -1166,10 +1188,13 @@ MDObjectPtr MDObject::operator[](const UL &ChildType) const
 	MDObjectULList::const_iterator it = begin();
 	while(it != end())
 	{
-		if((*it).first.Matches(ChildType))
+		if((*it).first.Matches(ChildType)) return (*it).second;
+		if((*it).second->ValueType)
 		{
-			return (*it).second;
+			const ULPtr &ValUL = (*it).second->ValueType->GetTypeUL();
+			if(ValUL && ValUL->Matches(ChildType)) return (*it).second;
 		}
+
 		it++;
 	}
 
@@ -1610,7 +1635,8 @@ warning("Entered dead code for reading old-style batches/arrays for %s\n", FullN
 				size_t BytesAtItemStart = Bytes;
 
 				DataChunk Key;
-				size_t ThisBytes = ReadKey(Type->GetKeyFormat(), Size, Buffer, Key);
+				Tag LocalTag;
+				size_t ThisBytes = ReadKey(Type->GetKeyFormat(), Size, Buffer, Key, LocalTag);
 
 				// Abort if we can't read the key
 				// this prevents us looping for ever if we
@@ -1652,10 +1678,8 @@ warning("Entered dead code for reading old-style batches/arrays for %s\n", FullN
 					MDObjectPtr NewItem;
 					if(Type->GetKeyFormat() == DICT_KEY_2_BYTE)
 					{
-						mxflib_assert(Key.Size == 2);
-						Tag ThisKey = GetU16(Key.Data);
-
-						NewItem = new MDObject(ThisKey, UsePrimer);
+						mxflib_assert((LocalTag != 0) && (LocalTag < 0x10000));
+						NewItem = new MDObject(LocalTag, UsePrimer);
 					}
 					else if(Type->GetKeyFormat() == DICT_KEY_AUTO)
 					{
@@ -1664,22 +1688,102 @@ warning("Entered dead code for reading old-style batches/arrays for %s\n", FullN
 
 						NewItem = new MDObject(ThisUL);
 					}
+					else if(Type->GetKeyFormat() == DICT_KEY_1_BYTE)
+					{
+						mxflib_assert((LocalTag != 0) && (LocalTag < 0x100));
+
+						// Search for declared 1-byte tags only in this set
+						MDOType::iterator it = Type->begin();
+						while(it != Type->end())
+						{
+							if((*it).second->GetTag() == LocalTag)
+							{
+								NewItem = new MDObject((*it).second);
+								break;
+							}
+							it++;
+						}
+
+						if(!NewItem)
+						{
+							error("%s at 0x%s in %s contains unknown item with 1-byte tag of 0x%02x\n",
+								  FullName().c_str(), Int64toHexString(GetLocation(), 8).c_str(), GetSource().c_str(), (int)*(Key.Data));
+							SetModified(false);
+							// fall through to skip
+						}
+					}
+					else if(Type->GetKeyFormat() == DICT_KEY_BER)
+					{
+						// Search for declared OID BER tags only in this set
+						MDOType::iterator it = Type->begin();
+						while(it != Type->end())
+						{
+							if((*it).second->GetTag() == LocalTag)
+							{
+								NewItem = new MDObject((*it).second);
+								break;
+							}
+							it++;
+						}
+
+						if(!NewItem)
+						{
+							error("%s at 0x%s in %s contains unknown item with OID BER key of 0x%s\n",
+								  FullName().c_str(), Int64toHexString(GetLocation(), 8).c_str(), GetSource().c_str(), Int64toHexString(LocalTag, 4).c_str());
+							SetModified(false);
+							// fall through to skip
+						}
+					}
 					else
 					{
-						// Only 2-byte and 16-byte keys are supported at present
+						// Only 1-byte, 2-byte and 16-byte keys are supported at present
 						mxflib_assert(0);
 						SetModified(false);
 						return 0;
 					}
 					
+					if( !NewItem )
+					{
+						// could not parse - skip over
+						Size -= static_cast<size_t>(Length);
+						Buffer += static_cast<size_t>(Length);
+						Bytes += static_cast<size_t>(Length);
+
+						continue;
+					}
+
+					// NewItem->SetParent( this, BytesAtItemStart, static_cast<UInt32>(Bytes - BytesAtItemStart) );
 					NewItem->Parent = this;
 					NewItem->ParentOffset = BytesAtItemStart;
 					NewItem->KLSize = static_cast<UInt32>(Bytes - BytesAtItemStart);
 
+					// DEBUG
+					std::string NewName = NewItem->Type->Name();
+					ClassRef NewRefType = NewItem->Type->GetRefType();
+					std::string NewTargetName = NewItem->Type->GetRefTargetName();
+
+					// Handle nested strong references
+					if( NewItem->Type->IsNestedRef() )
+					{
+						AddChildInternal(NewItem);
+
+						MDObjectPtr Target = new MDObject( NewItem->Type->GetRefTarget() );
+						NewItem->MakeRef( Target );
+
+						Target->Parent = NewItem;
+						Target->ParentOffset = 0;
+						Target->KLSize = static_cast<UInt32>(Bytes - BytesAtItemStart);
+						
+						// Done with the link item now - set it as unmodified since read
+						NewItem->SetModified(false);
+
+						NewItem = Target;
+					}
+
 					// Handle cases where a batch has burst the 2-byte length (non-standard)
 					if((Length == 0xffff) && (Type->GetLenFormat() == DICT_LEN_2_BYTE) && (NewItem->Type->GetContainerType() == BATCH))
 					{
-						ThisBytes = NewItem->ReadValue(Buffer, Size);
+						Length = NewItem->ReadValue(Buffer, Size);
 					}
 					else
 					{
@@ -1702,34 +1806,38 @@ warning("Entered dead code for reading old-style batches/arrays for %s\n", FullN
 					Buffer += static_cast<size_t>(Length);
 					Bytes += static_cast<size_t>(Length);
 
-#ifdef OPTION3ENABLED
-					// Have we just read an ObjectClass for this object?
-					if(NewItem->TheUL && NewItem->TheUL->Matches(ObjectClass_UL))
+					// For nested strong references, Child already added above, no need to add again
+					if( NewItem->Parent && (!NewItem->Parent->Type->IsNestedRef()) )
 					{
-						DataChunkPtr NewData = NewItem->PutData();
-						
-						if(NewData && (NewData->Size == 16))
+#ifdef OPTION3ENABLED
+						// Have we just read an ObjectClass for this object?
+						if(NewItem->TheUL && NewItem->TheUL->Matches(ObjectClass_UL))
 						{
-							// Record the baseline UL that was used as the set key
-							BaselineUL = TheUL;
-
-							// Build a new UL
-							UL NewUL(NewData->Data);
-
-							// Change us to that type
-							ChangeType(NewUL);
+							DataChunkPtr NewData = NewItem->PutData();
+							
+							if(NewData && (NewData->Size == 16))
+							{
+								// Record the baseline UL that was used as the set key
+								BaselineUL = TheUL;
+	
+								// Build a new UL
+								UL NewUL(NewData->Data);
+	
+								// Change us to that type
+								ChangeType(NewUL);
+							}
+							else
+							{
+								error("%s at %s has an invalid value of %s\n", FullName().c_str(), GetSourceLocation().c_str(), NewItem->Name().c_str());
+							}
+	
+							// DRAGONS: We now DON'T add this item so the ObjectClass property is invisible to us!!
 						}
 						else
-						{
-							error("%s at %s has an invalid value of %s\n", FullName().c_str(), GetSourceLocation().c_str(), NewItem->Name().c_str());
-						}
-
-						// DRAGONS: We now DON'T add this item so the ObjectClass property is invisible to us!!
-					}
-					else
 #endif // OPTION3ENABLED
-					{
-						AddChildInternal(NewItem);
+						{
+							AddChildInternal(NewItem);
+						}
 					}
 				}
 			}
@@ -1889,36 +1997,71 @@ bool MDObject::SetGenerationUID(UUIDPtr NewGen)
 
 
 //! Read a key from a memory buffer
-UInt32 MDObject::ReadKey(DictKeyFormat Format, size_t Size, const UInt8 *Buffer, DataChunk& Key)
+UInt32 MDObject::ReadKey(DictKeyFormat Format, size_t Size, const UInt8 *Buffer, DataChunk& Key, Tag &LocalTag)
 {
 	UInt32 KeySize;
 
 	switch(Format)
 	{
-	default:
-	// Unsupported key types!
-	case DICT_KEY_NONE:
-	case DICT_KEY_AUTO:		// DRAGONS: Should probably make this work at some point!
-		mxflib_assert(0);
-		Key.Resize(0);
-		return 0;
+		default:
+		// Unsupported key types!
+		case DICT_KEY_NONE:
+			mxflib_assert(0);
+			Key.Resize(0);
+			return 0;
 
-	case DICT_KEY_1_BYTE:		KeySize = 1; break;
-	case DICT_KEY_2_BYTE:		KeySize = 2; break;
-	case DICT_KEY_4_BYTE:		KeySize = 4; break;
+		case DICT_KEY_AUTO:			;		// DRAGONS: Assumes 16-byte outer KLV keys always
+		{
+			if(Size < 16) { KeySize = 16; break; } 
+			LocalTag = 0;
+			Key.Resize(16);
+			Key.Set(16, Buffer);
+			return 16;
+		}
+
+		case DICT_KEY_1_BYTE:
+		{
+			if(Size < 1) { KeySize = 1; break; }
+			LocalTag = *Buffer;
+			Key.Resize(0);
+			return 1;
+		}
+
+		case DICT_KEY_2_BYTE:
+		{
+			if(Size < 2) { KeySize = 2; break; }
+			LocalTag = GetU16(Buffer);;
+			Key.Resize(0);
+			return 2;
+		}
+
+		case DICT_KEY_4_BYTE:
+		{
+			if(Size < 4) { KeySize = 4; break; }
+			LocalTag = GetU32(Buffer);
+			Key.Resize(0);
+			return 4;
+		}
+
+		case DICT_KEY_BER:
+		{
+			// We scan forwards until we run out of buffer bytes, or find a byte with a zero MSB
+			// If we run out of buffer before finding the last OID byte (one with zero MSB) KeySize will be Size+1 and an error will be triggered below
+			Key.Resize(0);
+			LocalTag = 0;
+			KeySize = 0;
+			UInt8 const *pBuff = Buffer;
+			while((++KeySize) <= Size)
+			{
+				LocalTag = (LocalTag << 7) + ((*pBuff) & 0x7f);
+				if((*(pBuff++) & 0x80) == 0) return KeySize;
+			}
+		}
 	}
 
-	if(Size < KeySize)
-	{
-		error("Not enough bytes for required key type in MDObject::ReadKey(), got %s, require %d\n", Int64toString(Size).c_str(), KeySize);
-		Key.Resize(0);
-		return 0;
-	}
-
-	Key.Resize(KeySize);
-	Key.Set(KeySize, Buffer);
-
-	return KeySize;
+	error("Not enough bytes for required key type in MDObject::ReadKey(), got %s, require %d\n", Int64toString(Size).c_str(), KeySize);
+	Key.Resize(0);
+	return 0;
 }
 
 
@@ -2154,7 +2297,7 @@ size_t MDObject::WriteLinkedObjects(DataChunkPtr &Buffer, PrimerPtr UsePrimer /*
 	{
 		if((*it).second->Link)
 		{
-			if((*it).second->GetRefType() == DICT_REF_STRONG) Bytes += (*it).second->Link->WriteLinkedObjects(Buffer, UsePrimer);
+			if(((*it).second->GetRefType() == DICT_REF_STRONG) && (!((*it).second->IsNestedRef()))) Bytes += (*it).second->Link->WriteLinkedObjects(Buffer, UsePrimer);
 		}
 		else if(!((*it).second->empty()))
 		{
@@ -2221,6 +2364,7 @@ ULPtr MDOType::GetBaselineUL(void)
  */
 #define DEBUG_WRITEOBJECT(x)
 //#define DEBUG_WRITEOBJECT(x) x
+//#define debug printf
 size_t MDObject::WriteObject(DataChunkPtr &Buffer, const MDObject *ParentObject, PrimerPtr UsePrimer /*=NULL*/, UInt32 BERSize /*=0*/) const
 {
 	size_t Bytes = 0;
@@ -2245,7 +2389,7 @@ size_t MDObject::WriteObject(DataChunkPtr &Buffer, const MDObject *ParentObject,
 		{
 			Bytes = WriteKey(Buffer, ParentObject->Type->GetKeyFormat(), UsePrimer);
 
-			DEBUG_WRITEOBJECT( DataChunk Key; Key.Set(Buffer, Bytes); )
+			DEBUG_WRITEOBJECT( DataChunk Key; Key.Set(Bytes, &Buffer->Data[Buffer->Size - Bytes]); )
 			DEBUG_WRITEOBJECT( debug("Key = %s, ", Key.GetString().c_str()); )
 		}
 
@@ -2402,14 +2546,42 @@ size_t MDObject::WriteObject(DataChunkPtr &Buffer, const MDObject *ParentObject,
 	}
 	else if(IsValue && Value)
 	{
-		DEBUG_WRITEOBJECT( debug("  *Value*\n"); )
+		if(Link && Type && Type->IsNestedRef())
+		{
+			DEBUG_WRITEOBJECT( debug("  *Nested*\n"); )
 
-		DataChunkPtr Val = Value->PutData();
-		Bytes += WriteLength(Buffer, Val->Size, LenFormat, BERSize);
-		Buffer->Append(Val);
-		Bytes += Val->Size;
+			// Cast away const nature to allow us to modify the set!!!
+			MDObject *NestedSet = const_cast<MDObject*>(Link.GetPtr());
 
-		DEBUG_WRITEOBJECT( debug("  > %s\n", Val->GetString().c_str()); )
+			// Most nested sets don't include an InstanceUID property, but we use it internally for links.
+			// So, if we are about to write out a nested set of a type which DOES NOT have an InstanceUID, temporarily remove it so it is not written
+			MDObjectPtr InstanceUID;
+			if((Link->Type) && (!NestedSet->Type->HasA(InstanceUID_UL)))
+			{
+				InstanceUID = NestedSet->Child(InstanceUID_UL);
+				if(InstanceUID) NestedSet->RemoveChild(InstanceUID_UL);
+			}
+
+			DataChunkPtr Val = Link->PutData();
+			Bytes += WriteLength(Buffer, Val->Size, LenFormat, BERSize);
+			Buffer->Append(Val);
+
+			// If we removed the InstanceUID, put it back
+			if(InstanceUID) NestedSet->AddChild(InstanceUID);
+
+			DEBUG_WRITEOBJECT( debug("  > %s\n", Val->GetString().c_str()); )
+		}
+		else
+		{
+			DEBUG_WRITEOBJECT( debug("  *Value*\n"); )
+
+			DataChunkPtr Val = Value->PutData();
+			Bytes += WriteLength(Buffer, Val->Size, LenFormat, BERSize);
+			Buffer->Append(Val);
+			Bytes += Val->Size;
+
+			DEBUG_WRITEOBJECT( debug("  > %s\n", Val->GetString().c_str()); )
+		}
 	}
 	else
 	{
@@ -2420,6 +2592,7 @@ size_t MDObject::WriteObject(DataChunkPtr &Buffer, const MDObject *ParentObject,
 
 	return Bytes;
 }
+//#undef debug
 
 
 //! Write a length field to a memory buffer
@@ -2507,7 +2680,68 @@ UInt32 MDObject::WriteKey(DataChunkPtr &Buffer, DictKeyFormat Format, PrimerPtr 
 			}
 
 			Buffer->Append(16, TheUL->GetValue());
+
+			// If byte 6 of a SMPTE key is specified as "7f" this is used to flag that it depends on the exact usage, so we will need to work it out
+			if(TheUL->GetValue()[5] == 0x7f)
+			{
+				static const UInt8 SMPTEKeyRoot[5] = { 0x06, 0x0e, 0x2b, 0x34, 0x02 };
+				if(memcmp(SMPTEKeyRoot, TheUL->GetValue(), 5) == 0)
+				{
+					// Work out which byte to update in the buffer
+					UInt8 *pUpdate = &Buffer->Data[Buffer->Size - 11];
+
+					// Most common cases first
+					if(GetKeyFormat() == DICT_KEY_2_BYTE)
+					{
+						if(GetLenFormat() == DICT_LEN_2_BYTE) *pUpdate = 0x53;
+						else if(GetLenFormat() == DICT_LEN_BER) *pUpdate = 0x13;
+						else if(GetLenFormat() == DICT_LEN_1_BYTE) *pUpdate = 0x33;
+						else *pUpdate = 0x73;
+					}
+					else if(GetKeyFormat() == DICT_KEY_1_BYTE)
+					{
+						if(GetLenFormat() == DICT_LEN_1_BYTE) *pUpdate = 0x23;
+						else if(GetLenFormat() == DICT_LEN_BER) *pUpdate = 0x03;
+						else if(GetLenFormat() == DICT_LEN_2_BYTE) *pUpdate = 0x43;
+						else *pUpdate = 0x63;
+					}
+					else if(GetKeyFormat() == DICT_KEY_BER)
+					{
+						if(GetLenFormat() == DICT_LEN_1_BYTE) *pUpdate = 0x2b;
+						else if(GetLenFormat() == DICT_LEN_BER) *pUpdate = 0x0b;
+						else if(GetLenFormat() == DICT_LEN_2_BYTE) *pUpdate = 0x4b;
+						else *pUpdate = 0x6b;
+					}
+					else if(GetKeyFormat() == DICT_KEY_AUTO)
+					{
+						*pUpdate = 0x01;
+					}
+					else
+					{
+						error("Unsupported Key/Length format for %s - leaving byte 6 as 0x7f\n", FullName().c_str());
+					}
+				}
+			}
+
 			return 16;
+		}
+
+	case DICT_KEY_1_BYTE:
+		{ 
+			if(!TheUL)
+			{
+				error("Call to WriteKey() for %s, but the UL is not known\n", FullName().c_str());
+				return 0;
+			}
+
+
+			Tag UseTag;
+			if(UsePrimer) UseTag = UsePrimer->Lookup(TheUL, TheTag);
+			else UseTag = MDOType::GetStaticPrimer()->Lookup(TheUL, TheTag);
+
+			UInt8 Buff = (UInt8)UseTag;
+			Buffer->Append(1, &Buff);
+			return 1;
 		}
 
 	case DICT_KEY_2_BYTE:
@@ -2530,12 +2764,23 @@ UInt32 MDObject::WriteKey(DataChunkPtr &Buffer, DictKeyFormat Format, PrimerPtr 
 			return 2;
 		}
 
-	case DICT_KEY_1_BYTE:		
 	case DICT_KEY_4_BYTE:
 		{ 
 			mxflib_assert(0);
-			error("Call to WriteKey() for %s, but 1 and 4 byte tags not currently supported\n", FullName().c_str());
+			error("Call to WriteKey() for %s, but 4 byte tags not currently supported\n", FullName().c_str());
 			return 0;
+		}
+
+	case DICT_KEY_BER:
+		{
+			Tag UseTag;
+			if(UsePrimer) UseTag = UsePrimer->Lookup(TheUL, TheTag);
+			else UseTag = MDOType::GetStaticPrimer()->Lookup(TheUL, TheTag);
+
+			UInt8 KeyBuff[16];
+			int Size = 16 - EncodeOID(KeyBuff, UseTag, 16);
+			Buffer->Append(Size, KeyBuff);
+			return static_cast<UInt32>(Size);
 		}
 	}
 }
@@ -2673,13 +2918,16 @@ MDObjectPtr MDObject::MakeCopy(void) const
 		}
 		else
 		{
-			// Copy set or pack children
+			// Copy set or pack children (excluding the InstanceUID)
 			while(it != end())
 			{
-				// We replace any existing items if this is a pack
-				// DRAGONS: Some compilers don't like refs to temporary values
-				MDObjectPtr NewChild = (*it).second->MakeCopy();
-				Ret->AddChild(NewChild, (Type->GetContainerType() == PACK));
+				if(!(*it).first.Matches(InstanceUID_UL))
+				{
+					// We replace any existing items if this is a pack
+					// DRAGONS: Some compilers don't like refs to temporary values
+					MDObjectPtr NewChild = (*it).second->MakeCopy();
+					Ret->AddChild(NewChild, (Type->GetContainerType() == PACK));
+				}
 				it++;
 			}
 		}
@@ -2724,6 +2972,7 @@ void MDOType::Derive(MDOTypePtr &BaseEntry)
 	// Default to using the base entry keys
 	Key.Set(BaseEntry->Key);
 	GlobalKey.Set(BaseEntry->GlobalKey);
+	LocalTag = BaseEntry->LocalTag;
 
 	// Copy the base root name, note that we can't copy the name as this must be unique
 	RootName = BaseEntry->RootName;
@@ -2867,12 +3116,28 @@ bool MDObject::IsA(MDOTypePtr &BaseType) const
 //! Determine if this object is derived from a specified type (directly or indirectly)
 bool MDObject::IsA(const UL &BaseType) const
 {
-	MDOTypePtr TestType = Type;
+	MDOType *TestType = Type;
+
+	// Test for value type first as this may have been overridden in the MDObject, later tests check via MDOType
+	if(ValueType && ValueType->GetTypeUL() && (ValueType->GetTypeUL()->Matches(BaseType))) return true;
 
 	while(TestType)
 	{
 		const ULPtr &TestUL = TestType->GetTypeUL();
-		if((*TestUL).Matches(BaseType)) return true;
+		if(TestUL && (*TestUL).Matches(BaseType)) return true;
+
+		// Iterate through types to see if the value is has the specified type in its derivation
+		if(TestType->GetValueType())
+		{
+			MDType const *ValType = TestType->GetValueType();
+			while(ValType)
+			{
+				if(ValType->GetTypeUL() && ValType->GetTypeUL()->Matches(BaseType)) return true;
+				MDTypeClass Class = ValType->GetClass();
+				if(Class == INTERPRETATION || Class == ENUM) ValType = ValType->GetBase();
+				else break;
+			}
+		}
 		TestType = TestType->Base;
 	}
 
@@ -2930,12 +3195,12 @@ bool MDOType::IsA(const UL &BaseType) const
 /*! This determines if the specified UL has been included as a child of this type in any loaded disctionary.
 	*  It may be valid for children of this UL to be included, even if this function returns false 
 	*/
-bool MDOType::HasA(const ULPtr &ChildType) const
+bool MDOType::HasA(const UL &ChildType) const
 {
 	MDOType::const_iterator it = begin();
 	while(it != end())
 	{
-		if((*it).second->TypeUL && (*((*it).second->TypeUL) == *ChildType))
+		if((*it).second->TypeUL && ((*it).second->TypeUL)->Matches(ChildType))
 		{
 			return true;
 		}
@@ -3081,6 +3346,7 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 		DICT_KEY_AUTO,
 		DICT_KEY_4_BYTE,
 		DICT_KEY_GLOBAL,
+		DICT_KEY_BER,
 		DICT_KEY_UNDEFINED
 	};
 
@@ -3104,6 +3370,9 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 
 	// Does this entry have a valid UL (rather than a UUID)
 	bool ValidUL = false;
+
+	// Assume this class is not nested - unless we discover it is
+	bool Nested = false;
 
 	// The UL for this type
 	ULPtr TypeUL;
@@ -3411,7 +3680,11 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 	// If nothing specified this time then we use the details from the type
 	if((!Extending) && Ret->ValueType)
 	{
-		if(RefType == ClassRefUndefined) RefType = static_cast<ClassRef>(Ret->ValueType->EffectiveRefType());
+		if(RefType == ClassRefUndefined) 
+		{
+			RefType = static_cast<ClassRef>(Ret->ValueType->EffectiveRefType());
+			Nested = Ret->ValueType->EffectiveRefNested();
+		}
 		if(RefTarget.length() == 0) RefTarget = Ret->ValueType->EffectiveRefTargetName();
 	}
 
@@ -3428,6 +3701,7 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 				{
 					(*it).second->RefType = RefType;
 					(*it).second->RefTargetName = RefTarget;
+					(*it).second->Nested = Nested;
 				}
 				it++;
 			}
@@ -3436,6 +3710,7 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 		{
 			Ret->RefType = RefType;
 			Ret->RefTargetName = RefTarget;
+			Ret->Nested = Nested;
 		}
 	}
 //#	else
@@ -3444,10 +3719,10 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 //#	}
 
 	// Set the local tag (if one exists)
-	if(ThisClass->Tag)
+	if(ThisClass->LocalTag)
 	{
-		Ret->Key.Resize(2);
-		PutU16(ThisClass->Tag, Ret->Key.Data);
+		Ret->Key.Resize(0);
+		Ret->LocalTag = ThisClass->LocalTag;
 	}
 
 //	// Determine the symbol space to use for this and any children - this is done irrespective of
@@ -3472,7 +3747,7 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 		Ret->GlobalKey.Set(16, TypeUL->GetValue());
 
 		// If we don't have a tag set this global key as the key
-		if(ThisClass->Tag == 0) Ret->Key.Set(16, TypeUL->GetValue());
+		if(ThisClass->LocalTag == 0) Ret->Key.Set(16, TypeUL->GetValue());
 
 		Ret->TypeUL = TypeUL;
 
