@@ -139,6 +139,12 @@ UInt32 mxflib::MDTraits::GetUInt(const MDObject *Object) const { error("Called G
 UInt64 mxflib::MDTraits::GetUInt64(const MDObject *Object) const { error("Called GetUInt64() on %s which has traits of %s and does not support GetUInt64()\n", Object->Name().c_str(), Name().c_str()); return 0;}
 std::string mxflib::MDTraits::GetString(const MDObject *Object) const { error("Called GetString() on %s which has traits of %s and does not support GetString()\n", Object->Name().c_str(), Name().c_str()); return std::string("Base"); }
 
+//! default traits-based Convert is not an error
+bool mxflib::MDTraits::Convert( MDObject* Dest, const MDObject* Source ) { return false; }
+
+// if you want to prove it, use this
+// bool mxflib::MDTraits::Convert( MDObject* Dest, const MDObject* Source ) { error("Called Convert( %s, %s ) on traits of %s which does not support Convert()\n", Dest->Name().c_str(), Source->Name().c_str(), Name().c_str()); return false;}
+
 //! Support old capitalization of SetUInt
 void MDTraits::SetUint(MDObject *Object, UInt32 Val) { SetUInt(Object, Val); }
 
@@ -2075,6 +2081,9 @@ std::string MDTraits_Label::GetString(const MDObject *Object, OutputFormatEnum F
 **   UMID Implementations	**
 *****************************/
 
+//! Current default output format for UMIDs
+OutputFormatEnum MDTraits_UMID::DefaultFormat = -1;
+
 void MDTraits_UMID::SetString(MDObject *Object, std::string Val)
 {
 	// Make a safe copy of the value that will not be cleaned-up by string manipulation
@@ -2166,50 +2175,17 @@ void MDTraits_UMID::SetString(MDObject *Object, std::string Val)
 	delete[] Data;
 }
 
-std::string MDTraits_UMID::GetString(const MDObject *Object) const
+
+std::string MDTraits_UMID::GetString(const MDObject *Object, OutputFormatEnum Format) const
 {
-	char Buffer[100];
-
 	mxflib_assert(Object->GetData().Size >= 32);
-	const UInt8 *Ident = Object->GetData().Data;
-
-	sprintf (Buffer, "[%02x%02x%02x%02x.%02x%02x.%02x%02x.%02x%02x%02x%02x]",
-					  Ident[0], Ident[1], Ident[2], Ident[3], Ident[4], Ident[5],
-					  Ident[6], Ident[7], Ident[8], Ident[9], Ident[10], Ident[11]
-		    );
-	
-	// Start building the return value
-	std::string Ret(Buffer);
-
-	sprintf( Buffer, ",%02x,%02x,%02x,%02x,", Ident[12], Ident[13], Ident[14], Ident[15]);
-	Ret += Buffer;
-
-	// Decide how best to represent the material number
-	const UInt8* Material = &Ident[16];
-	if( !(0x80&Material[8]) )
-	{	// Half-swapped UL packed into a UUID datatype
-		// Return as compact SMPTE format [bbaa9988.ddcc.ffee.00010203.04050607]
-		// Stored with upper/lower 8 bytes exchanged
-		// Stored in the following 0-based index order: 88 99 aa bb cc dd ee ff 00 01 02 03 04 05 06 07
-		sprintf (Buffer, "[%02x%02x%02x%02x.%02x%02x.%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x]",
-						   Material[8], Material[9], Material[10], Material[11], Material[12], Material[13], Material[14], Material[15],
-						   Material[0], Material[1], Material[2], Material[3], Material[4], Material[5], Material[6], Material[7]
-				);
-	}
-	else
-	{	// UUID
-		// Stored in the following 0-based index order: 00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff
-		// (i.e. network byte order)
-		// Return as compact GUID format {00112233-4455-6677-8899-aabbccddeeff}
-		sprintf (Buffer, "{%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
-						   Material[0], Material[1], Material[2], Material[3], Material[4], Material[5], Material[6], Material[7],
-						   Material[8], Material[9], Material[10], Material[11], Material[12], Material[13], Material[14], Material[15]
-				);
+	if(Object->GetData().Size < 32) 
+	{
+		if(Object->GetData().Size == 0) return "<Zero-Length UMID>";
+		else return "<Invalid-UMID = " + Object->GetData().GetString() + ">";
 	}
 
-	Ret += Buffer;
-
-	return Ret;
+	return UMID::FormatString(Object->GetData().Data, (Format == -1) ? DefaultFormat : Format);
 };
 
 
@@ -2490,8 +2466,8 @@ void MDTraits_Rational::SetString(MDObject *Object, std::string Val)
 #endif
 
 #if FORMAT_RATIONAL==0 // default legacy behaviour
-	// separator = '/'
-	std::string::size_type Sep = Val.find("/");
+	// separator = '/' or ':' or ','
+	std::string::size_type Sep = Val.find_first_of("/:,");
 	if(Sep != std::string::npos) Den = atoi(&(Val.c_str()[Sep+1]));
 
 	if(Numerator) Numerator->SetUInt(Num);
@@ -2581,7 +2557,7 @@ std::string MDTraits_TimeStamp::GetString(const MDObject *Object) const
 #if FORMAT_DATES==0 // default behaviour
 	// ISO-8601
 	return UInt2String(Y) + "-" + UInt2String(M,2) + "-" + UInt2String(D,2) + " " +
-		   UInt2String(H) + ":" + UInt2String(Min,2) + ":" + UInt2String(S,2) + "." + UInt2String(ms,3);
+		   UInt2String(H,2) + ":" + UInt2String(Min,2) + ":" + UInt2String(S,2) + "." + UInt2String(ms,3);
 #else
 	// AAF legacy format
 	static const char * const monthNames[] =
@@ -2680,21 +2656,17 @@ void MDTraits_TimeStamp::SetString(MDObject *Object, std::string Val)
 //! Set from an Int32
 void mxflib::MDTraits_BasicEnum::SetInt(MDObject *Object, Int32 Val)
 {
-	MDOType *OType = Object->GetType();
-	if(OType)
+	const MDTypePtr &BaseType = Object->GetValueType();
+	if(BaseType)
 	{
-		const MDTypePtr &BaseType = OType->GetValueType();
-		if(BaseType)
+		const MDTypeParent &Base = BaseType->EffectiveBase();
+		if(Base)
 		{
-			const MDTypeParent &Base = BaseType->GetBase();
-			if(Base)
+			MDTraitsPtr BaseTraits = Base->GetTraits();
+			if(BaseTraits)
 			{
-				MDTraitsPtr BaseTraits = Base->GetTraits();
-				if(BaseTraits)
-				{
-					BaseTraits->SetInt(Object, Val);
-					return;
-				}
+				BaseTraits->SetInt(Object, Val);
+				return;
 			}
 		}
 	}
@@ -2704,21 +2676,17 @@ void mxflib::MDTraits_BasicEnum::SetInt(MDObject *Object, Int32 Val)
 //! Set from an Int64
 void mxflib::MDTraits_BasicEnum::SetInt64(MDObject *Object, Int64 Val) 
 {
-	MDOType *OType = Object->GetType();
-	if(OType)
+	const MDTypePtr &BaseType = Object->GetValueType();
+	if(BaseType)
 	{
-		const MDTypePtr &BaseType = OType->GetValueType();
-		if(BaseType)
+		const MDTypeParent &Base = BaseType->EffectiveBase();
+		if(Base)
 		{
-			const MDTypeParent &Base = BaseType->GetBase();
-			if(Base)
+			MDTraitsPtr BaseTraits = Base->GetTraits();
+			if(BaseTraits)
 			{
-				MDTraitsPtr BaseTraits = Base->GetTraits();
-				if(BaseTraits)
-				{
-					BaseTraits->SetInt64(Object, Val);
-					return;
-				}
+				BaseTraits->SetInt64(Object, Val);
+				return;
 			}
 		}
 	}
@@ -2728,21 +2696,17 @@ void mxflib::MDTraits_BasicEnum::SetInt64(MDObject *Object, Int64 Val)
 //! Set from a UInt32
 void mxflib::MDTraits_BasicEnum::SetUInt(MDObject *Object, UInt32 Val)
 {
-	MDOType *OType = Object->GetType();
-	if(OType)
+	const MDTypePtr &BaseType = Object->GetValueType();
+	if(BaseType)
 	{
-		const MDTypePtr &BaseType = OType->GetValueType();
-		if(BaseType)
+		const MDTypeParent &Base = BaseType->EffectiveBase();
+		if(Base)
 		{
-			const MDTypeParent &Base = BaseType->GetBase();
-			if(Base)
+			MDTraitsPtr BaseTraits = Base->GetTraits();
+			if(BaseTraits)
 			{
-				MDTraitsPtr BaseTraits = Base->GetTraits();
-				if(BaseTraits)
-				{
-					BaseTraits->SetUInt(Object, Val);
-					return;
-				}
+				BaseTraits->SetUInt(Object, Val);
+				return;
 			}
 		}
 	}
@@ -2752,21 +2716,17 @@ void mxflib::MDTraits_BasicEnum::SetUInt(MDObject *Object, UInt32 Val)
 //! Set from a UInt64
 void mxflib::MDTraits_BasicEnum::SetUInt64(MDObject *Object, UInt64 Val)
 {
-	MDOType *OType = Object->GetType();
-	if(OType)
+	const MDTypePtr &BaseType = Object->GetValueType();
+	if(BaseType)
 	{
-		const MDTypePtr &BaseType = OType->GetValueType();
-		if(BaseType)
+		const MDTypeParent &Base = BaseType->EffectiveBase();
+		if(Base)
 		{
-			const MDTypeParent &Base = BaseType->GetBase();
-			if(Base)
+			MDTraitsPtr BaseTraits = Base->GetTraits();
+			if(BaseTraits)
 			{
-				MDTraitsPtr BaseTraits = Base->GetTraits();
-				if(BaseTraits)
-				{
-					BaseTraits->SetUInt64(Object, Val);
-					return;
-				}
+				BaseTraits->SetUInt64(Object, Val);
+				return;
 			}
 		}
 	}
@@ -2776,18 +2736,14 @@ void mxflib::MDTraits_BasicEnum::SetUInt64(MDObject *Object, UInt64 Val)
 //! Get Int32
 Int32 mxflib::MDTraits_BasicEnum::GetInt(const MDObject *Object) const
 {
-	const MDOType *OType = Object->GetType();
-	if(OType)
+	const MDTypePtr &BaseType = Object->GetValueType();
+	if(BaseType)
 	{
-		const MDTypePtr &BaseType = OType->GetValueType();
-		if(BaseType)
+		const MDTypeParent &Base = BaseType->EffectiveBase();
+		if(Base)
 		{
-			const MDTypeParent &Base = BaseType->GetBase();
-			if(Base)
-			{
-				MDTraitsPtr BaseTraits = Base->GetTraits();
-				if(BaseTraits) return BaseTraits->GetInt(Object);
-			}
+			MDTraitsPtr BaseTraits = Base->GetTraits();
+			if(BaseTraits) return BaseTraits->GetInt(Object);
 		}
 	}
 	error("Unable to GetInt() on base of enumerated type %s\n", Object->FullName().c_str());
@@ -2797,18 +2753,14 @@ Int32 mxflib::MDTraits_BasicEnum::GetInt(const MDObject *Object) const
 //! Get Int64
 Int64 mxflib::MDTraits_BasicEnum::GetInt64(const MDObject *Object) const
 {
-	const MDOType *OType = Object->GetType();
-	if(OType)
+	const MDTypePtr &BaseType = Object->GetValueType();
+	if(BaseType)
 	{
-		const MDTypePtr &BaseType = OType->GetValueType();
-		if(BaseType)
+		const MDTypeParent &Base = BaseType->EffectiveBase();
+		if(Base)
 		{
-			const MDTypeParent &Base = BaseType->GetBase();
-			if(Base)
-			{
-				MDTraitsPtr BaseTraits = Base->GetTraits();
-				if(BaseTraits) return BaseTraits->GetInt64(Object);
-			}
+			MDTraitsPtr BaseTraits = Base->GetTraits();
+			if(BaseTraits) return BaseTraits->GetInt64(Object);
 		}
 	}
 	error("Unable to GetInt64() on base of enumerated type %s\n", Object->FullName().c_str());
@@ -2818,18 +2770,14 @@ Int64 mxflib::MDTraits_BasicEnum::GetInt64(const MDObject *Object) const
 //! Get UInt32
 UInt32 mxflib::MDTraits_BasicEnum::GetUInt(const MDObject *Object) const
 {
-	const MDOType *OType = Object->GetType();
-	if(OType)
+	const MDTypePtr &BaseType = Object->GetValueType();
+	if(BaseType)
 	{
-		const MDTypePtr &BaseType = OType->GetValueType();
-		if(BaseType)
+		const MDTypeParent &Base = BaseType->EffectiveBase();
+		if(Base)
 		{
-			const MDTypeParent &Base = BaseType->GetBase();
-			if(Base)
-			{
-				MDTraitsPtr BaseTraits = Base->GetTraits();
-				if(BaseTraits) return BaseTraits->GetUInt(Object);
-			}
+			MDTraitsPtr BaseTraits = Base->GetTraits();
+			if(BaseTraits) return BaseTraits->GetUInt(Object);
 		}
 	}
 	error("Unable to GetUInt() on base of enumerated type %s\n", Object->FullName().c_str());
@@ -2839,18 +2787,14 @@ UInt32 mxflib::MDTraits_BasicEnum::GetUInt(const MDObject *Object) const
 //! Get UInt64
 UInt64 mxflib::MDTraits_BasicEnum::GetUInt64(const MDObject *Object) const
 {
-	const MDOType *OType = Object->GetType();
-	if(OType)
+	const MDTypePtr &BaseType = Object->GetValueType();
+	if(BaseType)
 	{
-		const MDTypePtr &BaseType = OType->GetValueType();
-		if(BaseType)
+		const MDTypeParent &Base = BaseType->EffectiveBase();
+		if(Base)
 		{
-			const MDTypeParent &Base = BaseType->GetBase();
-			if(Base)
-			{
-				MDTraitsPtr BaseTraits = Base->GetTraits();
-				if(BaseTraits) return BaseTraits->GetUInt64(Object);
-			}
+			MDTraitsPtr BaseTraits = Base->GetTraits();
+			if(BaseTraits) return BaseTraits->GetUInt64(Object);
 		}
 	}
 	error("Unable to GetUInt64() on base of enumerated type %s\n", Object->FullName().c_str());

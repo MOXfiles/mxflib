@@ -177,6 +177,14 @@ namespace mxflib
 
 		virtual size_t ReadValue(MDObject *Object, const UInt8 *Buffer, size_t Size, int Count=0);
 
+		//! Convert to a Destination from a Source
+		/*	This will convert the value held by Source and place it in Dest. The
+			trait will query each object as required for type info. If the
+			conversion is not supported, it will return "false".
+			Dest must already have been constructed with the appropriate Type.
+		*/
+		virtual bool Convert( MDObject* Dest, const MDObject* Source );
+
 		//! Support old capitalization of SetUInt
 		void SetUint(MDObject *Object, UInt32 Val);
 
@@ -570,6 +578,9 @@ friend class MDTraits_BasicEnum;
 
 	class MDTraits_UMID : public MDTraits_Raw
 	{
+	protected:
+		static OutputFormatEnum DefaultFormat;			//!< Current default output format
+
 	public:
 		//! Does this trait take control of all sub-data and build values in the values own DataChunk?
 		/*! The entire UMID is held locally */
@@ -578,11 +589,24 @@ friend class MDTraits_BasicEnum;
 		//! A unique name for this trait
 		virtual std::string Name() const { return "mxflib::MDTraits_UMID"; };
 
+		//! Set the default output format from a string and return an OutputFormatEnum value to use in future
+		static OutputFormatEnum SetOutputFormat(std::string Format)
+		{
+			// We use the UUID class to do the formatting, so we need to get enum values from it
+			// To do this we temorarily switch the UUID format to the requested format (to get the value), then change back to what it was before
+			OutputFormatEnum OldFormat = mxflib::UUID::GetOutputFormat();
+			DefaultFormat = mxflib::UUID::SetOutputFormat(Format);
+			mxflib::UUID::SetOutputFormat(OldFormat);
+			return DefaultFormat;
+		}
+
+		//! Set the default output format
+		static void SetOutputFormat(OutputFormatEnum Format) { DefaultFormat = Format; }
+
 	protected:
 		virtual void SetString(MDObject *Object, std::string Val);
-		virtual std::string GetString(const MDObject *Object) const;
-                //Overridden to avoid partial overriden virtual function issues with ICC
-                virtual std::string GetString(const MDObject *Object, OutputFormatEnum Format) const { return GetString(Object); }
+		virtual std::string GetString(const MDObject *Object) const { return GetString(Object, -1); }
+        virtual std::string GetString(const MDObject *Object, OutputFormatEnum Format) const;
 	};
 
 	class MDTraits_RawArrayArray : public MDTraits_BasicArray
