@@ -217,6 +217,9 @@ DataChunkPtr WAVE_PCM_EssenceSubParser::ESP_EssenceSource::GetEssenceData(size_t
 	// Update the file pointer
 	pCaller->BytePosition = FileTell(File);
 
+	// The edit unit to add to the index table this time
+	Position IndexedEditUnit = pCaller->CurrentPosition;
+
 	// Move the edit unit pointer forward by the number of edit units read (if the last part of a read)
 	if(!BytesRemaining)	
 	{
@@ -235,6 +238,12 @@ DataChunkPtr WAVE_PCM_EssenceSubParser::ESP_EssenceSource::GetEssenceData(size_t
 		size_t OldSize = Ret->Size;
 		Ret->Resize(Bytes);
 		memset(&Ret->Data[OldSize], 0, Bytes - OldSize);
+	}
+
+	if(Ret && (Ret->Size > 0) && pCaller->Manager)
+	{
+		// Offer this index table data to the index manager
+		pCaller->Manager->OfferEditUnit(pCaller->ManagedStreamID, IndexedEditUnit, 0, 0x80);
 	}
 
 	return Ret;
@@ -438,6 +447,7 @@ bool mxflib::WAVE_PCM_EssenceSubParser::CalcWrappingSequence(Rational EditRate)
 		delete[] SampleSequence;
 		SampleSequence = NULL;
 	}
+	SampleSequenceSize = 0;
 
 	// Invalid edit rate!
 	if(EditRate.Numerator == 0) return false;
@@ -509,12 +519,12 @@ Position WAVE_PCM_EssenceSubParser::CalcCurrentPosition(void)
 	}
 
 	// Now work out how many complete sequences we are from the start of the essence
-	Position CompleteSeq = (BytePosition-DataStart) / SampleSize * SeqSize;
+	Position CompleteSeq = (BytePosition-DataStart) / (SampleSize * SeqSize);
 
 	// And The fractional part...
-	Position FracSeq = (BytePosition-DataStart) - (CompleteSeq * SeqSize);
+	Position FracSeq = (BytePosition-DataStart) - (CompleteSeq * SeqSize * SampleSize);
 
-	Position Ret = CompleteSeq * SeqSize;
+	Position Ret = CompleteSeq * SampleSequenceSize;
 
 	// Count back through the sequence to see how many edit units the fractional part is
 	i = SequencePos;
@@ -525,10 +535,10 @@ Position WAVE_PCM_EssenceSubParser::CalcCurrentPosition(void)
 		i--;
 
 		// Not a complete edit unit left
-		if(FracSeq < SampleSequence[i]) break;
+		if(FracSeq < (SampleSequence[i] * SampleSize)) break;
 
-		Ret += SampleSequence[i];
-		FracSeq -= SampleSequence[i];
+		Ret++;
+		FracSeq -= (SampleSequence[i] * SampleSize);
 	}
 
 	return Ret;
