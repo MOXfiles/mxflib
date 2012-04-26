@@ -280,6 +280,18 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\utility\osprintf.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\utility\oxstream.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\utility\timecode.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Utility\utf8.cpp"
 				>
 			</File>
@@ -289,6 +301,18 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\utility\osprintf.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\utility\oxstream.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\utility\timecode.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\Utility\utf8.h"
 				>
