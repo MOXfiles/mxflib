@@ -41,9 +41,6 @@
 
 namespace mxflib
 {
-	//! List of strings
-	typedef std::list<std::string> StringList;
-
 	// Forward declare
 	class MDType;
 
@@ -118,7 +115,8 @@ namespace mxflib
 		DICT_KEY_AUTO = 3,
 		DICT_KEY_4_BYTE = 4,
 		DICT_KEY_GLOBAL = 5,
-		DICT_KEY_UNDEFINED = 6
+		DICT_KEY_BER = 6,
+		DICT_KEY_UNDEFINED = 7
 	} DictKeyFormat;
 
 
@@ -195,6 +193,9 @@ namespace mxflib
 
 		//! Report the detailed description for this type
 		MXFLIB_TYPEIF_VIRTUAL const std::string &GetDetail(void) const MXFLIB_TYPEIF_PURE;
+
+		//! Is this a nested reference
+		MXFLIB_TYPEIF_VIRTUAL bool IsNestedRef(void) const MXFLIB_TYPEIF_PURE;
 	};
 
 	//! Interface for getting type info for MDOTypes only
@@ -351,6 +352,10 @@ namespace mxflib
 		//! Insert a new child type
 		/*! DRAGONS: This overlaods the insert() methods of the base map */
 //		std::pair<MDOType::iterator, bool> insert(MDOTypePtr NewType) 
+
+		//! Set a strong ref to be nested or by-ref
+		MXFLIB_TYPEIF_VIRTUAL void SetNestedRef(bool nested = true) MXFLIB_TYPEIF_PURE;
+
 	};
 
 
@@ -424,6 +429,9 @@ namespace mxflib
 
 		//! Report the effective reference type of this type
 		MXFLIB_TYPEIF_VIRTUAL TypeRef EffectiveRefType(void) const MXFLIB_TYPEIF_PURE;
+
+		//! Report the if the effective reference type of this type is to be nested
+		MXFLIB_TYPEIF_VIRTUAL bool EffectiveRefNested(void) const MXFLIB_TYPEIF_PURE;
 
 		//! Report the effective reference target of this type
 		MXFLIB_TYPEIF_VIRTUAL MDOTypePtr EffectiveRefTarget(void) const MXFLIB_TYPEIF_PURE;
@@ -977,6 +985,10 @@ namespace mxflib
 		//! Make a link from this reference source to the specified target set via the given target property
 		MXFLIB_TYPEIF_VIRTUAL bool MakeRef(MDObjectPtr &TargetSet, const UL &Target, bool ForceLink = false) MXFLIB_TYPEIF_PURE;
 
+		//! Add a new source child to this property and link it to the specified target set
+		/*! This is used for adding new reference entries to batches or arrays */
+		MXFLIB_TYPEIF_VIRTUAL bool AddRef(MDObject *TargetSet, bool ForceLink = false) MXFLIB_TYPEIF_PURE;
+
 		//! Make a link from the given source child of this set to the specified target set, adding a new child if required
 		MXFLIB_TYPEIF_VIRTUAL bool MakeRef(const UL &Source, MDObjectPtr &TargetSet, bool ForceLink = false) MXFLIB_TYPEIF_PURE;
 
@@ -1009,7 +1021,7 @@ namespace mxflib
 		/*! This determines if the specified UL has been included as a child of this type in any loaded disctionary.
 		 *  It may be valid for children of this UL to be included, even if this function returns false 
 		 */
-		MXFLIB_TYPEIF_VIRTUAL bool HasA(const ULPtr &ChildType) const MXFLIB_TYPEIF_PURE;
+		MXFLIB_TYPEIF_VIRTUAL bool HasA(const UL &ChildType) const MXFLIB_TYPEIF_PURE;
 
 		//! Get read-only access to the base type
 		MXFLIB_TYPEIF_VIRTUAL const MDOTypeParent &GetBase(void) const MXFLIB_TYPEIF_PURE;
