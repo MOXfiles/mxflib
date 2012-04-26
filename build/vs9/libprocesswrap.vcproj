@@ -365,7 +365,31 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libprocesswrap\process_metadata.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\process_metadata.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\process_utils.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\process_utils.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libprocesswrap\productIDs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\utf8.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\utf8.h"
 				>
 			</File>
 		</Filter>
