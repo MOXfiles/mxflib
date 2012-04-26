@@ -157,6 +157,7 @@ namespace mxflib
 		//! Byte count for each and every edit unit, if CBR, else zero
 		UInt32 EditUnitByteCount;
 
+
 		//! Number of entries in BaseDeltaArray
 		int BaseDeltaCount;
 
@@ -170,12 +171,11 @@ namespace mxflib
 		int NPE;			//!< NPE as defined in SMPTE-337M (number of PosTable entries)
 		int IndexEntrySize;	//!< Size of each index entry (11 + 4*NSL + 8*NPE)
 
-//		//! Map of index entries that may be out of order
-//		/*! The entries will be built into segments by function xxx() */
-//		IndexEntryMap IndexOrderEntryMap;
-//		IndexEntryMap EssenceOrderEntryMap;
-
 		ReorderIndexPtr		Reorder;			//!< Pointer to our reorder index if we are using one (used for building reordered indexes)
+
+		Length PreCharge;						//!< The size of the precharge in an index table being built
+												/*!< While we are building an index table with pre-charge, the pre-charge edit units will have -ve
+												 *   positions - this tells us how far to adjust them when we write the table to start at zero */
 
 
 	public:
@@ -186,14 +186,14 @@ namespace mxflib
 
 	public:
 		//! Construct an IndexTable with no CBRDeltaArray
-		IndexTable() : IndexSID(0), BodySID(0), EditUnitByteCount(0) , BaseDeltaCount(0)
+		IndexTable() : IndexSID(0), BodySID(0), EditUnitByteCount(0) , BaseDeltaCount(0), BaseDeltaArray(0)
 		{ 
 			IndexDuration=0;
 			EditRate.Numerator=0; 
-			EditUnitByteCount=0; 
 			NSL=0; 
 			NPE=0; 
 			IndexEntrySize=11; 
+			PreCharge = 0;
 		};
 
 		//! Free any memory used by BaseDeltaArray when this IndexTable is destroyed
@@ -375,7 +375,7 @@ namespace mxflib
 						   int PosCount = 0, Rational *PosTable = NULL);
 
 		//! Add multiple - pre-formed index entries
-		bool AddIndexEntries(int Count, int Size, UInt8 const *Entries);
+		bool AddIndexEntries(int Count, int Size, UInt8 const *Entries, bool AllowOverSize = false);
 
 		//! Update the Stream Offset of an index entry
 		void Update(Position EditUnit, UInt64 StreamOffset);
@@ -397,6 +397,11 @@ namespace mxflib
 		int *PosTableList;					//!< PosTableIndex for each stream
 		UInt32 *ElementSizeList;			//!< ElementSize for each stream
 		int MasterStream;					//!< The Stream ID of the "master" stream that can set flags and key offset, normally the main stream "0"
+
+		Length PreCharge;					//!< The number of edit units of pre-charge at the start of the essence
+											/*!< Calls to Add/OfferEditUnit() and Set/Offer/TemporalOffset() will be adjusted bu this amount, but
+											 *   calls to Set/OfferOffset() do not need adjusting as they will be fixed by calling code
+											 */
 
 		struct IndexData
 		{
@@ -507,6 +512,12 @@ namespace mxflib
 		//! Set the master stream ID, this stream can change flags and key offset for an entry
 		void SetMasterStream(int StreamID) { MasterStream = StreamID; }
 
+		//! Set the pre-charge size to allow the index table to be built correctly
+		void SetPreCharge(Length PreChargeSize)
+		{
+			PreCharge = PreChargeSize;
+		}
+
 		//! Add an edit unit (of a stream) without a known offset
 		void AddEditUnit(int SubStream, Position EditUnit, int KeyOffset = 0, int Flags = -1);
 
@@ -604,6 +615,7 @@ namespace mxflib
 		//! Access function to read CBR flag
 		bool IsCBR(void) { return DataIsCBR; };
 
+
 		//! Set value-relative indexing flag
 		/*! Value-relative indexing will produce index tables that count from the first byte of the KLV 
 		 *  of clip-wrapped essence rather than the key. These tables can be used internally but must not
@@ -620,7 +632,12 @@ namespace mxflib
 		void SetSubRangeOffset(Position Offset) { SubRangeOffset = Offset; }
 
 
-		void SetIndexDuration( Int64 newVal) {IndexDuration=newVal; };
+		//! Get the index duration
+		/* DRAGONS: Only currently works from CBR */
+		Length GetIndexDuration(void) { return IndexDuration; };
+
+		//! Set the CBR index duration
+		void SetIndexDuration( Int64 newVal) { IndexDuration = newVal; };
 
 	protected:
 		//! Access an entry in the managed data array - creating or extending the array as required
