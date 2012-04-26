@@ -35,6 +35,9 @@
 
 // Standard library includes
 #include <list>
+#include <sstream>
+#include <iomanip>
+
 
 #ifdef _WIN32
 #pragma warning(disable : 4995) //turn off warnings about sprintf deprecated
@@ -49,7 +52,7 @@ namespace mxflib
 	typedef Int64 Length;				//!< Lenth of an item in bytes
 	typedef Int64 Position;				//!< Position within an MXF file
 
-	typedef UInt16 Tag;					//!< 2-byte tag for local sets
+	typedef UInt32 Tag;					//!< Tag for local sets, will handle 1-byte, 2-byte and up-to 4-byte BER
 
 	//! Pair of UInt32 values
 	typedef std::pair<UInt32, UInt32> U32Pair;
@@ -59,11 +62,12 @@ namespace mxflib
 // Some string conversion utilities
 namespace mxflib
 {
-	//! String version of a tag
+	//! String version of a 2-byte tag
 	inline std::string Tag2String(Tag value)
 	{
-		char Buffer[8];
-		sprintf(Buffer, "%02x.%02x", value >> 8, value & 0xff);
+		char Buffer[16];
+		if((value & 0xffff0000) == 0) sprintf(Buffer, "%02x.%02x", (value & 0xff00) >> 8, value & 0xff);
+		else sprintf(Buffer, "0x%04x", value);
 		return std::string(Buffer);
 	}
 }
@@ -406,6 +410,12 @@ namespace mxflib
 	typedef Identifier<32> Identifier32;
 	class UMID : public Identifier32, public RefCount<UMID>
 	{
+	protected:
+		static OutputFormatEnum DefaultFormat;			//!< Current default output format
+
+		static OutputFormatEnum OutputFormatBraced;		//!< Dynamic enum value allocated to [00112233.4455.6677.8899aabb],cc,dd,ee,ff,{00112233-4455-6677-8899-aabbccddeeff} format
+		static OutputFormatEnum OutputFormatURN;		//!< Dynamic enum value allocated to urn:smpte:umid format
+
 	public:
 		//! Construct a new UMID either from a sequence of bytes, or as a NULL UMID (32 zero bytes)
 		/*! \note The byte string must contain at least 32 bytes or errors will be produced when it is used
@@ -416,10 +426,10 @@ namespace mxflib
 		UMID(const SmartPtr<UMID> ID) { if(!ID) memset(Ident,0,32); else memcpy(Ident,ID->Ident, 32); };
 
 		//! Construct a UMID from a string
-		UMID(std::string String);
+		UMID(std::string String) { SetString(String); };
 
 		//! Copy constructor
-		UMID(const UMID &RHS) { memcpy(Ident,RHS.Ident, 16); };
+		UMID(const UMID &RHS) { memcpy(Ident,RHS.Ident, 32); };
 
 		//! Get the UMID's instance number
 		/*! \note The number returned interprets the instance number as big-endian */
@@ -455,6 +465,27 @@ namespace mxflib
 			// DRAGONS: Is this the right method for a UL?
 			Ident[11] = (Ident[11] & 0x0f) | 2<<4;
 		}
+
+		//! Set the default output format from a string and return an OutputFormatEnum value to use in future
+		static OutputFormatEnum SetOutputFormat(std::string Format);
+
+		//! Set the default output format
+		static void SetOutputFormat(OutputFormatEnum Format) { DefaultFormat = Format; }
+
+		//! Get the current default output format
+		static OutputFormatEnum GetOutputFormat(void) { return DefaultFormat; }
+
+		//! Produce a human-readable string in one of the "standard" formats
+		std::string GetString(OutputFormatEnum Format = -1) const
+		{
+			return FormatString(Ident, Format);
+		}
+
+		//! Set the value of a UMID, based on a string
+		void SetString(std::string Val);
+
+		//! Format using one of the "standard" UMID formats
+		static std::string FormatString(UInt8 const *Ident, OutputFormatEnum Format = -1);
 	};
 
 	//! A smart pointer to a UMID object
@@ -467,15 +498,37 @@ namespace mxflib
 	//! Structure for holding fractions
 	class Rational
 	{
+	protected:
+		//! Smart pointer to the last MDObject created by operator MDObject*() to ensure safe deletion if never set into another smart pointer
+		MDObjectPtr AutoCastObject;
+
 	public:
 		Int32 Numerator;				//!< Numerator of the fraction (top number)
 		Int32 Denominator;				//!< Denominator of the fraction (bottom number)
 	
 		//! Build an empty Rational
-		Rational() : Numerator(0), Denominator(0) {};
+		Rational() : Numerator(0), Denominator(1) {};
 
 		//! Initialise a Rational with a value
-		Rational(Int32 Num, Int32 Den) : Numerator(Num), Denominator(Den) {};
+		Rational(Int32 Num, Int32 Den = 1) : Numerator(Num), Denominator(Den) {};
+
+		//! Construct a Rational from a string
+		Rational(std::string s) : Numerator(0), Denominator(1) { SetString(s); };
+
+		//! Construct a Rational from an MDObject*(Rational_UL)
+		Rational( const MDObject* );
+
+		//! Construct a Rational from an MDObject(Rational_UL)
+		Rational( const MDObject& );
+
+		//! Assign from an MDObject(Rational_UL)
+		Rational &operator=( const MDObject& );
+
+		//! Cast to MDObjectPtr to MDObject(Rational_UL)
+		operator MDObjectPtr();
+
+		//! Cast to MDObject*(Rational_UL)
+		operator MDObject*();
 
 		//! Determine the greatest common divisor using the Euclidean algorithm
 		Int32 GreatestCommonDivisor(void) 
@@ -528,11 +581,17 @@ namespace mxflib
 			return !operator==(RHS);
 		}
 
+		//! Comparison
+		inline bool operator<(const Rational& RHS) const
+		{
+			return ( (double)Numerator/(double)Denominator )<( (double)RHS.Numerator/(double)RHS.Denominator );
+		}
+
 		//! Set the value of the rational from a string
 		void SetString(std::string Value);
 
 		//! Get the value of this rational as a string
-		std::string GetString(void) const;
+		std::string GetString(const std::string sep = ":") const;
 	};
 
 	//! Determine the greatest common divisor of a 64-bit / 64-bit pair using the Euclidean algorithm
@@ -578,6 +637,10 @@ namespace mxflib
 
 		// Calculate the greated common divisor
 		Int64 GCD = GreatestCommonDivisor(Numerator, Denominator);
+
+		// Check for divide by zero
+		mxflib_assert(GCD != 0);
+		if(GCD == 0) GCD = 1;
 		
 		Numerator /= GCD;
 		Denominator /= GCD;
@@ -762,37 +825,10 @@ namespace mxflib
 		 */
 		static LabelPtr Find(const std::string Name);
 
+		//! Does givien label value match the named label (taking the mask into account)
+		static bool Matches(const std::string Name, const UInt8 *Value);
 	};
-
-
-	//types for Edgecode components
-
-	enum _EdgeType_t
-	{	
-		kEtInvalid		= -1,
-		kEtNull			= 0,
-		kEtKeycode		= 1,
-		kEtEdgenum4		= 2,
-		kEtEdgenum5		= 3,
-		kEtHeaderSize	= 8
-	} 	;
-
-	typedef enum _EdgeType_t EdgeType_t;
-
-
-	enum _FilmType_t
-	{
-		kFtInvalid	= -1,
-		kFtNull		= 0,
-		ktFt35MM	= 1,
-		ktFt16MM	= 2,
-		kFt8MM		= 3,
-		kFt65MM		= 4
-	} ;
-
-	typedef enum _FilmType_t FilmType_t;
 }
-
 
 
 #endif // MXFLIB__TYPES_H

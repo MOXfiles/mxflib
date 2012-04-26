@@ -744,15 +744,50 @@ LabelPtr Label::Find(const std::string Name)
 
 	LabelPtr Ret;
 
+	// Check unmasked first
 	LabelULMap::iterator it = LabelMap.begin();
-
 	while( it != LabelMap.end() )
 	{
 		if( (*it).second->Name == Name ) return (*it).second;
 		it++;
 	}
 
+	// Then check masked
+	LabelULMultiMap::iterator it2 = LabelMultiMap.begin();
+	while( it2 != LabelMultiMap.end() )
+	{
+		if( (*it2).second->Name == Name ) return (*it2).second;
+		it2++;
+	}
+
 	return Ret;
+}
+
+
+//! Does givien label value match the named label (taking the mask into account)
+bool Label::Matches(const std::string Name, const UInt8 *Value)
+{
+	LabelPtr TestLabel = Label::Find(Name);
+	if(!TestLabel) return false;
+
+	// Set up pointers to the test label mask and value
+	const UInt8 *p1 = TestLabel->Value.GetValue();
+	const UInt8 *pMask = TestLabel->Mask;
+
+	// Set up a pointer to the test value
+	const UInt8 *p2 = Value;
+
+	for(int i=0; i<16; i++)
+	{
+		// Test each byte of the label (removing the masked bits) with each byte of the value (removing the masked bits)
+		if(((*p1) & ~(*pMask)) != ((*p2) & ~(*pMask)))  return false;
+
+		p1++;
+		pMask++;
+		p2++;
+	}
+
+	return true;
 }
 
 
@@ -878,12 +913,60 @@ bool Label::Insert(std::string Name, std::string Detail, const mxflib::UUID &Lab
 }
 
 
+
+
+//! Construct a Rational from an MDObject*(Rational_UL)
+Rational::Rational(const MDObject* Val) : Numerator(0), Denominator(1)
+{
+	if( Val->IsA(Rational_UL) ) 
+	{
+		Numerator = Val->GetInt(Numerator_UL);
+		Denominator = Val->GetInt(Denominator_UL);
+		return;
+	}
+};
+
+//! Construct a Rational from an MDObject(Rational_UL)
+Rational::Rational(const MDObject &Val) : Numerator(0), Denominator(1)
+{
+	Numerator = Val.GetInt(Numerator_UL);
+	Denominator = Val.GetInt(Denominator_UL);
+};
+
+//! Assign from an MDObject(Rational_UL)
+Rational &Rational::operator=( const MDObject& Val )
+{
+	Numerator = Val.GetInt(Numerator_UL);
+	Denominator = Val.GetInt(Denominator_UL);
+	return *this;
+}
+
+//! Cast to MDObjectPtr to MDObject(Rational_UL)
+Rational::operator MDObjectPtr()
+{
+	AutoCastObject = new MDObject(Rational_UL);
+	AutoCastObject->AddChild(Numerator_UL)->SetInt(Numerator);
+	AutoCastObject->AddChild(Denominator_UL)->SetInt(Denominator);
+	AutoCastObject->SetTransient(true);
+	return AutoCastObject;
+};
+
+//! Cast to MDObject*(Rational_UL)
+Rational::operator MDObject*()
+{
+	AutoCastObject = new MDObject(Rational_UL);
+	AutoCastObject->AddChild(Numerator_UL)->SetInt(Numerator);
+	AutoCastObject->AddChild(Denominator_UL)->SetInt(Denominator);
+	AutoCastObject->SetTransient(true);
+	return AutoCastObject.GetPtr();
+};
+
 //! Get the value of this rational as a string
-std::string Rational::GetString(void) const
+std::string Rational::GetString(const std::string sep /*=":"*/) const
 {
 	std::stringstream Str;
 
-	Str << Numerator << ":" << Denominator;
+	Str << Numerator << sep << Denominator;
 
 	return Str.str();
 }
@@ -1370,20 +1453,212 @@ std::string mxflib::UUID::FormatString(UInt8 const *Ident, OutputFormatEnum Form
 }
 
 
-//! Construct a UMID from a string
-UMID::UMID(std::string String)
+//! Current default output format for UMIDs
+OutputFormatEnum UMID::DefaultFormat = -1;
+
+/* Static members holding allocated dynamic enum values for UMID output formats */
+OutputFormatEnum UMID::OutputFormatBraced = -1;
+OutputFormatEnum UMID::OutputFormatURN = -1;
+
+//! Set the default output format from a string and return an OutputFormatEnum value to use in future
+OutputFormatEnum UMID::SetOutputFormat(std::string Format)
 {
-	DataChunkPtr Bytes = Hex2DataChunk(String);
+	/* Valid formats:
+	 * "Braced", "Bracketed" or "[]" or "{}"			[00112233.4455.6677.8899aabb.ccddeeff] or {8899aabb-ccdd-eeff-0011-223344556677}
+	 * "URN"											urn:smpte:umid
+	 */
 
-	if(Bytes->Size < 32)
+	// Do the actual comparisons all in upper case to make case-insensitive
+	std::transform(Format.begin(), Format.end(), Format.begin(), toupper);
+
+	// We will set and/or return one of our static members, which depends on the format.
+	// This is done by using a pointer to the one to apply - we default to the braced format
+	OutputFormatEnum *FormatRef = &UMID::OutputFormatBraced;
+
+	if((Format == "BRACED") || (Format == "BRACKETED") || (Format == "[]") || (Format == "{}"))
 	{
-		error("Invalid UMID %s\n", String);
-		
-		// Copy what we can!
-		memset(Ident, 0, Bytes->Size);
-
-		return;
+		FormatRef = &UMID::OutputFormatBraced;
+	}
+	else if(Format == "URN")
+	{
+		FormatRef = &UMID::OutputFormatURN;
+	}
+	else
+	{
+		error("Unknown UL format \"%s\" specified in call to UMID::SetFormat()\n", Format.c_str());
+		return -1;
 	}
 
-	memcpy(Ident, 0, 32);
+	// If we don't yet have an enum value for this format, ask for one
+	if((*FormatRef) == -1) *FormatRef = MDTraitsEnum::GetNewEnum();
+
+	// Set the format
+	DefaultFormat = *FormatRef;
+
+	// Return the numeric value for future SetFormat() or GetString() calls
+	return DefaultFormat;
+}
+
+
+
+//! Format using one of the "standard" UMID formats
+std::string UMID::FormatString(UInt8 const *Ident, OutputFormatEnum Format /*=-1*/)
+{
+	char Buffer[100];
+
+	// If no format specified, use current default
+	if(Format == -1)
+	{
+		if(DefaultFormat == -1)
+		{
+			if(OutputFormatBraced == -1) OutputFormatBraced = MDTraitsEnum::GetNewEnum();
+			DefaultFormat = OutputFormatBraced;
+		}
+		Format = DefaultFormat;
+	}
+
+	if(Format == OutputFormatBraced)
+	{
+		sprintf (Buffer, "[%02x%02x%02x%02x.%02x%02x.%02x%02x.%02x%02x%02x%02x]",
+						  Ident[0], Ident[1], Ident[2], Ident[3], Ident[4], Ident[5],
+						  Ident[6], Ident[7], Ident[8], Ident[9], Ident[10], Ident[11]
+				);
+		
+		// Start building the return value
+		std::string Ret(Buffer);
+
+		sprintf( Buffer, ",%02x,%02x,%02x,%02x,", Ident[12], Ident[13], Ident[14], Ident[15]);
+		Ret += Buffer;
+
+		// Decide how best to represent the material number
+		const UInt8* Material = &Ident[16];
+		if( !(0x80&Material[8]) )
+		{	// Half-swapped UL packed into a UUID datatype
+			// Return as compact SMPTE format [bbaa9988.ddcc.ffee.00010203.04050607]
+			// Stored with upper/lower 8 bytes exchanged
+			// Stored in the following 0-based index order: 88 99 aa bb cc dd ee ff 00 01 02 03 04 05 06 07
+			sprintf (Buffer, "[%02x%02x%02x%02x.%02x%02x.%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x]",
+							   Material[8], Material[9], Material[10], Material[11], Material[12], Material[13], Material[14], Material[15],
+							   Material[0], Material[1], Material[2], Material[3], Material[4], Material[5], Material[6], Material[7]
+					);
+		}
+		else
+		{	// UUID
+			// Stored in the following 0-based index order: 00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff
+			// (i.e. network byte order)
+			// Return as compact GUID format {00112233-4455-6677-8899-aabbccddeeff}
+			sprintf (Buffer, "{%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
+							   Material[0], Material[1], Material[2], Material[3], Material[4], Material[5], Material[6], Material[7],
+							   Material[8], Material[9], Material[10], Material[11], Material[12], Material[13], Material[14], Material[15]
+					);
+		}
+
+		Ret += Buffer;
+
+		return Ret;
+	}
+	else if(Format == OutputFormatURN)
+	{
+		sprintf(Buffer, "urn:smpte:umid:%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x",
+						Ident[0], Ident[1], Ident[2], Ident[3], Ident[4], Ident[5], Ident[6], Ident[7],
+						Ident[8], Ident[9], Ident[10], Ident[11], Ident[12], Ident[13], Ident[14], Ident[15],
+						Ident[16], Ident[17], Ident[18], Ident[19], Ident[20], Ident[21], Ident[22], Ident[23],
+						Ident[24], Ident[25], Ident[26], Ident[27], Ident[28], Ident[29], Ident[30], Ident[31]
+				);
+
+		return Buffer;
+	}
+	else
+	{
+		error("Unknown OutputFormat %d in UMID::FormatString()\n", (int)Format);
+		return FormatString(Ident, OutputFormatBraced);
+	}
+
+};
+
+
+//! Set the value of a UMID, based on a string
+void mxflib::UMID::SetString(std::string Val)
+{
+	// Make a safe copy of the value that will not be cleaned-up by string manipulation
+	const int VALBUFF_SIZE = 256;
+	char ValueBuff[VALBUFF_SIZE];
+	strncpy(ValueBuff, Val.c_str(), VALBUFF_SIZE -1);
+	const char *p = ValueBuff;
+
+	size_t Count = 32;
+	int Value = -1;
+	UInt8 *pD = Ident;
+
+	bool EndSwap = false;
+
+	// During this loop Value = -1 when no digits of a number are mid-process
+	// This stops a double space being regarded as a small zero in between two spaces
+	while(Count)
+	{
+		int digit;
+		
+		if((*p == 0) && (Value == -1)) Value = 0;
+
+		if(*p >= '0' && *p <='9') digit = (*p) - '0';
+		else if(*p >= 'a' && *p <= 'f') digit = (*p) - 'a' + 10;
+		else if(*p >= 'A' && *p <= 'F') digit = (*p) - 'A' + 10;
+		else
+		{
+			// If we meet "[" before the digits for the material number, it is a UL - which will need to be end-swapped
+			if((*p == '[') && (Count == 16))
+			{
+				EndSwap = true;
+			}
+
+			if(Value == -1)
+			{
+				// Skip second or subsiquent non-digit
+				p++;
+				continue;
+			}
+			else 
+			{
+				*pD = Value;
+				*pD++;
+
+				Count--;
+
+				if(*p) p++;
+				
+				Value = -1;
+
+				continue;
+			}
+		}
+
+		if(Value == -1) Value = digit;
+		else 
+		{
+			Value <<=4;
+			Value += digit;
+
+			*pD = Value;
+			*pD++;
+
+			Count--;
+
+			if(*p) p++;
+			
+			Value = -1;
+
+			continue;
+		}
+
+		p++;
+	}
+
+	// If the material number was a UL, end-swap it
+	if(EndSwap)
+	{
+		UInt8 Temp[8];
+		memcpy(Temp, &Ident[24], 8);
+		memcpy(&Ident[24], &Ident[16], 8);
+		memcpy(&Ident[16], Temp, 8);
+	}
 }
