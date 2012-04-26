@@ -37,6 +37,7 @@ using namespace mxflib;
 
 //! MXFLib debug flag
 static bool DebugMode = false;
+static bool QuietMode = false;
 
 /* XML functions */
 void Convert_startElement(void *user_data, const char *name, const char **attrs);
@@ -70,8 +71,14 @@ bool ULConsts = true;
 //! Should UL consts always be long-form?
 bool LongFormConsts = false;
 
+//! Should output files be discarded on any errors/warnings? (prevents overwriting good ones)
+bool SafeOverwrite = false;
+
 //! Namespace for defining UL constants
 std::string ULNamespace = "mxflib";
+
+//! Error state = 0 for no errors, 1 for warnings only, 2 for errors
+int ErrorState = 0;
 
 
 // Declare main process function
@@ -115,49 +122,49 @@ namespace
 
 	ULDataMap ULMap;
 	ULDataList ULFixupList;
-};
 
 
-//! State-machine state for XML parsing
-enum CurrentState
-{
-	StateIdle = 0,								//!< Processing not yet started
-	StateTypes,									//!< Processing types - not yet processing a types section
-	StateTypesBasic,							//!< Processing basic types section
-	StateTypesInterpretation,					//!< Processing interpretation types section
-	StateTypesMultiple,							//!< Processing multiple types section
-	StateTypesCompound,							//!< Processing compound types section
-	StateTypesCompoundItem,						//!< Processing sub-items within a compound
-	StateTypesEnum,								//!< Processing enumerated types section
-	StateTypesEnumValue,						//!< Processing values within an enumeration
-	StateTypesLabel,							//!< Processing lablels, possibly inside a types section
-	StateClasses,								//!< Processing classes
-	StateDone,									//!< Finished processing
-	StateError									//!< Error encountered - process nothing else
-};
+	//! State-machine state for XML parsing
+	enum CurrentState
+	{
+		StateIdle = 0,								//!< Processing not yet started
+		StateTypes,									//!< Processing types - not yet processing a types section
+		StateTypesBasic,							//!< Processing basic types section
+		StateTypesInterpretation,					//!< Processing interpretation types section
+		StateTypesMultiple,							//!< Processing multiple types section
+		StateTypesCompound,							//!< Processing compound types section
+		StateTypesCompoundItem,						//!< Processing sub-items within a compound
+		StateTypesEnum,								//!< Processing enumerated types section
+		StateTypesEnumValue,						//!< Processing values within an enumeration
+		StateTypesLabel,							//!< Processing lablels, possibly inside a types section
+		StateClasses,								//!< Processing classes
+		StateDone,									//!< Finished processing
+		StateError									//!< Error encountered - process nothing else
+	};
 
-//! State structure for XML parsing
-struct ConvertState
-{
-	CurrentState State;							//!< Current state of the parser state-machine
-	std::string Parent;							//!< The name of the current compound or set/pack being built
-	std::string Multi;							//!< The name of the current multiple being built (possibly inside a set of pack)
-	ULDataPtr ParentData;						//!< The ULData item of the parent set or pack
-	ULDataPtr MultiData;						//!< The ULData item of the parent multiple
-	FILE *OutFile;								//!< The file being written
-	int Depth;									//!< Nesting depth in class parsing
-	std::list<std::string> EndTagText;			//!< Text to be output at the next class end tag
-	std::map<std::string, std::string> TypeMap;	//!< Map of type for each class - to allow types to be inherited
-	std::list<bool> ExtendSubsList;				//!< List of extendSubs flags (explicit and inherited) for each level
-	std::string ProvisionalItem;				//!< The line to send for this class if it turns out to be an item
-	std::string ProvisionalExtend;				//!< The line to send for this class if it turns out to be an extension of a set or pack
-	bool FoundType;								//!< Set true once we have determined the dictionary type (old or new)
-	bool FoundMulti;							//!< Found new multi-style dictionary
-	bool LabelsOnly;							//!< True if this is a labels section rather than a full types section
-												// ** DRAGONS: Labels are treated as types rather than defining a third kind (types, classes and labels)
+	//! State structure for XML parsing
+	struct ConvertState
+	{
+		CurrentState State;							//!< Current state of the parser state-machine
+		std::string Parent;							//!< The name of the current compound or set/pack being built
+		std::string Multi;							//!< The name of the current multiple being built (possibly inside a set of pack)
+		ULDataPtr ParentData;						//!< The ULData item of the parent set or pack
+		ULDataPtr MultiData;						//!< The ULData item of the parent multiple
+		FILE *OutFile;								//!< The file being written
+		int Depth;									//!< Nesting depth in class parsing
+		std::list<std::string> EndTagText;			//!< Text to be output at the next class end tag
+		std::map<std::string, std::string> TypeMap;	//!< Map of type for each class - to allow types to be inherited
+		std::list<bool> ExtendSubsList;				//!< List of extendSubs flags (explicit and inherited) for each level
+		std::string ProvisionalItem;				//!< The line to send for this class if it turns out to be an item
+		std::string ProvisionalExtend;				//!< The line to send for this class if it turns out to be an extension of a set or pack
+		bool FoundType;								//!< Set true once we have determined the dictionary type (old or new)
+		bool FoundMulti;							//!< Found new multi-style dictionary
+		bool LabelsOnly;							//!< True if this is a labels section rather than a full types section
+													// ** DRAGONS: Labels are treated as types rather than defining a third kind (types, classes and labels)
 
-	std::string SymSpace;						//!< The symbol space attribute of the classes tag (stored if deferring the header line)
-};
+		std::string SymSpace;						//!< The symbol space attribute of the classes tag (stored if deferring the header line)
+	};
+}
 
 
 //! Add a ULData item for a type
@@ -182,12 +189,16 @@ int main_process(int argc, char *argv[])
 			num_options++;
 			if((argv[i][1] == 'z') || (argv[i][1] == 'Z'))
 				PauseBeforeExit = true;
+			else if((argv[i][1] == 'q') || (argv[i][1] == 'Q'))
+				QuietMode = true;
 			else if((argv[i][1] == 'v') || (argv[i][1] == 'V'))
 				DebugMode = true;
 			else if((argv[i][1] == 'b') || (argv[i][1] == 'B'))
 				{ DictStructs = true; ULConsts = true; }
 			else if((argv[i][1] == 'c') || (argv[i][1] == 'C'))
-				DictStructs = true;
+				DictStructs = false;
+			else if((argv[i][1] == 'o') || (argv[i][1] == 'O'))
+				SafeOverwrite = true;
 			else if( (argv[i][1] == 'd') || (argv[i][1] == 'D')
 				   || (argv[i][1] == 'x') || (argv[i][1] == 'X') )
 				ULConsts = false;
@@ -228,10 +239,12 @@ int main_process(int argc, char *argv[])
 		printf("Options: -b         BOTH dict struct and UL consts (default)\n");
 		printf("         -c         CONSTS only\n");
 		printf("         -d         DICT only\n");
+		printf("         -o         Only write outputs if no errors/warnings\n");
 		printf("         -x         (same as -d)\n");
 		printf("         -n=name    Use \"name\" as the name of the structure built\n");
 		printf("         -l         Always use long-form names for UL consts\n");
 		printf("         -s=name    Use \"name\" as the namespace for UL consts\n");
+		printf("         -q         Quiet mode - do not show info messages\n");
 		printf("         -v         Verbose mode - shows lots of debug info\n");
 		printf("         -z         Pause for input before final exit\n");
 		printf("If <constsfile> is not specified, UL consts will be appended to dict struct file\n");
@@ -264,11 +277,12 @@ int main_process(int argc, char *argv[])
 	// outfile is used for both DictStructs and ULConsts
 	FILE *outfile;
 		
-	// parsing always writes to outfile; so if DictStructs not required, open the file as temporary
-	if( !DictStructs )
-		outfile = fopen(argv[FileArg[1]],"wD");
-	else
-		outfile = fopen(argv[FileArg[1]],"w");
+	// Parsing always writes to outfile; so if DictStructs not required, always write as a temporary
+	const char *pStructsFile = ((!DictStructs) || SafeOverwrite) ? "dictstruct.tmp" : argv[FileArg[1]];
+	const char *pConstsFile = SafeOverwrite ? "constsfile.tmp" : argv[FileArg[2]];
+
+	// Open the struct output file
+	outfile = fopen(pStructsFile,"w");
 
 	if(!outfile)
 	{
@@ -288,6 +302,7 @@ int main_process(int argc, char *argv[])
 	// DRAGONS writes to outfile
 	bool result = false;
 	result = XMLParserParseFile(&XMLHandler, &State, InputFile);
+	if(!result) ErrorState = 2;
 
 	if((ClassesCount > 0) || (TypesCount > 0))
 	{
@@ -319,10 +334,10 @@ int main_process(int argc, char *argv[])
 	if( ULConsts && (ULMap.size() > 0) )
 	{
 		// Set up the ULConsts file
-		if( DictStructs && argv[FileArg[1]]==argv[FileArg[2]] )
-			outfile = fopen(argv[FileArg[2]],"a+");
+		if( DictStructs && (argv[FileArg[1]]==argv[FileArg[2]]))
+			outfile = fopen(pStructsFile,"a+");
 		else
-			outfile = fopen(argv[FileArg[2]],"w");
+			outfile = fopen(pConstsFile,"w");
 
 		if(!outfile)
 		{
@@ -335,7 +350,7 @@ int main_process(int argc, char *argv[])
 		ULDataList::iterator ListIt = ULFixupList.begin();
 		while(ListIt != ULFixupList.end())
 		{
-			printf("\n* Resolving Duplicate %s\n", (*ListIt)->Name.c_str());
+			if( !QuietMode ) printf("\n* Resolving Duplicate %s\n", (*ListIt)->Name.c_str());
 
 			// Must check that any parent is resolved first
 			// DRAGONS: Can this ever be required?
@@ -358,7 +373,7 @@ int main_process(int argc, char *argv[])
 					ULDataPtr ThisData = (*ListIt);
 					ULFixupList.erase(ListIt);
 					ULFixupList.push_back(ThisData);
-					printf("Defering %s as parent, %s, needs resolving first\n", ThisData->Name.c_str(), ThisData->Parent->Name.c_str());
+					if( !QuietMode ) printf("Defering %s as parent, %s, needs resolving first\n", ThisData->Name.c_str(), ThisData->Parent->Name.c_str());
 					ListIt = ULFixupList.begin();
 					continue;
 				}
@@ -467,7 +482,7 @@ int main_process(int argc, char *argv[])
 						}
 					}
 
-					printf("%s -> %s\n", (*ListIt2)->Name.c_str(), NewName.c_str());
+					if( !QuietMode ) printf("%s -> %s\n", (*ListIt2)->Name.c_str(), NewName.c_str());
 
 					(*ListIt2)->Name = NewName;
 					ULMap.insert(ULDataMap::value_type(NewName, (*ListIt2)));
@@ -487,7 +502,7 @@ int main_process(int argc, char *argv[])
 
 					ULMap.insert(ULDataMap::value_type(NewName, (*ListIt2)));
 
-					printf("%s -> %s\n", (*ListIt2)->Name.c_str(), NewName.c_str());
+					if( !QuietMode ) printf("%s -> %s\n", (*ListIt2)->Name.c_str(), NewName.c_str());
 
 					ListIt2++;
 				}
@@ -532,12 +547,42 @@ int main_process(int argc, char *argv[])
 	}
 
 
-	if( outfile )
+	if( outfile ) fclose( outfile );
+
+	if(SafeOverwrite)
 	{
-		fclose( outfile );
-		State.OutFile = NULL;
+		if(ErrorState == 0)
+		{
+			if(DictStructs)
+			{
+				FileDelete(argv[FileArg[1]]);
+				rename(pStructsFile, argv[FileArg[1]]);
+			}
+			if(ULConsts)
+			{
+				// DRAGONS: If we are simply appending to the structs file, we don't rename as we just did it!
+				if((!DictStructs) || (FileArg[1] != FileArg[2]))
+				{
+					FileDelete(argv[FileArg[2]]);
+					rename(pConstsFile, argv[FileArg[2]]);
+				}
+			}
+		}
+		else
+		{
+			printf("Output files not written\n");
+			FileDelete(pStructsFile);
+			FileDelete(pConstsFile);
+			
+			// Prevent us trying to delete it again
+			DictStructs = true;
+		}
 	}
-	return result ? 0 : 1;
+
+	// Remove the temporary file if not using the main output
+	if(!DictStructs) { FileDelete(pStructsFile); }
+
+	return ErrorState;
 }
 
 
@@ -791,13 +836,15 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 					}
 					else if(strcmp(attr, "ref") == 0)
 					{
-						Convert_warning("Unexpected ref type %s on basic type %s\n", val, name);
+						Convert_warning(State, "Unexpected ref type %s on basic type %s\n", val, name);
 
 						if(strcasecmp(val,"strong") == 0) RefType = "ClassRefStrong";
 						else if(strcasecmp(val,"target") == 0) RefType = "ClassRefTarget";
 						else if(strcasecmp(val,"weak") == 0) RefType = "ClassRefWeak";
 						else if(strcasecmp(val,"meta") == 0) RefType = "ClassRefMeta";
 						else if(strcasecmp(val,"dict") == 0) RefType = "ClassRefDict";
+						else if(strcasecmp(val,"none") == 0) RefType = "ClassRefNone";
+						else if(strcasecmp(val,"nested") == 0) RefType = "ClassRefNested";
 						else if(strcasecmp(val,"global") == 0) RefType = "ClassRefGlobal";
 						else
 						{
@@ -807,7 +854,7 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 					}
 					else if(strcmp(attr, "target") == 0)
 					{
-						Convert_warning("Unexpected ref target %s on basic type %s\n", val, name);
+						Convert_warning(State, "Unexpected ref target %s on basic type %s\n", val, name);
 						RefTargetName = val;
 					}
 					else if(strcmp(attr, "doc") == 0)
@@ -908,6 +955,8 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 						else if(strcasecmp(val,"weak") == 0) RefType = "ClassRefWeak";
 						else if(strcasecmp(val,"meta") == 0) RefType = "ClassRefMeta";
 						else if(strcasecmp(val,"dict") == 0) RefType = "ClassRefDict";
+						else if(strcasecmp(val,"none") == 0) RefType = "ClassRefNone";
+						else if(strcasecmp(val,"nested") == 0) RefType = "ClassRefNested";
 						else if(strcasecmp(val,"global") == 0) RefType = "ClassRefGlobal";
 						else
 						{
@@ -1020,6 +1069,8 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 						else if(strcasecmp(val,"weak") == 0) RefType = "ClassRefWeak";
 						else if(strcasecmp(val,"meta") == 0) RefType = "ClassRefMeta";
 						else if(strcasecmp(val,"dict") == 0) RefType = "ClassRefDict";
+						else if(strcasecmp(val,"none") == 0) RefType = "ClassRefNone";
+						else if(strcasecmp(val,"nested") == 0) RefType = "ClassRefNested";
 						else if(strcasecmp(val,"global") == 0) RefType = "ClassRefGlobal";
 						else
 						{
@@ -1396,7 +1447,7 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 						}
 						else
 						{
-							printf("Duplicate name %s - will attempt to resolve later\n", ItemName.c_str());
+							if( !QuietMode ) printf("Duplicate name %s - will attempt to resolve later\n", ItemName.c_str());
 
 							ULFixupList.push_back(ThisItem);
 						}
@@ -1432,8 +1483,8 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 
 		case StateClasses:
 		{
-			// If we find a new style "MXFTypes" or "MXFClasses" section then restart in idle to enter mode properly
-			if((strcmp(name, "MXFTypes") == 0) || (strcmp(name, "MXFClasses") == 0))
+			// If we find a new style "MXFTypes", "MXFLabels" or "MXFClasses" section then restart in idle to enter mode properly
+			if((strcmp(name, "MXFTypes") == 0) || (strcmp(name, "MXFLabels") == 0) || (strcmp(name, "MXFClasses") == 0))
 			{
 				// Types or classes inside MXFDictionary is a new style dictionary
 				if(!State->FoundType)
@@ -1484,6 +1535,7 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 			bool HasGlobalKey = false;
 			bool HasDValue = false;
 			bool HasDefault = false;
+			Tag LocalTag = 0;
 			std::string Key;
 			std::string GlobalKey;
 			std::string Use = "ClassUsageOptional";
@@ -1498,6 +1550,7 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 			std::string dvalue_text;
 			std::string SymSpace;
 			unsigned int LenFormat = 2;
+			unsigned int KeyFormat = 2;
 			bool HasExtendSubs = false;
 			bool ExtendSubs = true;
 			bool Baseline = false;
@@ -1511,11 +1564,67 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 					char const *attr = attrs[this_attr++];
 					char const *val = attrs[this_attr++];
 					
-					if(strcmp(attr, "key") == 0)
+					if(strcmp(attr, "tag") == 0)
 					{
-						Key = val;
+						int Size;
+						UInt8 Buffer[32];
+
+						/* "Tag" values may be decimal values or hex - determine which */
+						bool IsHexValue = ((val[0] == '0') && (tolower(val[1]) == 'x'));
+						bool IsDecimal = !IsHexValue;
+						if(!IsHexValue)
+						{
+							const char *pTest = val;
+							while(*pTest)
+							{
+								if(!isdigit(*(pTest++)))
+								{
+									IsDecimal = false;
+									break;
+								}
+							}
+						}
+
+						/* DRAGONS: By now we should have isHexValue=true, or isDecimal=true, or neither (i.e. hex string) */
+
+						if(IsDecimal || IsHexValue)
+						{
+							// DRAGONS: Force radix to prevent leading zero causing octal!
+							LocalTag = strtoul(val, NULL, IsDecimal ? 10 : 16);
+						}
+						else
+						{
+							Size = ReadHexStringOrUL(val, 32, Buffer, " \t.");
+							
+							// Tags > 4 bytes are regarded as pre-rendered keys, otherwise we decode as a big-endian tag
+							if(Size > 4) Key = val;
+							else
+							{
+								LocalTag = 0;
+								size_t Count = Size;
+								UInt8 *p = Buffer;
+								while(Count--) LocalTag = (LocalTag << 8) + *(p++);
+							}
+						}
 					}
-					else if(strcmp(attr, "globalKey") == 0)
+					else if(strcmp(attr, "key") == 0)
+					{
+						int Size;
+						UInt8 Buffer[32];
+
+						Size = ReadHexStringOrUL(val, 32, Buffer, " \t.");
+
+						// Keys > 4 bytes are regarded as pre-rendered keys, otherwise we decode as a big-endian tag
+						if(Size > 4) Key = val;
+						else
+						{
+							LocalTag = 0;
+							size_t Count = Size;
+							UInt8 *p = Buffer;
+							while(Count--) LocalTag = (LocalTag << 8) + *(p++);
+						}
+					}
+					else if(strcmp(attr, "ul") == 0 || strcmp(attr, "globalKey") == 0)
 					{
 						GlobalKey = val;
 						HasGlobalKey = true;
@@ -1546,6 +1655,8 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 						else if(strcasecmp(val,"weak") == 0) RefType = "ClassRefWeak";
 						else if(strcasecmp(val,"meta") == 0) RefType = "ClassRefMeta";
 						else if(strcasecmp(val,"dict") == 0) RefType = "ClassRefDict";
+						else if(strcasecmp(val,"none") == 0) RefType = "ClassRefNone";
+						else if(strcasecmp(val,"nested") == 0) RefType = "ClassRefNested";
 						else if(strcasecmp(val,"global") == 0) RefType = "ClassRefGlobal";
 						else
 						{
@@ -1570,11 +1681,19 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 					{
 						maxLength = atoi(val);
 					}
-					else if(strcmp(attr, "keyFormat") == 0)
+					else if(strcmp(attr, "tagFormat") == 0 || strcmp(attr, "keyFormat") == 0)
 					{
-						if(atoi(val) != 2)
+						if(strcasecmp(val, "BER")==0)
 						{
-							Convert_error(State, "Class %s uses key format %s which is not supported\n", name, val);
+							KeyFormat = (unsigned int)DICT_KEY_BER;
+						}
+						else
+						{
+							KeyFormat = atoi(val);
+							if((KeyFormat != 2) && (KeyFormat != 1))
+							{
+								Convert_error(State, "Class %s uses key format %s which is not supported\n", name, val);
+							}
 						}
 					}
 					else if(strcmp(attr, "lengthFormat") == 0)
@@ -1631,12 +1750,6 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 			// If only the Key is supplied this must be the UL
 			if(!HasGlobalKey) GlobalKey = Key;
 
-			// Calculate the local tag (if that is what the key is)
-			UInt16 Tag = 0;
-			UInt8 KeyBuff[16];
-			int Count = ReadHexStringOrUL(Key.c_str(), 16, KeyBuff, " \t.");
-			if(Count == 2) Tag = GetU16(KeyBuff);
-
 			ULDataPtr ThisItem;
 			if(ULConsts && (GlobalKey.length() > 0))
 			{
@@ -1692,7 +1805,7 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 					}
 
 					ThisItem->UL = new UL(KeyBuff);
-					ThisItem->LocalTag = (mxflib::Tag)Tag;
+					ThisItem->LocalTag = LocalTag;
 
 					// Build the name to use for the const
 					std::string ItemName = ThisItem->Name;
@@ -1704,7 +1817,7 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 					{
 						if(*(ThisItem->UL) == *((*it).second->UL))
 						{
-							if((((*it).second->LocalTag != 0) && (Tag != 0)) && ((*it).second->LocalTag != ThisItem->LocalTag))
+							if((((*it).second->LocalTag != 0) && (LocalTag != 0)) && ((*it).second->LocalTag != ThisItem->LocalTag))
 							{
 								error("Multiple entries for %s with UL %s with different local tags (%s and %s)\n", 
 									   ItemName.c_str(), ThisItem->UL->GetString().c_str(), 
@@ -1717,7 +1830,7 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 						}
 						else
 						{
-							printf("Duplicate name %s - will attempt to resolve later\n", ItemName.c_str());
+							if( !QuietMode ) printf("Duplicate name %s - will attempt to resolve later\n", ItemName.c_str());
 
 							ULFixupList.push_back(ThisItem);
 						}
@@ -1761,39 +1874,55 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 			strncpy(TypeBuff, Type.c_str(), 32);
 			TypeBuff[31] = '\0';
 
-			if(strcasecmp(TypeBuff,"universalSet") == 0)
+			if(   (strcasecmp(TypeBuff,"localSet") == 0)
+			   || (strcasecmp(TypeBuff,"subLocalSet") == 0)
+			   || (strcasecmp(TypeBuff,"universalSet") == 0) )
 			{
-				if(DictStructs)
+				if(strcasecmp(TypeBuff,"universalSet") == 0)
 				{
-					Convert_error(State, "Class %s is unsupported type %s\n", name, Type.c_str());
-					fprintf(State->OutFile, "%sERROR: Class %s is unsupported type %s\n", Indent.c_str(), name, Type.c_str());
+					LenFormat = (unsigned int)DICT_LEN_BER;
+					KeyFormat = 16;
 				}
-				State->Parent = name;
-				State->EndTagText.push_back(Indent + "/* END UNSUPPORTED TYPE */");
-			}
-			else if(   (strcasecmp(TypeBuff,"localSet") == 0)
-				    || (strcasecmp(TypeBuff,"subLocalSet") == 0) )
-			{
-				if((LenFormat != DICT_LEN_BER) && (LenFormat != 2))
+				else if((LenFormat != DICT_LEN_BER) && (LenFormat != 2) && (LenFormat != 1))
 				{
-					Convert_error(State, "Class %u uses length format %s which is not supported\n", name, LenFormat);
+					Convert_error(State, "Class %u uses length format %s which is not currently supported\n", name, LenFormat);
 				}
 
 				State->Parent = name;
 				State->ParentData = ThisItem;
 
+				// Produce a version of the key format that can be inserted into the structure
+				char KFormat_Buff[16];
+				const char *KFormat = (KeyFormat == 16) ? "(unsigned int)DICT_KEY_AUTO" : ((KeyFormat == DICT_KEY_BER) ? "(unsigned int)DICT_KEY_BER" : KFormat_Buff);
+				if(KFormat == KFormat_Buff) sprintf(KFormat_Buff, "%d", KeyFormat);
+
 				if(Baseline)
 				{
 					if(SymSpace.size() == 0)
 					{
-						fprintf(State->OutFile, "%sMXFLIB_CLASS_SET_EX(\"%s\", \"%s\", \"%s\", 2, %d, \"%s\", NULL, %s)\n", Indent.c_str(), name, Detail.c_str(), Base.c_str(), LenFormat, GlobalKey.c_str(),
+						fprintf(State->OutFile, "%sMXFLIB_CLASS_SET_EX(\"%s\", \"%s\", \"%s\", %s, %d, \"%s\", NULL, %s)\n", Indent.c_str(), name, Detail.c_str(), Base.c_str(), KFormat, LenFormat, GlobalKey.c_str(),
 								ExtendSubs ? "ClassFlags_ExtendSubs + ClassFlags_Baseline" : "ClassFlags_Baseline"
 							   );
 					}
 					else
 					{
-						fprintf(State->OutFile, "%sMXFLIB_CLASS_SET_EX(\"%s\", \"%s\", \"%s\", 2, %d, \"%s\", \"%s\", %s)\n", Indent.c_str(), name, Detail.c_str(), Base.c_str(), LenFormat, GlobalKey.c_str(), SymSpace.c_str(), 
+						fprintf(State->OutFile, "%sMXFLIB_CLASS_SET_EX(\"%s\", \"%s\", \"%s\", %s, %d, \"%s\", \"%s\", %s)\n", Indent.c_str(), name, Detail.c_str(), Base.c_str(), KFormat, LenFormat, GlobalKey.c_str(), SymSpace.c_str(), 
 								ExtendSubs ? "ClassFlags_ExtendSubs + ClassFlags_Baseline" : "ClassFlags_Baseline"
+							   );
+					}
+				}
+				else if((LenFormat != 2)  || (KeyFormat != 2))
+				{
+					if(SymSpace.size() == 0)
+					{
+						fprintf(State->OutFile, "%sMXFLIB_CLASS_SET_EX(\"%s\", \"%s\", \"%s\", %s, %d, \"%s\", NULL, %s)\n", Indent.c_str(), name, Detail.c_str(), Base.c_str(), KFormat, LenFormat, GlobalKey.c_str(),
+								ExtendSubs ? "ClassFlags_ExtendSubs" : "0"
+							   );
+					}
+					else
+					{
+						fprintf(State->OutFile, "%sMXFLIB_CLASS_SET_EX(\"%s\", \"%s\", \"%s\", %s, %d, \"%s\", \"%s\", %s)\n", Indent.c_str(), name, Detail.c_str(), Base.c_str(), KFormat, LenFormat, GlobalKey.c_str(), SymSpace.c_str(), 
+								ExtendSubs ? "ClassFlags_ExtendSubs" : "0"
 							   );
 					}
 				}
@@ -1930,9 +2059,9 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 				}
 
 				if(RefType == "ClassRefNone")
-					fprintf(State->OutFile, "%sMXFLIB_CLASS_VECTOR(\"%s\", \"%s\", %s, 0x%04x, \"%s\")\n", Indent.c_str(), name, Detail.c_str(), Use.c_str(), Tag, GlobalKey.c_str());
+					fprintf(State->OutFile, "%sMXFLIB_CLASS_VECTOR(\"%s\", \"%s\", %s, 0x%04x, \"%s\")\n", Indent.c_str(), name, Detail.c_str(), Use.c_str(), LocalTag, GlobalKey.c_str());
 				else
-					fprintf(State->OutFile, "%sMXFLIB_CLASS_VECTOR_REF(\"%s\", \"%s\", %s, 0x%04x, \"%s\", %s, \"%s\")\n", Indent.c_str(), name, Detail.c_str(), Use.c_str(), Tag, GlobalKey.c_str(), RefType.c_str(), RefTargetName.c_str());
+					fprintf(State->OutFile, "%sMXFLIB_CLASS_VECTOR_REF(\"%s\", \"%s\", %s, 0x%04x, \"%s\", %s, \"%s\")\n", Indent.c_str(), name, Detail.c_str(), Use.c_str(), LocalTag, GlobalKey.c_str(), RefType.c_str(), RefTargetName.c_str());
 
 				State->EndTagText.push_back(Indent + "MXFLIB_CLASS_VECTOR_END");
 			}
@@ -1948,9 +2077,9 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 				}
 				
 				if(RefType == "ClassRefNone")
-					fprintf(State->OutFile, "%sMXFLIB_CLASS_ARRAY(\"%s\", \"%s\", %s, 0x%04x, \"%s\")\n", Indent.c_str(), name, Detail.c_str(), Use.c_str(), Tag, GlobalKey.c_str());
+					fprintf(State->OutFile, "%sMXFLIB_CLASS_ARRAY(\"%s\", \"%s\", %s, 0x%04x, \"%s\")\n", Indent.c_str(), name, Detail.c_str(), Use.c_str(), LocalTag, GlobalKey.c_str());
 				else
-					fprintf(State->OutFile, "%sMXFLIB_CLASS_ARRAY_REF(\"%s\", \"%s\", %s, 0x%04x, \"%s\", %s, \"%s\")\n", Indent.c_str(), name, Detail.c_str(), Use.c_str(), Tag, GlobalKey.c_str(), RefType.c_str(), RefTargetName.c_str());
+					fprintf(State->OutFile, "%sMXFLIB_CLASS_ARRAY_REF(\"%s\", \"%s\", %s, 0x%04x, \"%s\", %s, \"%s\")\n", Indent.c_str(), name, Detail.c_str(), Use.c_str(), LocalTag, GlobalKey.c_str(), RefType.c_str(), RefTargetName.c_str());
 
 				State->EndTagText.push_back(Indent + "MXFLIB_CLASS_ARRAY_END");
 			}
@@ -1989,7 +2118,7 @@ void Convert_startElement(void *user_data, const char *name, const char **attrs)
 				Builder << Qt << Type << Qt << ", ";
 				Builder << minLength << ", ";
 				Builder << maxLength << ", ";
-				Builder << "0x" << std::setw(4) << std::setfill('0') << std::hex << Tag << ", ";
+				Builder << "0x" << std::setw(4) << std::setfill('0') << std::hex << LocalTag << ", ";
 				Builder << Qt << GlobalKey << Qt;
 
 				if(RefType != "ClassRefNone") Builder << ", " << RefType << ", " << Qt << RefTargetName << Qt;
@@ -2245,7 +2374,7 @@ void AddType(ConvertState *State, std::string Name, std::string Detail, std::str
 				}
 				else
 				{
-					printf("Duplicate name %s - will attempt to resolve later\n", ItemName.c_str());
+					if( !QuietMode ) printf("Duplicate name %s - will attempt to resolve later\n", ItemName.c_str());
 
 					ULFixupList.push_back(ThisItem);
 				}
@@ -2258,6 +2387,9 @@ void AddType(ConvertState *State, std::string Name, std::string Detail, std::str
 	}
 }
 
+
+// Debug and error messages
+#include <stdarg.h>
 
 //! XML callback - Handle warnings during XML parsing
 extern void Convert_warning(void *user_data, const char *msg, ...)
@@ -2296,9 +2428,6 @@ extern void Convert_fatalError(void *user_data, const char *msg, ...)
 }
 
 
-// Debug and error messages
-#include <stdarg.h>
-
 #ifdef MXFLIB_DEBUG
 //! Display a general debug message
 void mxflib::debug(const char *Fmt, ...)
@@ -2322,6 +2451,8 @@ void mxflib::warning(const char *Fmt, ...)
 	printf("Warning: ");
 	vprintf(Fmt, args);
 	va_end(args);
+
+	if(ErrorState < 1) ErrorState = 1;
 }
 
 //! Display an error message
@@ -2333,4 +2464,6 @@ void mxflib::error(const char *Fmt, ...)
 	printf("ERROR: ");
 	vprintf(Fmt, args);
 	va_end(args);
+
+	ErrorState = 2;
 }
