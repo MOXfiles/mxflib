@@ -49,60 +49,6 @@ const bool DefaultCompiledDict = false;
 #endif // COMPILED_DICT
 
 
-//Import a UUID from a character string
-bool ParseUUID(const char * inputUUID, byte * buffer)
-{
-	int index=0;
-	bool firstNibble=true;
-	byte b=0;
-	byte nibble=0;
-	const char * pch=inputUUID;
-	while(*pch!='\0')
-	{
-		if(*pch=='0' && (*(pch+1)=='x' || *(pch+1)=='X')) //check for special case 0x 
-		{
-			pch+=2;
-			continue;
-		}
-		if(*pch=='i' && *(pch+1)=='d' ) //check for special case uuid: 
-		{
-			pch+=2;
-			continue;
-		}
-		nibble=0xff; //set to impossible value
-		if(*pch>='0' && *pch<='9' )
-			nibble=*pch-'0';
-		else if(*pch>='A' && *pch<='F' ) 
-			nibble=*pch-'A'+10;
-		else if(*pch>='a' && *pch<='f' ) 
-			nibble=*pch-'a'+10;
-		if(nibble!=0xff) //i.e. we have found a valid hex digit
-		{
-			if(firstNibble)
-			{
-				b=nibble<<4;
-				firstNibble=false;
-			}
-			else
-			{
-				b+=nibble;
-				firstNibble=true;
-				buffer[index++]=b;
-				b=0;
-			}
-		}
-
-		if(index>17) //make sure we don't run over the buffer end
-			index=17;
-		pch++;
-	}
-
-	if(index==16) //i.e. there were 16 hex number found
-		return true;
-
-	memset(buffer,0,16); //not valid so put in a zero UUID
-	return false;
-}
 
 //! Print usage help
 void HelpText()
@@ -120,10 +66,16 @@ void HelpText()
 
 		printf("Options:\n");
 		printf("    -1         = Use a version 1 KLVFill item key\n");
+
+
 		printf("    -a[2]      = Force OP-Atom (optionally with only 2 partitions if VBR)\n");
+
+
 		printf("    -c=<file>  = Read commandline from file (incomplete - MUCH TODO)\n");
 		printf("    -c=<num>   = Demultiplex multi-channel audio to <num> channels or less\n");
-		printf("    -c=<n>:<m> = Demultiplex multi-channel audio to n channels, each m-bits\n");
+		printf("    -c=<n>/<m> = Demultiplex multi-channel audio to n channels, each m-bits\n");
+
+
 		printf("    -e         = Only start body partitions at edit points\n");
 
 		printf("    -dp=<path> = Path to metadata dictionaries\n" );
@@ -137,7 +89,12 @@ void HelpText()
 		printf("    -do=<name> = Use alternative orthodox dictionary\n" );
 
 
+
+		printf("    -mft=<tc>  = Add a Timecode Track to File Package\n");
+		printf("    -mmt=<tc>  = Add a Timecode Track to Material Package (-bt deprecated, but allowed for legacy)\n");
+
 		printf("    -mm=<name> = Add Metadata Track to Material Package\n");
+
 
 		// following is not implemented yet
 		// printf("    -mp?        = Add a physical source package derived from input file(s) \n" );
@@ -156,19 +113,30 @@ void HelpText()
 		printf("    -ip        = Write sparse index tables with one entry per partition\n");
 		printf("    -is        = Write index tables sprinkled one section per partition\n");
 		printf("    -ii        = Isolated index tables (don't share partition with essence)\n");
+		printf("    -iih       = Isolated index tables (don't share partition with header metadata)\n");
 		printf("    -ii2       = Isolated index tables (don't share with essence or metadata)\n");
 		printf("    -ka=<size> = Set KAG size (default=1) (-k deprecated)\n");
+
+
 		printf("    -pd=<dur>  = Body partition every <dur> frames\n");
 		printf("    -ps=<size> = Body partition roughly every <size> bytes\n");
 		printf("                 (early rather than late)\n");
-		printf("    -fr=<n>/<d>= Force edit rate (if possible) (-r deprecated, but allowed for legacy\n");
+		printf("    -fr=<n>/<d> = Force edit rate (if possible) (-r deprecated, but allowed for legacy\n");
+
+
 		printf("    -s         = Interleave essence containers for streaming\n");
+
+
 		printf("    -kxs       = Use 377-2 KLV Extension Syntax (KXS) including only extensions beyond the baseline\n");
+
+
 		printf("    -u         = Update the header after writing footer\n");
 		printf("    -v         = Verbose mode\n");
 		printf("    -w         = List available wrapping options (does not build a file)\n");
 		printf("    -w=<num>   = Use wrapping option <num>\n");
+
 		printf("    -z         = Pause for input before final exit\n");
+
 }
 
 int EvaluateConfigurationfromFile( const char * filename , int &argc, char **argv, int curarg, ProcessOptions *pOpt);
@@ -195,17 +163,29 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 			if(strlen(p) > 2) Val = &p[2];			// Only set a value if one found
 
 			// deal with -c=filename to get config from file
-			// DRAGONS: exclude filenames that start with digit, to allow legacy use of -c= for channel-splitting
-			if( Opt == 'c' && strlen(Val) && !isdigit(Val[0]) )
+			// DRAGONS: exclude filenames that might be like "1/16", to allow legacy use of -c=N/W for channel-splitting
+			if( Opt == 'c' )
 			{
+				if( strlen(Val)<2
+				||	strlen(Val)>4
+				||	!isdigit(Val[0])
+				||	( Val[1]!=':' && Val[1]!='/' )
+				||	!isdigit(Val[2]) )
 				return EvaluateConfigurationfromFile( Val, argc, argv, i, pOpt );
 			}
 
 			else if((Opt == 'r') || ( 0==strncmp("fr",p,strlen("fr")) ))
 			{
 				// -r is now deprecated; use -fr instead
+				if( 0==strncmp("fr",p,strlen("fr")) ) Val++;
+
 				int N, D; // Use ints in case Int32 is not the same size as "int" on this platform
 				if(sscanf(Val,"%d/%d", &N, &D) == 2)
+				{
+					pOpt->ForceEditRate.Numerator = N;
+					pOpt->ForceEditRate.Denominator = D;
+				}
+				else if(sscanf(Val,"%d:%d", &N, &D) == 2)
 				{
 					pOpt->ForceEditRate.Numerator = N;
 					pOpt->ForceEditRate.Denominator = D;
@@ -256,12 +236,16 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 				pOpt->FrameGroup = true;
 				if(p[1] == '0') pOpt->ZeroPad = true;
 			}
-			else if(Opt == 's') pOpt->StreamMode = true;
+			else if(Opt == 's')
+			{
+					pOpt->StreamMode = true;
+			}
 			else if(Opt == 'i')
 			{
 				if(tolower(p[1]) == 'i')
 				{
-					pOpt->IsolatedIndex = true;
+					if(p[2] == 'h') pOpt->IsolatedEssence = true;
+					else pOpt->IsolatedIndex = true;
 					if(p[2] == '2') pOpt->VeryIsolatedIndex = true;
 				}
 				else if(tolower(p[1]) == 'p')
@@ -287,10 +271,17 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 				unsigned int Bits = 0;
 
 				// Read the parameters
-				sscanf(Val, "%u:%u", &Limit, &Bits);
-
-				pOpt->AudioLimit = Limit;
-				pOpt->AudioBits = Bits;
+				if( sscanf(Val,"%u/%u", &Limit, &Bits) == 2 )
+				{
+					pOpt->AudioLimit = Limit;
+					pOpt->AudioBits = Bits;
+				}
+				// colon separator allowed for legacy
+				else if( sscanf(Val, "%u:%u", &Limit, &Bits) == 2)
+				{
+					pOpt->AudioLimit = Limit;
+					pOpt->AudioBits = Bits;
+				}
 			}
 			else if(Opt == 'h') 
 			{
@@ -461,14 +452,16 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 		ps++;
 	}
 
-	//now sort out Outfilename
-	strncpy(pOpt->OutFilenameSet, argv[2], 510);
+
+	//now sort out OutFilename
+	strncpy(pOpt->OutFilenameSet, argv[2], sizeof(pOpt->OutFilenameSet)-1);
 	pOpt->OutFileCount = 0;
 	ps = pOpt->OutFilenameSet;
 	for(;;)
 	{
 		char *LastDot = NULL;
 		char *pd = pOpt->OutFilename[pOpt->OutFileCount];
+
 
 		// Find the position of last dot in the input filename
 		while(*ps)
@@ -535,6 +528,7 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 		}
 	}
 
+
 	if(pOpt->OutFileCount == 1)
 	{
 		printf("Output file = %s\n\n", pOpt->OutFilename[0]);
@@ -557,6 +551,13 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 		//pOpt->SelectedWrappingOption = -1;
 	}
 
+	// Sanity check use of -ii
+	if(pOpt->IsolatedIndex && (!pOpt->UseIndex && !pOpt->SparseIndex && !pOpt->SprinkledIndex))
+	{
+		warning("-ii and -ii2 only work when combined with -i, -ip or -is\n");
+	}
+
+
 
 	if(pOpt->OPAtom)
 	{
@@ -568,7 +569,15 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 
 		pOpt->OPUL = OPAtomUL;
 
-		if((pOpt->InFileGangCount * pOpt->InFileGangSize) != pOpt->OutFileCount) error("OP-Atom can only output a single essence container per file so requires as many output files as input files\n");
+		if((pOpt->InFileGangCount * pOpt->InFileGangSize) > pOpt->OutFileCount)
+			error("Too many output files specified\n");
+		else if((pOpt->InFileGangCount * pOpt->InFileGangSize) < pOpt->OutFileCount)
+		{
+			if( !pOpt->AudioLimit )
+				error("OP-Atom can only output a single essence container per file so requires as many output files as input files\n");
+			else
+				warning("Mismatched input and output file count, requires multi-channel audio input\n");
+		}
 		
 		if(pOpt->BodyMode != Body_None) 
 		{
@@ -582,7 +591,7 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 	}
 	else
 	{
-		if((pOpt->FrameGroup) || (pOpt->InFileGangSize == 1))
+		if((pOpt->FrameGroup) || (pOpt->InFileGangSize == pOpt->OutFileCount))
 		{
 			if(pOpt->InFileGangCount == 1) { printf("Output OP = OP1a\n"); pOpt->OPUL = OP1aUL; }
 			else { printf("Output OP = OP2a\n"); pOpt->OPUL = OP2aUL; }
@@ -708,6 +717,7 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 	{
 		printf("KLVFill items will be written with a version 1 key, for compatibility\n");
 	}
+
 
 	// Check for stray parameters as a space in the wrong place can otherise cause us to overwrite input files!
 	if(argc > 3)

@@ -29,12 +29,27 @@
  */
 
 #include "mxflib/mxflib.h"
+
+#include "libprocesswrap/process.h"
+
+#define PRODUCT_VERSION_MAJOR "1"
+#define PRODUCT_VERSION_MINOR "2"
+#define PRODUCT_VERSION_TWEAK "7"
+#define PRODUCT_VERSION_BUILD "20120425"
+#define PRODUCT_VERSION_REL 1
+ 
+
+
+
 using namespace mxflib;
 
 #include "parseoptions.h"
 
+
+
 #include <stdio.h>
 #include <iostream>
+
 
 using namespace std;
 
@@ -144,6 +159,11 @@ int main_process(int argc, char *argv[]);
 //! Do the main processing and pause if required
 int main(int argc, char *argv[]) 
 { 
+	char VersionText[256];
+	snprintf(VersionText, 255, "MXFWrap %s.%s.%s(%s)%s of %s %s", PRODUCT_VERSION_MAJOR, PRODUCT_VERSION_MINOR, PRODUCT_VERSION_TWEAK, PRODUCT_VERSION_BUILD,
+		     MXFLIB_VERSION_RELTEXT(PRODUCT_VERSION_REL), __DATE__, __TIME__);
+	HandleVersionRequest(argc, argv, VersionText);
+
 	int Ret = main_process(argc, argv);
 
 	if( PauseBeforeExit>0 ) PauseForInput();
@@ -227,11 +247,13 @@ int main_process(int argc, char *argv[])
 	std::string InitialFile;							//!< The name of the first file if processing a single list of source files
 	int i;
 	int InCount = Opt.InFileGangSize * Opt.InFileGangCount;
+
 	int iFilePackage = 0;
 	int OutNum = 0;
 	for(i=0; i< InCount; i++)
 	{
 		FileParserPtr FParser = new FileParser(Opt.InFilename[i]);
+
 
 		// Wrapping config to use
 		EssenceParser::WrappingConfigPtr WCP = ChooseWrapping(FParser, Opt);
@@ -246,14 +268,15 @@ int main_process(int argc, char *argv[])
 			FParser->SetNewFileHandler(new FilenameHandler);
 		}
 
+		// Edit rate for this source
+		EditRate = WCP->EditRate;
+
 		// Set the wrapping options
 		FParser->Use(WCP->Stream, WCP->WrapOpt);
+		FParser->SetEditRate(EditRate);
 		
 		// Install the descriptor in the source
 		FParser->SetDescriptor(WCP->EssenceDescriptor);
-
-		// Edit rate for this source
-		EditRate = WCP->EditRate;
 
 		// DRAGONS: Once we have set the edit rate for the first file we force it on the rest
 		Opt.ForceEditRate = EditRate;
@@ -436,6 +459,7 @@ int main_process(int argc, char *argv[])
 		}
 		else
 		{
+
 			// Add this wrapping option
 			WrappingList.push_back(WCP);
 
@@ -482,25 +506,35 @@ int main_process(int argc, char *argv[])
 
 	// Generate UMIDs for each file package
 	UMIDPtr FPUMID[ProcessOptions::MaxInFiles];								//! UMIDs for each file package (internal or external)
+
+
 	i = 0;				//  Essence container and track index
 	WrappingList_it = WrappingList.begin();
 	while(WrappingList_it != WrappingList.end())
 	{
-		switch((*WrappingList_it)->WrapOpt->GCEssenceType)
+		int UMIDkind = 0x0d;
+
+		if( Opt.OPAtom )
 		{
-		case 0x05: case 0x15:
-			FPUMID[i] = MakeUMID(1);
-			break;
-		case 0x06: case 0x16:
-			FPUMID[i] = MakeUMID(2);
-			break;
-		case 0x07: case 0x17:
-			FPUMID[i] = MakeUMID(3);
-			break;
-		case 0x18: default:
-			FPUMID[i] = MakeUMID(4);
-			break;
+			switch((*WrappingList_it)->WrapOpt->GCEssenceType)
+			{
+			case 0x05: case 0x15:
+				UMIDkind = 1;
+				break;
+			case 0x06: case 0x16:
+				UMIDkind = 2;
+				break;
+			case 0x07: case 0x17:
+				UMIDkind = 3;
+				break;
+			case 0x18: default:
+				UMIDkind = 4;
+				break;
+			}
 		}
+
+		FPUMID[i] = MakeUMID(UMIDkind);
+
 
 		WrappingList_it++;
 		i++;
@@ -509,7 +543,7 @@ int main_process(int argc, char *argv[])
 	// Set any OP qualifiers
 	if(!Opt.OPAtom)
 	{
-		if((Opt.FrameGroup) || (WrappingList.size() == 1))
+		if( (Opt.FrameGroup) || (WrappingList.size() == 1))
 		{
 			// FIXME: This is wrong!!
 			SetUniTrack(Opt.OPUL);
@@ -545,6 +579,7 @@ int main_process(int argc, char *argv[])
 
 		if(InitialFile.size()) printf("    Essence File: %s\n", InitialFile.c_str());
 
+
 		Length dur = Process(
 					OutFileNum, 
 					Out,
@@ -552,7 +587,7 @@ int main_process(int argc, char *argv[])
 					WrappingList, 
 					InFileSource, 
 					EditRate,
-					MPUMID, 
+					MPUMID,
 					FPUMID,
 					NULL
 				);
@@ -562,8 +597,10 @@ int main_process(int argc, char *argv[])
 		// Close the file - all done!
 		Out->Close();
 
-
 	}
+
+
+
 
 	printf("\nDone\n");
 
@@ -660,15 +697,17 @@ EssenceParser::WrappingConfigPtr ChooseWrapping(FileParserPtr &FParser, ProcessO
 	if(Opt.SelectedWrappingOption < 0)
 	{
 		// Select the best wrapping option
-		if(Opt.FrameGroup) WCP = FParser->SelectWrappingOption(PDList, Opt.ForceEditRate, Opt.KAGSize, WrappingOption::Frame);
-		else WCP = FParser->SelectWrappingOption(PDList, Opt.ForceEditRate, Opt.KAGSize);
+		if(Opt.FrameGroup) 
+			WCP = FParser->SelectWrappingOption(!Opt.OPAtom, PDList, Opt.ForceEditRate, Opt.KAGSize, WrappingOption::Frame);
+		else
+			WCP = FParser->SelectWrappingOption(!Opt.OPAtom, PDList, Opt.ForceEditRate, Opt.KAGSize);
 	}
 	else
 	// Manual wrapping selection
 	{
 		EssenceParser::WrappingConfigList WCList;
-		if(Opt.FrameGroup) WCList = FParser->ListWrappingOptions(PDList, Opt.ForceEditRate, WrappingOption::Frame);
-		else WCList = FParser->ListWrappingOptions(PDList, Opt.ForceEditRate);
+		if(Opt.FrameGroup) WCList = FParser->ListWrappingOptions(!Opt.OPAtom, PDList, Opt.ForceEditRate, WrappingOption::Frame);
+		else WCList = FParser->ListWrappingOptions(!Opt.OPAtom, PDList, Opt.ForceEditRate);
 
 		// Ensure that there are enough wrapping options
 		if(((size_t)Opt.SelectedWrappingOption) > WCList.size())
