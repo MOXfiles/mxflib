@@ -480,8 +480,6 @@ typedef unsigned int uintptr_t;
 #endif // __WORDSIZE
 #endif
 
-#include <uuid/uuid.h>
-
 namespace mxflib
 {
 	/******** ENDIAN SWAPPING ********/
@@ -649,6 +647,8 @@ namespace mxflib
 
 	/******** UUID Generation ********/
 #ifdef HAVE_UUID_GENERATE
+#include <uuid/uuid.h>
+
 	inline void MakeUUID(UInt8 *Buffer)
 	{
 		uuid_t u;
