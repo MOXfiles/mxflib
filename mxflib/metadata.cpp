@@ -1616,7 +1616,7 @@ Track::TrackType mxflib::Track::ParseTrackTypeText(std::string Text)
 	//! Type for each entry in TrackWordList
 	struct TrackWordType
 	{
-		char *Word;						//!< A descriptive word
+		char const *Word;			//!< A descriptive word
 		Track::TrackType Type;			//!< The track type this word implies
 	};
 
