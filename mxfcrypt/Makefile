@@ -10,7 +10,7 @@ LIBDIR=$(DESTDIR)/lib
 
 # Output binary
 TARGETDIR := $(BINDIR)
-TARGET := $(TARGETDIR)/libutility.a
+TARGET := $(BINDIR)/mxfcrypt
 
 INCLUDE += -I../include
 
