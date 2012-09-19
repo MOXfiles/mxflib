@@ -19,7 +19,7 @@ OBJS := \
 	$(OBJSDIR)/crypto_asdcp.o \
 	$(OBJSDIR)/mxfcrypt.o \
 
-$(TARGET):  $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)  $(OBJS) $(DESTDIR)/lib/libmxf.a
+$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)  $(OBJS) $(DESTDIR)/lib/libmxf.a
 	$(CC) -o $(TARGET) $(OBJS) $(LIBRARIES)
 
 

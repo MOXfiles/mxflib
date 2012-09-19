@@ -20,7 +20,7 @@ OBJS := \
 	$(OBJSDIR)/mxfwrap.o \
 	$(OBJSDIR)/parseoptions.o \
 
-$(TARGET):  $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)  $(OBJS) $(DESTDIR)/lib/libmxf.a
+$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)  $(OBJS) $(DESTDIR)/lib/libmxf.a
 	$(CC) -o $(TARGET) $(OBJS) $(LIBRARIES) $(DESTDIR)/lib/libmxf.a
 
 
