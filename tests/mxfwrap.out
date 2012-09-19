@@ -1,0 +1,14 @@
+MXFlib File Wrapper
+
+KAGSize     = 64
+
+Input file  = ../../small.wav
+Output file = ../../mxfwrap_wav.mxf
+
+Output OP = OP-Atom
+An updated header will be written after writing the footer
+Header padding has been increased to the empirical minimum: 16384 bytes
+At least 16384 padding bytes will be left after the initial writing of the header
+Index tables will be written for each frame wrapped essence container
+Index table segments will not share a partition with essence
+ERROR: Could not identify the essence in file "../../small.wav"

@@ -1,0 +1,1 @@
+-k=64 -a -f -r25/1 ../../small.wav ../../mxfwrap_wav.mxf

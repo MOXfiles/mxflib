@@ -1,0 +1,570 @@
+MXFlib File Splitter
+
+Partition    1 at 0x00000000 for BodySID 0x0001
+
+Partition Pack:
+ClosedCompleteHeader
+  MajorVersion = 1
+  MinorVersion = 2
+  KAGSize = 1
+  ThisPartition = 0
+  PreviousPartition = 0
+  FooterPartition = 20031
+  HeaderByteCount = 19855
+  IndexByteCount = 0
+  IndexSID = 0
+  BodyOffset = 0
+  BodySID = 1
+  OperationalPattern = MXFOPSpecialized - MXF Specialized OP
+  EssenceContainers = GenericEssenceContainerMultipleWrappings - Empty Generic Container, MXFGCAESBWF - MXF-GC AES-BWF Audio
+    AUID = GenericEssenceContainerMultipleWrappings - Empty Generic Container
+    AUID = MXFGCAESBWF - MXF-GC AES-BWF Audio
+
+
+Header Metadata:
+  Preface
+    InstanceUID = {5dceec07-72e0-4bfd-95de-3315189c0c38}
+    LastModifiedDate = 2004-04-26 14:18:29.368
+      Date = Year="2004" Month="04" Day="1a"
+        Year = 2004
+        Month = 04
+        Day = 1a
+      Time = Hours="0e" Minutes="12" Seconds="1d" msBy4="5c"
+        Hours = 0e
+        Minutes = 12
+        Seconds = 1d
+        msBy4 = 5c
+    Version = 258
+    Identifications
+      StrongReferenceIdentification = {1be628a1-a147-4c87-adc6-6ace8a9351b3}
+      StrongReferenceIdentification -> Strong Reference to Identification
+        Identification
+          CompanyName = FreeMXF.org
+            UTF16 = F
+            UTF16 = r
+            UTF16 = e
+            UTF16 = e
+            UTF16 = M
+            UTF16 = X
+            UTF16 = F
+            UTF16 = .
+            UTF16 = o
+            UTF16 = r
+            UTF16 = g
+          ProductName = mxfwrap file wrapper
+            UTF16 = m
+            UTF16 = x
+            UTF16 = f
+            UTF16 = w
+            UTF16 = r
+            UTF16 = a
+            UTF16 = p
+            UTF16 =  
+            UTF16 = f
+            UTF16 = i
+            UTF16 = l
+            UTF16 = e
+            UTF16 =  
+            UTF16 = w
+            UTF16 = r
+            UTF16 = a
+            UTF16 = p
+            UTF16 = p
+            UTF16 = e
+            UTF16 = r
+          VersionString = Unreleased mxflib 0.3.3.1
+            UTF16 = U
+            UTF16 = n
+            UTF16 = r
+            UTF16 = e
+            UTF16 = l
+            UTF16 = e
+            UTF16 = a
+            UTF16 = s
+            UTF16 = e
+            UTF16 = d
+            UTF16 =  
+            UTF16 = m
+            UTF16 = x
+            UTF16 = f
+            UTF16 = l
+            UTF16 = i
+            UTF16 = b
+            UTF16 =  
+            UTF16 = 0
+            UTF16 = .
+            UTF16 = 3
+            UTF16 = .
+            UTF16 = 3
+            UTF16 = .
+            UTF16 = 1
+          ProductUID = {86dce099-da7f-d052-8466-14f327ddde40}
+          ModificationDate = 2004-04-26 14:18:29.348
+            Date = Year="2004" Month="04" Day="1a"
+              Year = 2004
+              Month = 04
+              Day = 1a
+            Time = Hours="0e" Minutes="12" Seconds="1d" msBy4="57"
+              Hours = 0e
+              Minutes = 12
+              Seconds = 1d
+              msBy4 = 57
+          InstanceUID = {1be628a1-a147-4c87-adc6-6ace8a9351b3}
+          ThisGenerationUID = {3f12ad30-44ea-40e2-be1c-1a48e60cc713}
+      StrongReferenceIdentification = {2cf4bc4e-657f-4e05-87b4-4cfdaae30a2b}
+      StrongReferenceIdentification -> Strong Reference to Identification
+        Identification
+          CompanyName = FreeMXF.org
+            UTF16 = F
+            UTF16 = r
+            UTF16 = e
+            UTF16 = e
+            UTF16 = M
+            UTF16 = X
+            UTF16 = F
+            UTF16 = .
+            UTF16 = o
+            UTF16 = r
+            UTF16 = g
+          ProductName = mxfwrap file wrapper
+            UTF16 = m
+            UTF16 = x
+            UTF16 = f
+            UTF16 = w
+            UTF16 = r
+            UTF16 = a
+            UTF16 = p
+            UTF16 =  
+            UTF16 = f
+            UTF16 = i
+            UTF16 = l
+            UTF16 = e
+            UTF16 =  
+            UTF16 = w
+            UTF16 = r
+            UTF16 = a
+            UTF16 = p
+            UTF16 = p
+            UTF16 = e
+            UTF16 = r
+          VersionString = Unreleased mxflib 0.3.3.1
+            UTF16 = U
+            UTF16 = n
+            UTF16 = r
+            UTF16 = e
+            UTF16 = l
+            UTF16 = e
+            UTF16 = a
+            UTF16 = s
+            UTF16 = e
+            UTF16 = d
+            UTF16 =  
+            UTF16 = m
+            UTF16 = x
+            UTF16 = f
+            UTF16 = l
+            UTF16 = i
+            UTF16 = b
+            UTF16 =  
+            UTF16 = 0
+            UTF16 = .
+            UTF16 = 3
+            UTF16 = .
+            UTF16 = 3
+            UTF16 = .
+            UTF16 = 1
+          ProductUID = {86dce099-da7f-d052-8466-14f327ddde40}
+          ModificationDate = 2004-04-26 14:18:29.368
+            Date = Year="2004" Month="04" Day="1a"
+              Year = 2004
+              Month = 04
+              Day = 1a
+            Time = Hours="0e" Minutes="12" Seconds="1d" msBy4="5c"
+              Hours = 0e
+              Minutes = 12
+              Seconds = 1d
+              msBy4 = 5c
+          InstanceUID = {2cf4bc4e-657f-4e05-87b4-4cfdaae30a2b}
+          ThisGenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+    EssenceContainers = GenericEssenceContainerMultipleWrappings - Empty Generic Container, MXFGCAESBWF - MXF-GC AES-BWF Audio
+      AUID = GenericEssenceContainerMultipleWrappings - Empty Generic Container
+      AUID = MXFGCAESBWF - MXF-GC AES-BWF Audio
+    DMSchemes = 
+    ContentStorageObject = {898a4470-327a-40aa-9c41-c6c63a647718}
+    ContentStorageObject -> Strong Reference to ContentStorage
+      ContentStorage
+        Packages
+          StrongReferencePackage = {c07c8b06-0ee3-4b75-9ffb-8905a46fda18}
+          StrongReferencePackage -> Strong Reference to MaterialPackage
+            MaterialPackage
+              PackageName = A Material Package
+                UTF16 = A
+                UTF16 =  
+                UTF16 = M
+                UTF16 = a
+                UTF16 = t
+                UTF16 = e
+                UTF16 = r
+                UTF16 = i
+                UTF16 = a
+                UTF16 = l
+                UTF16 =  
+                UTF16 = P
+                UTF16 = a
+                UTF16 = c
+                UTF16 = k
+                UTF16 = a
+                UTF16 = g
+                UTF16 = e
+              PackageUID = [060a2b34.0101.0105.01010d20],13,00,00,00,{9ab65cc0-f954-4120-a42d-a5f34b6c3dd7}
+              PackageCreationDate = 2004-04-26 14:18:29.348
+                Date = Year="2004" Month="04" Day="1a"
+                  Year = 2004
+                  Month = 04
+                  Day = 1a
+                Time = Hours="0e" Minutes="12" Seconds="1d" msBy4="57"
+                  Hours = 0e
+                  Minutes = 12
+                  Seconds = 1d
+                  msBy4 = 57
+              PackageModifiedDate = 2004-04-26 14:18:29.348
+                Date = Year="2004" Month="04" Day="1a"
+                  Year = 2004
+                  Month = 04
+                  Day = 1a
+                Time = Hours="0e" Minutes="12" Seconds="1d" msBy4="57"
+                  Hours = 0e
+                  Minutes = 12
+                  Seconds = 1d
+                  msBy4 = 57
+              Tracks
+                StrongReferenceTrack = {9e69d947-1a63-45d7-a385-c579fa483fcf}
+                StrongReferenceTrack -> Strong Reference to Track
+                  Track
+                    TrackName = Timecode Track
+                      UTF16 = T
+                      UTF16 = i
+                      UTF16 = m
+                      UTF16 = e
+                      UTF16 = c
+                      UTF16 = o
+                      UTF16 = d
+                      UTF16 = e
+                      UTF16 =  
+                      UTF16 = T
+                      UTF16 = r
+                      UTF16 = a
+                      UTF16 = c
+                      UTF16 = k
+                    TrackNumber = 0
+                    Origin = 0
+                    EditRate = 5/1
+                      Numerator = 5
+                      Denominator = 1
+                    TrackID = 1
+                    TrackSegment = {b15d1aad-9e13-4f9d-89a6-28006f0b23d7}
+                    TrackSegment -> Strong Reference to Sequence
+                      Sequence
+                        ComponentDataDefinition = SMPTE12MTimecodeTrack - SMPTE 12M Timecode Track
+                        ComponentLength = 1
+                        StructuralComponents
+                          StrongReferenceComponent = {a45f103a-6379-4556-b665-172df2f00e6e}
+                          StrongReferenceComponent -> Strong Reference to TimecodeComponent
+                            TimecodeComponent
+                              RoundedTimecodeBase = 5
+                              DropFrame = 00
+                              StartTimecode = 0
+                              ComponentLength = 1
+                              InstanceUID = {a45f103a-6379-4556-b665-172df2f00e6e}
+                              ComponentDataDefinition = SMPTE12MTimecodeTrack - SMPTE 12M Timecode Track
+                              GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+                        InstanceUID = {b15d1aad-9e13-4f9d-89a6-28006f0b23d7}
+                        GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+                    InstanceUID = {9e69d947-1a63-45d7-a385-c579fa483fcf}
+                StrongReferenceTrack = {3a213bc8-7bb9-40bd-a054-144f3834e808}
+                StrongReferenceTrack -> Strong Reference to Track
+                  Track
+                    TrackName = Sound Track
+                      UTF16 = S
+                      UTF16 = o
+                      UTF16 = u
+                      UTF16 = n
+                      UTF16 = d
+                      UTF16 =  
+                      UTF16 = T
+                      UTF16 = r
+                      UTF16 = a
+                      UTF16 = c
+                      UTF16 = k
+                    TrackNumber = 0
+                    Origin = 0
+                    EditRate = 5/1
+                      Numerator = 5
+                      Denominator = 1
+                    TrackID = 2
+                    TrackSegment = {bf207331-e2c5-4547-9be1-1a07899497ef}
+                    TrackSegment -> Strong Reference to Sequence
+                      Sequence
+                        ComponentDataDefinition = SoundEssenceTrack - Sound Essence Track
+                        ComponentLength = 1
+                        StructuralComponents
+                          StrongReferenceComponent = {9b27feda-8d2f-4572-af06-f699b8c89eb5}
+                          StrongReferenceComponent -> Strong Reference to SourceClip
+                            SourceClip
+                              ComponentLength = 1
+                              SourcePackageID = [060a2b34.0101.0101.01010220],13,00,00,00,{145d1e9f-7a3f-4103-adb6-249c870d7ec3}
+                              SourceTrackID = 2
+                              StartPosition = 0
+                              InstanceUID = {9b27feda-8d2f-4572-af06-f699b8c89eb5}
+                              ComponentDataDefinition = SoundEssenceTrack - Sound Essence Track
+                              GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+                        InstanceUID = {bf207331-e2c5-4547-9be1-1a07899497ef}
+                        GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+                    InstanceUID = {3a213bc8-7bb9-40bd-a054-144f3834e808}
+              InstanceUID = {c07c8b06-0ee3-4b75-9ffb-8905a46fda18}
+          StrongReferencePackage = {087c0183-bede-4f1e-8b1e-16336e35c45e}
+          StrongReferencePackage -> Strong Reference to SourcePackage
+            SourcePackage
+              PackageName = File Package: SMPTE 382M frame wrapping of wave audio
+                UTF16 = F
+                UTF16 = i
+                UTF16 = l
+                UTF16 = e
+                UTF16 =  
+                UTF16 = P
+                UTF16 = a
+                UTF16 = c
+                UTF16 = k
+                UTF16 = a
+                UTF16 = g
+                UTF16 = e
+                UTF16 = :
+                UTF16 =  
+                UTF16 = S
+                UTF16 = M
+                UTF16 = P
+                UTF16 = T
+                UTF16 = E
+                UTF16 =  
+                UTF16 = 3
+                UTF16 = 8
+                UTF16 = 2
+                UTF16 = M
+                UTF16 =  
+                UTF16 = f
+                UTF16 = r
+                UTF16 = a
+                UTF16 = m
+                UTF16 = e
+                UTF16 =  
+                UTF16 = w
+                UTF16 = r
+                UTF16 = a
+                UTF16 = p
+                UTF16 = p
+                UTF16 = i
+                UTF16 = n
+                UTF16 = g
+                UTF16 =  
+                UTF16 = o
+                UTF16 = f
+                UTF16 =  
+                UTF16 = w
+                UTF16 = a
+                UTF16 = v
+                UTF16 = e
+                UTF16 =  
+                UTF16 = a
+                UTF16 = u
+                UTF16 = d
+                UTF16 = i
+                UTF16 = o
+              PackageUID = [060a2b34.0101.0101.01010220],13,00,00,00,{145d1e9f-7a3f-4103-adb6-249c870d7ec3}
+              PackageCreationDate = 2004-04-26 14:18:29.348
+                Date = Year="2004" Month="04" Day="1a"
+                  Year = 2004
+                  Month = 04
+                  Day = 1a
+                Time = Hours="0e" Minutes="12" Seconds="1d" msBy4="57"
+                  Hours = 0e
+                  Minutes = 12
+                  Seconds = 1d
+                  msBy4 = 57
+              PackageModifiedDate = 2004-04-26 14:18:29.348
+                Date = Year="2004" Month="04" Day="1a"
+                  Year = 2004
+                  Month = 04
+                  Day = 1a
+                Time = Hours="0e" Minutes="12" Seconds="1d" msBy4="57"
+                  Hours = 0e
+                  Minutes = 12
+                  Seconds = 1d
+                  msBy4 = 57
+              Tracks
+                StrongReferenceTrack = {f2bfb360-10b7-49a7-af2e-c4fa6219bc01}
+                StrongReferenceTrack -> Strong Reference to Track
+                  Track
+                    TrackName = Timecode Track
+                      UTF16 = T
+                      UTF16 = i
+                      UTF16 = m
+                      UTF16 = e
+                      UTF16 = c
+                      UTF16 = o
+                      UTF16 = d
+                      UTF16 = e
+                      UTF16 =  
+                      UTF16 = T
+                      UTF16 = r
+                      UTF16 = a
+                      UTF16 = c
+                      UTF16 = k
+                    TrackNumber = 0
+                    Origin = 0
+                    EditRate = 5/1
+                      Numerator = 5
+                      Denominator = 1
+                    TrackID = 1
+                    TrackSegment = {77b27d53-cbef-431c-84bd-e642590e92cc}
+                    TrackSegment -> Strong Reference to Sequence
+                      Sequence
+                        ComponentDataDefinition = SMPTE12MTimecodeTrack - SMPTE 12M Timecode Track
+                        ComponentLength = 1
+                        StructuralComponents
+                          StrongReferenceComponent = {6d858723-b90e-4d67-8dd8-e128f24bbcf5}
+                          StrongReferenceComponent -> Strong Reference to TimecodeComponent
+                            TimecodeComponent
+                              RoundedTimecodeBase = 5
+                              DropFrame = 00
+                              StartTimecode = 18000
+                              ComponentLength = 1
+                              InstanceUID = {6d858723-b90e-4d67-8dd8-e128f24bbcf5}
+                              ComponentDataDefinition = SMPTE12MTimecodeTrack - SMPTE 12M Timecode Track
+                              GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+                        InstanceUID = {77b27d53-cbef-431c-84bd-e642590e92cc}
+                        GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+                    InstanceUID = {f2bfb360-10b7-49a7-af2e-c4fa6219bc01}
+                StrongReferenceTrack = {2aae1eb3-c5a0-4da5-b178-f1eb9a68f08c}
+                StrongReferenceTrack -> Strong Reference to Track
+                  Track
+                    TrackName = Sound Track
+                      UTF16 = S
+                      UTF16 = o
+                      UTF16 = u
+                      UTF16 = n
+                      UTF16 = d
+                      UTF16 =  
+                      UTF16 = T
+                      UTF16 = r
+                      UTF16 = a
+                      UTF16 = c
+                      UTF16 = k
+                    TrackNumber = 369164545
+                    Origin = 0
+                    EditRate = 5/1
+                      Numerator = 5
+                      Denominator = 1
+                    TrackID = 2
+                    TrackSegment = {f267d527-0fbd-4555-a03e-3552ae317c4a}
+                    TrackSegment -> Strong Reference to Sequence
+                      Sequence
+                        ComponentDataDefinition = SoundEssenceTrack - Sound Essence Track
+                        ComponentLength = 1
+                        StructuralComponents
+                          StrongReferenceComponent = {df85498b-7243-4ba4-a24e-faedd87aa00d}
+                          StrongReferenceComponent -> Strong Reference to SourceClip
+                            SourceClip
+                              ComponentLength = 1
+                              SourcePackageID = [00000000.0000.0000.00000000],00,00,00,00,[00000000.0000.0000.00000000.00000000]
+                              SourceTrackID = 0
+                              StartPosition = 0
+                              InstanceUID = {df85498b-7243-4ba4-a24e-faedd87aa00d}
+                              ComponentDataDefinition = SoundEssenceTrack - Sound Essence Track
+                              GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+                        InstanceUID = {f267d527-0fbd-4555-a03e-3552ae317c4a}
+                        GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+                    InstanceUID = {2aae1eb3-c5a0-4da5-b178-f1eb9a68f08c}
+              InstanceUID = {087c0183-bede-4f1e-8b1e-16336e35c45e}
+              Descriptor = {c4e1bab5-668d-4f3c-b416-7806264dc6e8}
+              Descriptor -> Strong Reference to WaveAudioDescriptor
+                WaveAudioDescriptor
+                  SampleRate = 11025/1
+                    Numerator = 11025
+                    Denominator = 1
+                  AudioSamplingRate = 11025/1
+                    Numerator = 11025
+                    Denominator = 1
+                  Locked = 00
+                  ChannelCount = 1
+                  QuantizationBits = 8
+                  BlockAlign = 1
+                  AvgBps = 11025
+                  EssenceContainer = MXFGCAESBWF - MXF-GC AES-BWF Audio
+                  LinkedTrackID = 2
+                  InstanceUID = {c4e1bab5-668d-4f3c-b416-7806264dc6e8}
+                  ContainerDuration = 1
+                  GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+        EssenceDataObjects
+          StrongReferenceEssenceData = {0f46b410-8ba9-45a2-a40a-175b0b6250f3}
+          StrongReferenceEssenceData -> Strong Reference to EssenceContainerData
+            EssenceContainerData
+              LinkedPackageUID = [060a2b34.0101.0101.01010220],13,00,00,00,{145d1e9f-7a3f-4103-adb6-249c870d7ec3}
+              BodySID = 1
+              InstanceUID = {0f46b410-8ba9-45a2-a40a-175b0b6250f3}
+              IndexSID = 129
+              GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+        InstanceUID = {898a4470-327a-40aa-9c41-c6c63a647718}
+    OperationalPattern = MXFOPSpecialized - MXF Specialized OP
+    PrimaryPackage -> Weak Reference to SourcePackage
+    GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
+
+No Index Table in this Partition
+
+Elements for BodySID 0x0001
+GC Element: L=0x00000010 File=_0001_16010101.stream NEW
+
+Partition    2 at 0x00004e3f for BodySID 0x0000
+
+Partition Pack:
+CompleteFooter
+  MajorVersion = 1
+  MinorVersion = 2
+  KAGSize = 1
+  ThisPartition = 20031
+  PreviousPartition = 0
+  FooterPartition = 20031
+  HeaderByteCount = 0
+  IndexByteCount = 100
+  IndexSID = 129
+  BodyOffset = 0
+  BodySID = 0
+  OperationalPattern = MXFOPSpecialized - MXF Specialized OP
+  EssenceContainers = GenericEssenceContainerMultipleWrappings - Empty Generic Container, MXFGCAESBWF - MXF-GC AES-BWF Audio
+    AUID = GenericEssenceContainerMultipleWrappings - Empty Generic Container
+    AUID = MXFGCAESBWF - MXF-GC AES-BWF Audio
+
+No Header Metadata in this Partition
+
+
+IndexTable:
+CBR Index Table Segment (covering whole Essence Container) :
+  Indexing BodySID 0x0001 from IndexSID 0x0081
+
+ Bytestream Order:
+  EditUnit   0 for stream 0 is at 0x00000000, Flags=00  *Exact*
+  EditUnit   1 for stream 0 is at 0x0000089d, Flags=00  *Exact*
+  EditUnit   2 for stream 0 is at 0x0000113a, Flags=00  *Exact*
+  EditUnit   3 for stream 0 is at 0x000019d7, Flags=00  *Exact*
+  EditUnit   4 for stream 0 is at 0x00002274, Flags=00  *Exact*
+  EditUnit   5 for stream 0 is at 0x00002b11, Flags=00  *Exact*
+
+ Presentation Order:
+  EditUnit   0 for stream 0 is at 0x00000000, Flags=00  *Exact*
+  EditUnit   1 for stream 0 is at 0x0000089d, Flags=00  *Exact*
+  EditUnit   2 for stream 0 is at 0x0000113a, Flags=00  *Exact*
+  EditUnit   3 for stream 0 is at 0x000019d7, Flags=00  *Exact*
+  EditUnit   4 for stream 0 is at 0x00002274, Flags=00  *Exact*
+  EditUnit   5 for stream 0 is at 0x00002b11, Flags=00  *Exact*
+No Body in this Partition
+
+Closing _0001_16010101.stream, size 0x10

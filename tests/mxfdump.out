@@ -1,18 +1,5 @@
-AT_BANNER([[Checking mxfdump]])
-
-
-AT_SETUP([mxfdump argument handling])
-AT_CHECK([mxfdump], 1, [ignore], [ignore])
-AT_CHECK([mxfdump -v], 1, [ignore], [ignore])
-# FIXME: Not implemented in mxfdump.cpp
-#AT_CHECK([mxfdump file/..1 file/..2], 1, [ignore], [[]])
-AT_CLEANUP
-
-
-AT_SETUP([mxfdump])
-AT_CHECK([mxfdump ../../small_wav.mxf], 0,
-[[Dump an MXF file using MXFLib
-- using dictionary "dict.xml"
+Dump an MXF file using MXFLib
+- using dictionary dict.xml
 
 Partition at 0x00000000 is for BodySID 0x0001
 ClosedCompleteHeader
@@ -27,10 +14,8 @@ ClosedCompleteHeader
   IndexSID = 0
   BodyOffset = 0
   BodySID = 1
-  OperationalPattern = MXF Specialized OP
-  EssenceContainers
-    EssenceContainer = MXF-GC Generic Essence Multiple Mappings
-    EssenceContainer = MXF-GC AES-BWF Audio
+  OperationalPattern = MXFOPSpecialized - MXF Specialized OP
+  EssenceContainers = GenericEssenceContainerMultipleWrappings - Empty Generic Container, MXFGCAESBWF - MXF-GC AES-BWF Audio
 
 Header Metadata:
   Preface
@@ -38,155 +23,153 @@ Header Metadata:
     LastModifiedDate = 2004-04-26 14:18:29.368
     Version = 258
     Identifications
-      Identification = {1be628a1-a147-4c87-adc6-6ace8a9351b3}
-      Identification -> Strong Reference to Identification
+      StrongReferenceIdentification = {1be628a1-a147-4c87-adc6-6ace8a9351b3}
+      StrongReferenceIdentification -> Strong Reference to Identification
         Identification
           CompanyName = FreeMXF.org
           ProductName = mxfwrap file wrapper
           VersionString = Unreleased mxflib 0.3.3.1
-          ProductUID = {846614f3-27dd-de40-86dc-e099da7fd052}
+          ProductUID = {86dce099-da7f-d052-8466-14f327ddde40}
           ModificationDate = 2004-04-26 14:18:29.348
           InstanceUID = {1be628a1-a147-4c87-adc6-6ace8a9351b3}
           ThisGenerationUID = {3f12ad30-44ea-40e2-be1c-1a48e60cc713}
-      Identification = {2cf4bc4e-657f-4e05-87b4-4cfdaae30a2b}
-      Identification -> Strong Reference to Identification
+      StrongReferenceIdentification = {2cf4bc4e-657f-4e05-87b4-4cfdaae30a2b}
+      StrongReferenceIdentification -> Strong Reference to Identification
         Identification
           CompanyName = FreeMXF.org
           ProductName = mxfwrap file wrapper
           VersionString = Unreleased mxflib 0.3.3.1
-          ProductUID = {846614f3-27dd-de40-86dc-e099da7fd052}
+          ProductUID = {86dce099-da7f-d052-8466-14f327ddde40}
           ModificationDate = 2004-04-26 14:18:29.368
           InstanceUID = {2cf4bc4e-657f-4e05-87b4-4cfdaae30a2b}
           ThisGenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
-    EssenceContainers
-      EssenceContainer = MXF-GC Generic Essence Multiple Mappings
-      EssenceContainer = MXF-GC AES-BWF Audio
-    DMSchemes
-    ContentStorage = {898a4470-327a-40aa-9c41-c6c63a647718}
-    ContentStorage -> Strong Reference to ContentStorage
+    EssenceContainers = GenericEssenceContainerMultipleWrappings - Empty Generic Container, MXFGCAESBWF - MXF-GC AES-BWF Audio
+    DMSchemes = 
+    ContentStorageObject = {898a4470-327a-40aa-9c41-c6c63a647718}
+    ContentStorageObject -> Strong Reference to ContentStorage
       ContentStorage
         Packages
-          Package = {c07c8b06-0ee3-4b75-9ffb-8905a46fda18}
-          Package -> Strong Reference to MaterialPackage
+          StrongReferencePackage = {c07c8b06-0ee3-4b75-9ffb-8905a46fda18}
+          StrongReferencePackage -> Strong Reference to MaterialPackage
             MaterialPackage
-              Name = A Material Package
+              PackageName = A Material Package
               PackageUID = [060a2b34.0101.0105.01010d20],13,00,00,00,{9ab65cc0-f954-4120-a42d-a5f34b6c3dd7}
               PackageCreationDate = 2004-04-26 14:18:29.348
               PackageModifiedDate = 2004-04-26 14:18:29.348
               Tracks
-                Tracks_Item = {9e69d947-1a63-45d7-a385-c579fa483fcf}
-                Tracks_Item -> Strong Reference to Track
+                StrongReferenceTrack = {9e69d947-1a63-45d7-a385-c579fa483fcf}
+                StrongReferenceTrack -> Strong Reference to Track
                   Track
                     TrackName = Timecode Track
                     TrackNumber = 0
                     Origin = 0
                     EditRate = 5/1
                     TrackID = 1
-                    Sequence = {b15d1aad-9e13-4f9d-89a6-28006f0b23d7}
-                    Sequence -> Strong Reference to Sequence
+                    TrackSegment = {b15d1aad-9e13-4f9d-89a6-28006f0b23d7}
+                    TrackSegment -> Strong Reference to Sequence
                       Sequence
-                        DataDefinition = SMPTE 12M Timecode Track
-                        Duration = 1
+                        ComponentDataDefinition = SMPTE12MTimecodeTrack - SMPTE 12M Timecode Track
+                        ComponentLength = 1
                         StructuralComponents
-                          StructuralComponent = {a45f103a-6379-4556-b665-172df2f00e6e}
-                          StructuralComponent -> Strong Reference to TimecodeComponent
+                          StrongReferenceComponent = {a45f103a-6379-4556-b665-172df2f00e6e}
+                          StrongReferenceComponent -> Strong Reference to TimecodeComponent
                             TimecodeComponent
                               RoundedTimecodeBase = 5
-                              DropFrame = 0
+                              DropFrame = 00
                               StartTimecode = 0
-                              Duration = 1
+                              ComponentLength = 1
                               InstanceUID = {a45f103a-6379-4556-b665-172df2f00e6e}
-                              DataDefinition = SMPTE 12M Timecode Track
+                              ComponentDataDefinition = SMPTE12MTimecodeTrack - SMPTE 12M Timecode Track
                               GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
                         InstanceUID = {b15d1aad-9e13-4f9d-89a6-28006f0b23d7}
                         GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
                     InstanceUID = {9e69d947-1a63-45d7-a385-c579fa483fcf}
-                Tracks_Item = {3a213bc8-7bb9-40bd-a054-144f3834e808}
-                Tracks_Item -> Strong Reference to Track
+                StrongReferenceTrack = {3a213bc8-7bb9-40bd-a054-144f3834e808}
+                StrongReferenceTrack -> Strong Reference to Track
                   Track
                     TrackName = Sound Track
                     TrackNumber = 0
                     Origin = 0
                     EditRate = 5/1
                     TrackID = 2
-                    Sequence = {bf207331-e2c5-4547-9be1-1a07899497ef}
-                    Sequence -> Strong Reference to Sequence
+                    TrackSegment = {bf207331-e2c5-4547-9be1-1a07899497ef}
+                    TrackSegment -> Strong Reference to Sequence
                       Sequence
-                        DataDefinition = Sound Essence Track
-                        Duration = 1
+                        ComponentDataDefinition = SoundEssenceTrack - Sound Essence Track
+                        ComponentLength = 1
                         StructuralComponents
-                          StructuralComponent = {9b27feda-8d2f-4572-af06-f699b8c89eb5}
-                          StructuralComponent -> Strong Reference to SourceClip
+                          StrongReferenceComponent = {9b27feda-8d2f-4572-af06-f699b8c89eb5}
+                          StrongReferenceComponent -> Strong Reference to SourceClip
                             SourceClip
-                              Duration = 1
+                              ComponentLength = 1
                               SourcePackageID = [060a2b34.0101.0101.01010220],13,00,00,00,{145d1e9f-7a3f-4103-adb6-249c870d7ec3}
                               SourceTrackID = 2
                               StartPosition = 0
                               InstanceUID = {9b27feda-8d2f-4572-af06-f699b8c89eb5}
-                              DataDefinition = Sound Essence Track
+                              ComponentDataDefinition = SoundEssenceTrack - Sound Essence Track
                               GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
                         InstanceUID = {bf207331-e2c5-4547-9be1-1a07899497ef}
                         GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
                     InstanceUID = {3a213bc8-7bb9-40bd-a054-144f3834e808}
               InstanceUID = {c07c8b06-0ee3-4b75-9ffb-8905a46fda18}
-          Package = {087c0183-bede-4f1e-8b1e-16336e35c45e}
-          Package -> Strong Reference to SourcePackage
+          StrongReferencePackage = {087c0183-bede-4f1e-8b1e-16336e35c45e}
+          StrongReferencePackage -> Strong Reference to SourcePackage
             SourcePackage
-              Name = File Package: SMPTE 382M frame wrapping of wave audio
+              PackageName = File Package: SMPTE 382M frame wrapping of wave audio
               PackageUID = [060a2b34.0101.0101.01010220],13,00,00,00,{145d1e9f-7a3f-4103-adb6-249c870d7ec3}
               PackageCreationDate = 2004-04-26 14:18:29.348
               PackageModifiedDate = 2004-04-26 14:18:29.348
               Tracks
-                Tracks_Item = {f2bfb360-10b7-49a7-af2e-c4fa6219bc01}
-                Tracks_Item -> Strong Reference to Track
+                StrongReferenceTrack = {f2bfb360-10b7-49a7-af2e-c4fa6219bc01}
+                StrongReferenceTrack -> Strong Reference to Track
                   Track
                     TrackName = Timecode Track
                     TrackNumber = 0
                     Origin = 0
                     EditRate = 5/1
                     TrackID = 1
-                    Sequence = {77b27d53-cbef-431c-84bd-e642590e92cc}
-                    Sequence -> Strong Reference to Sequence
+                    TrackSegment = {77b27d53-cbef-431c-84bd-e642590e92cc}
+                    TrackSegment -> Strong Reference to Sequence
                       Sequence
-                        DataDefinition = SMPTE 12M Timecode Track
-                        Duration = 1
+                        ComponentDataDefinition = SMPTE12MTimecodeTrack - SMPTE 12M Timecode Track
+                        ComponentLength = 1
                         StructuralComponents
-                          StructuralComponent = {6d858723-b90e-4d67-8dd8-e128f24bbcf5}
-                          StructuralComponent -> Strong Reference to TimecodeComponent
+                          StrongReferenceComponent = {6d858723-b90e-4d67-8dd8-e128f24bbcf5}
+                          StrongReferenceComponent -> Strong Reference to TimecodeComponent
                             TimecodeComponent
                               RoundedTimecodeBase = 5
-                              DropFrame = 0
+                              DropFrame = 00
                               StartTimecode = 18000
-                              Duration = 1
+                              ComponentLength = 1
                               InstanceUID = {6d858723-b90e-4d67-8dd8-e128f24bbcf5}
-                              DataDefinition = SMPTE 12M Timecode Track
+                              ComponentDataDefinition = SMPTE12MTimecodeTrack - SMPTE 12M Timecode Track
                               GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
                         InstanceUID = {77b27d53-cbef-431c-84bd-e642590e92cc}
                         GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
                     InstanceUID = {f2bfb360-10b7-49a7-af2e-c4fa6219bc01}
-                Tracks_Item = {2aae1eb3-c5a0-4da5-b178-f1eb9a68f08c}
-                Tracks_Item -> Strong Reference to Track
+                StrongReferenceTrack = {2aae1eb3-c5a0-4da5-b178-f1eb9a68f08c}
+                StrongReferenceTrack -> Strong Reference to Track
                   Track
                     TrackName = Sound Track
                     TrackNumber = 369164545
                     Origin = 0
                     EditRate = 5/1
                     TrackID = 2
-                    Sequence = {f267d527-0fbd-4555-a03e-3552ae317c4a}
-                    Sequence -> Strong Reference to Sequence
+                    TrackSegment = {f267d527-0fbd-4555-a03e-3552ae317c4a}
+                    TrackSegment -> Strong Reference to Sequence
                       Sequence
-                        DataDefinition = Sound Essence Track
-                        Duration = 1
+                        ComponentDataDefinition = SoundEssenceTrack - Sound Essence Track
+                        ComponentLength = 1
                         StructuralComponents
-                          StructuralComponent = {df85498b-7243-4ba4-a24e-faedd87aa00d}
-                          StructuralComponent -> Strong Reference to SourceClip
+                          StrongReferenceComponent = {df85498b-7243-4ba4-a24e-faedd87aa00d}
+                          StrongReferenceComponent -> Strong Reference to SourceClip
                             SourceClip
-                              Duration = 1
+                              ComponentLength = 1
                               SourcePackageID = [00000000.0000.0000.00000000],00,00,00,00,[00000000.0000.0000.00000000.00000000]
                               SourceTrackID = 0
                               StartPosition = 0
                               InstanceUID = {df85498b-7243-4ba4-a24e-faedd87aa00d}
-                              DataDefinition = Sound Essence Track
+                              ComponentDataDefinition = SoundEssenceTrack - Sound Essence Track
                               GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
                         InstanceUID = {f267d527-0fbd-4555-a03e-3552ae317c4a}
                         GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
@@ -197,19 +180,19 @@ Header Metadata:
                 WaveAudioDescriptor
                   SampleRate = 11025/1
                   AudioSamplingRate = 11025/1
-                  Locked = 0
+                  Locked = 00
                   ChannelCount = 1
                   QuantizationBits = 8
                   BlockAlign = 1
                   AvgBps = 11025
-                  EssenceContainer = MXF-GC AES-BWF Audio
+                  EssenceContainer = MXFGCAESBWF - MXF-GC AES-BWF Audio
                   LinkedTrackID = 2
                   InstanceUID = {c4e1bab5-668d-4f3c-b416-7806264dc6e8}
                   ContainerDuration = 1
                   GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
-        EssenceContainerData
-          EssenceContainer = {0f46b410-8ba9-45a2-a40a-175b0b6250f3}
-          EssenceContainer -> Strong Reference to EssenceContainerData
+        EssenceDataObjects
+          StrongReferenceEssenceData = {0f46b410-8ba9-45a2-a40a-175b0b6250f3}
+          StrongReferenceEssenceData -> Strong Reference to EssenceContainerData
             EssenceContainerData
               LinkedPackageUID = [060a2b34.0101.0101.01010220],13,00,00,00,{145d1e9f-7a3f-4103-adb6-249c870d7ec3}
               BodySID = 1
@@ -217,8 +200,8 @@ Header Metadata:
               IndexSID = 129
               GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
         InstanceUID = {898a4470-327a-40aa-9c41-c6c63a647718}
-    OperationalPattern = MXF Specialized OP
-    PrimaryPackage -> Weak Reference to SourcePackage
+    OperationalPattern = MXFOPSpecialized - MXF Specialized OP
+    PrimaryPackage -> Weak Reference to SourcePackage {087c0183-bede-4f1e-8b1e-16336e35c45e}
     GenerationUID = {35ac1004-0ee7-4e21-94bf-0df4e4e52414}
 
 No index table in this partition
@@ -236,29 +219,9 @@ CompleteFooter
   IndexSID = 129
   BodyOffset = 0
   BodySID = 0
-  OperationalPattern = MXF Specialized OP
-  EssenceContainers
-    EssenceContainer = MXF-GC Generic Essence Multiple Mappings
-    EssenceContainer = MXF-GC AES-BWF Audio
+  OperationalPattern = MXFOPSpecialized - MXF Specialized OP
+  EssenceContainers = GenericEssenceContainerMultipleWrappings - Empty Generic Container, MXFGCAESBWF - MXF-GC AES-BWF Audio
 No header metadata in this partition
-CBR Index Table Segment (covering whole Essence Container) :
-  Indexing BodySID 0x0001 from IndexSID 0x0081
-
- Bytestream Order:
-  EditUnit   0 for stream 0 is at 0x00000000, Flags=00  *Exact*
-  EditUnit   1 for stream 0 is at 0x0000089d, Flags=00  *Exact*
-  EditUnit   2 for stream 0 is at 0x0000113a, Flags=00  *Exact*
-  EditUnit   3 for stream 0 is at 0x000019d7, Flags=00  *Exact*
-  EditUnit   4 for stream 0 is at 0x00002274, Flags=00  *Exact*
-  EditUnit   5 for stream 0 is at 0x00002b11, Flags=00  *Exact*
-
- Presentation Order:
-  EditUnit   0 for stream 0 is at 0x00000000, Flags=00  *Exact*
-  EditUnit   1 for stream 0 is at 0x0000089d, Flags=00  *Exact*
-  EditUnit   2 for stream 0 is at 0x0000113a, Flags=00  *Exact*
-  EditUnit   3 for stream 0 is at 0x000019d7, Flags=00  *Exact*
-  EditUnit   4 for stream 0 is at 0x00002274, Flags=00  *Exact*
-  EditUnit   5 for stream 0 is at 0x00002b11, Flags=00  *Exact*
 
 Read RIP
   BodySID 0x0001 is at 0x00000000 and is not loaded
@@ -266,6 +229,4 @@ Read RIP
 
 Scanned RIP
   BodySID 0x0001 is at 0x00000000 type ClosedCompleteHeader
-  BodySID 0x0000 is at 0x00004e3f type CompleteFooter]]
-)
-AT_CLEANUP
+  BodySID 0x0000 is at 0x00004e3f type CompleteFooter
