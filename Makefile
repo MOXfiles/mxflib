@@ -60,6 +60,14 @@ mxfcrypt: utility mxflib
 
 mxf2dot: utility mxflib
 
+.PHONY: docs
+docs:
+	$(MAKE) -C $@
+
+.PHONY: tests
+tests:
+	$(MAKE) -C $@ MXFLIB_ROOT=$(MXFLIB_ROOT) 
+
 .PHONY: make
 make:
 	build/make/makemake.sh
