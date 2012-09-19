@@ -26,7 +26,6 @@ function runtest ()
 	    cat $1.err >&2
 	fi
 	rm -f out.temp
-	rm -f $1.out
 }
 
 # Clear the summary
