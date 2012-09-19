@@ -16,11 +16,13 @@ INCLUDE += -I../include
 
 # List of our object files
 OBJS := \
-	$(OBJSDIR)/crypto_asdcp.o \
-	$(OBJSDIR)/mxfcrypt.o \
+	$(OBJSDIR)/osprintf.o \
+	$(OBJSDIR)/oxstream.o \
+	$(OBJSDIR)/timecode.o \
+	$(OBJSDIR)/utf8.o \
 
-$(TARGET):  $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)  $(OBJS) $(DESTDIR)/lib/libmxf.a
-	$(CC) -o $(TARGET) $(OBJS) $(LIBRARIES)
-
+$(TARGET): $(PREREQDIR)/marker $(OBJSDIR)/marker $(TARGETDIR)/marker  $(OBJS)
+	$(AR) $(ARFLAGS) $(TARGET) $(OBJS)
+	$(RANLIB) $(RANLIBFLAGS) $(TARGET)
 
 include ../build/make/rules.mk
