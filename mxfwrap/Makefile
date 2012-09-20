@@ -1,3 +1,4 @@
+# Makefile for MXFWRAP
 
 include ../build/make/standard.mk
 
@@ -20,7 +21,7 @@ OBJS := \
 	$(OBJSDIR)/mxfwrap.o \
 	$(OBJSDIR)/parseoptions.o \
 
-$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)  $(OBJS) $(DESTDIR)/lib/libmxf.a
+$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)/marker  $(OBJS) $(DESTDIR)/lib/libmxf.a
 	$(CC) -o $(TARGET) $(OBJS) $(LIBRARIES) $(DESTDIR)/lib/libmxf.a
 
 
