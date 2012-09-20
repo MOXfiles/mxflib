@@ -1,3 +1,4 @@
+# Makefile for dictconvert
 
 include ../build/make/standard.mk
 
@@ -18,7 +19,8 @@ INCLUDE += -I../include
 OBJS := \
 	$(OBJSDIR)/dictconvert.o \
 
-$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)  $(OBJS) $(DESTDIR)/lib/libmxf.a
+
+$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)/marker $(OBJS) $(DESTDIR)/lib/libmxf.a
 	$(CC) -o $(TARGET) $(OBJS) $(LIBRARIES) $(DESTDIR)/lib/libmxf.a
 
 
