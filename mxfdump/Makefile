@@ -1,3 +1,4 @@
+# Makefile for mxfdump
 
 include ../build/make/standard.mk
 
@@ -10,7 +11,7 @@ LIBDIR=$(DESTDIR)/lib
 
 # Output binary
 TARGETDIR := $(BINDIR)
-TARGET := $(BINDIR)/mxfdump
+TARGET := $(TARGETDIR)/mxfdump
 
 INCLUDE += -I../include
 
@@ -18,8 +19,9 @@ INCLUDE += -I../include
 OBJS := \
 	$(OBJSDIR)/mxfdump.o \
 
-$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)  $(OBJS) $(DESTDIR)/lib/libmxf.a
-	$(CC) -o $(TARGET) $(OBJS) $(LIBRARIES) $(DESTDIR)/lib/libmxf.a
+
+$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)/marker $(OBJS) $(DESTDIR)/lib/libmxf.a
+	$(CC) -o $(TARGET) $(OBJS) $(LIBRARIES) $(DESTDIR)/lib/libmxf.a $(DESTDIR)/lib/libutility.a
 
 
 include ../build/make/rules.mk
