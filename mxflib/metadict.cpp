@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2010, Metaglue Corporation
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include "mxflib/mxflib.h"
@@ -826,7 +824,7 @@ namespace
 
 
 	//! Structure holding info used when building a metadictionary
-	struct  MetaDictInfo : public RefCount<MetaDictInfo>
+	struct MetaDictInfo : public RefCount<MetaDictInfo>
 	{
 	public:
 		MDObjectList &MetaList;						//!< The list of objects in the current file, used when describing dark metadata items
@@ -850,6 +848,7 @@ namespace
 			// Sanity check - if nothing supplied, we don't build anything
 			if(MetaList.empty()) return;
 
+
 			// Build full metadata list
 			if(Feature(FeatureUsedMetadict))
 			{
@@ -857,7 +856,6 @@ namespace
 				while(it != MetaList.end())
 				{
 					AddClassOrProperty(*it);
-
 					it++;
 				}
 			}
@@ -917,7 +915,6 @@ namespace
 				// If this does not leave zero, we found something else that we needed in the process of adding the metadict classes, so we go around again
 				DefineMetadictClasses -= OriginalDefineMetadictClasses;
 			}
-
 		}
 
 
@@ -1018,15 +1015,12 @@ namespace
 			// We will be using PropertyDefinitions
 			DefineMetadictClasses |= Def_PropertyDefinition;
 
-			if(true) // Allow for future expansion...
+			if(Feature(FeatureUsedMetadict) || (!ThisItem->GetValueType()->IsBaseline()))
 			{
-				if(Feature(FeatureUsedMetadict) || (!ThisItem->GetValueType()->IsBaseline()))
+				// Make sure that the type is listed for this property
+				if(TypeMap.find(ThisItem->GetValueType()->GetTypeUL()) == TypeMap.end())
 				{
-					// Make sure that the type is listed for this property
-					if(TypeMap.find(ThisItem->GetTypeUL()) == TypeMap.end())
-					{
-						AddType(ThisItem->GetValueType());
-					}
+					AddType(ThisItem->GetValueType());
 				}
 			}
 		}
@@ -1043,15 +1037,12 @@ namespace
 			// We will be using PropertyDefinitions
 			DefineMetadictClasses |= Def_PropertyDefinition;
 
-			if(true) // Allow for future expansion...
+			if(Feature(FeatureUsedMetadict) || (!ThisType->GetValueType()->IsBaseline()))
 			{
-				if(Feature(FeatureUsedMetadict) || (!ThisType->GetValueType()->IsBaseline()))
+				// Make sure that the type is listed for this property
+				if(TypeMap.find(ThisType->GetValueType()->GetTypeUL()) == TypeMap.end())
 				{
-					// Make sure that the type is listed for this property
-					if(TypeMap.find(ThisType->GetTypeUL()) == TypeMap.end())
-					{
-						AddType(ThisType->GetValueType());
-					}
+					AddType(ThisType->GetValueType());
 				}
 			}
 		}
@@ -1061,6 +1052,7 @@ namespace
 		{
 			if(!ThisItem) return;
 			TypeMap[*(ThisItem->GetTypeUL())] = ThisItem;
+
 
 			// See if this type is based on another type - if so, we may need to add that too
 			if(ThisItem->GetBase())

@@ -23,6 +23,7 @@ oxstream& operator<<( oxstream& os, const escape& e )
 		// xml escaping of single character
 		if( !isgraph(e._c) && !isspace(e._c) )	(std::ostream &)os << "&#x" << hex << (const int)e._c << ";" ;
 		else if( '<'==e._c )	(ostream &)os << "&lt;" ;
+		else if( '>'==e._c )	(ostream &)os << "&gt;" ;
 		else if( '&'==e._c )	(ostream &)os << "&amp;" ;
 		else					(ostream &)os << e._c;
 	}

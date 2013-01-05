@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #ifndef MXFLIB__ESP_WAVEPCM_H
@@ -51,6 +49,8 @@ namespace mxflib
 															 *	 \note Other functions may move the file
 															 *         pointer between calls to our functions */
 
+		bool ForcedVBR;										//!< Enable VBR-indaxable behaviour by returning one edit unit at a time, even when clip-wrapping
+
 		size_t CachedDataSize;								//!< The size of the next data to be read, or (size_t)-1 if not known
 		UInt64 CachedCount;									//!< The number of wrapping units that CachedDataSize relates to
 
@@ -70,8 +70,10 @@ namespace mxflib
 		protected:
 			size_t BytesRemaining;							//!< The number of bytes remaining in a multi-part GetEssenceData, or zero if not part read
 
-			bool PaddingEnabled;							//!< Is padding after the end of the essence stream enabled?
+			bool PaddingEnabled;							//!< Is padding after the end of the essence stream enabled? Used when audio input is less than video
 			DataChunkPtr PaddingChunk;						//!< A chunk containing padding bytes (if required) for use in GetPadding()
+			Int64 ExtraSamples;							    //!< Number of extra samples to output after end of frame
+
 
 		public:
 			//! Construct and initialise for essence parsing/sourcing
@@ -135,6 +137,21 @@ namespace mxflib
 			//! Set a source type or parser specific option
 			/*! \return true if the option was successfully set */
 			virtual bool SetOption(std::string Option, Int64 Param = 0);
+
+			//! Enable VBR indexing, even in clip-wrap mode, by allowing each edit unit to be returned individually
+			/*! As the byte offset part of a VBR index table is constructed at write-time each indexed chunk must be written separately.
+			 *  When clip-wrapping, this is not normally the case as larger chunks may be returned for efficiency. Setting this mode
+			 *  forces each indexable edit unit to be returned by a fresh GetEssenceData call as if it were being frame-wrapped.
+			 *  \return true if this mode is supported by the source, and the mode was set, else false
+			 */
+			virtual bool EnableVBRIndexMode(void) 
+			{ 
+				WAVE_PCM_EssenceSubParser *pCaller = SmartPtr_Cast(Caller, WAVE_PCM_EssenceSubParser);
+
+				pCaller->ForcedVBR = true;
+
+				return true; 
+			}
 		};
 
 		// Give our essence source class privilaged access
@@ -152,6 +169,7 @@ namespace mxflib
 			DataSize = 0;
 			CurrentPosition = 0;
 			BytePosition = 0;
+			ForcedVBR = false;
 
 			// Use a sensible default if no edit rate is set - not ideal, but better than one sample!
 			// It will always be possible to wrap at this rate, but the end of the data may not be a whole edit unit

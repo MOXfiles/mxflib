@@ -7,28 +7,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *	Portions Copyright (c) 2003, Metaglue Corporation
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
  
 #include "mxflib/mxflib.h"
@@ -245,6 +242,15 @@ void mxflib::Partition::ProcessChildRefs(MDObjectPtr ThisObject)
 }
 
 
+//! Reload the metadata tree
+void mxflib::Partition::UpdateMetadata(ObjectInterface *Meta)
+{
+	// DRAGONS: Not the best way to do this
+	ClearMetadata();
+	AddMetadata(Meta);
+}
+
+
 //! Load any metadictionaties that are in the list of currently loaded objects
 bool mxflib::Partition::LoadMetadict(void)
 {
@@ -354,8 +360,8 @@ Length mxflib::Partition::ReadMetadata(MXFFilePtr File, Length Size)
 	Length Bytes = 0;
 	Length FillerBytes = 0;
 
-	// Clear any existing metadata
-	ClearMetadata();
+	// Clear any existing metadata, including the primer
+	ClearMetadata(false);
 
 	// Quick return for NULL metadata
 	if(Size == 0) return 0;
@@ -530,6 +536,7 @@ Length mxflib::Partition::ReadMetadata(MXFFilePtr File, Length Size)
 
 		AddMetadata(NewItem);
 	}
+
 
 	return Bytes + FillerBytes;
 }

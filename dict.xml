@@ -88,11 +88,12 @@
     </Interpretation>
     <Multiple>
       <UTFString detail="Unicode coded string - unknown format" base="UTF" type="String"/>
+      <UInt16Batch detail="Batch of UInt16" base="UInt16" type="Explicit"/>
       <UTF16String detail="Unicode UTF-16 coded string" base="UTF16" baseline="yes" type="String" ul="urn:x-ul:060E2B34.0104.0101.01100200.00000000"/>
 			<UInt32Array detail="Array of UInt32" base="UInt32" type="Implicit" ul="urn:x-ul:060e2b34.0104.0101.04010900.00000000"/>
 			<Int64Array detail="Array of Int64" base="Int64" type="Implicit" ul="urn:x-ul:060E2B34.0104.0101.04010400.00000000"/>
-			<Int64Batch detail="Batch of Int64" base="Int64" type="Explicit"/>
-			<UInt8Array detail="Array of UInt8" base="UInt8" type="Implicit" ul="urn:x-ul:060E2B34.0104.0101.04010100.00000000"/>
+      <Int64Batch detail="Batch of Int64" base="Int64" type="Explicit"/>
+      <UInt8Array detail="Array of UInt8" base="UInt8" type="Implicit" ul="urn:x-ul:060E2B34.0104.0101.04010100.00000000"/>
 			<ISO7String detail="ISO 7-Bit coded string" base="ISO7" type="String" baseline="yes" ul="urn:x-ul:060E2B34.0104.0101.01100400.00000000"/>
 			<UTF7String detail="RFC 2152 7-Bit Coded UNICODE string" base="UTF7" type="String" ul="urn:x-ul:060E2B34.0104.0101.01200500.00000000"/>
 			<Int32Batch detail="Batch of Int32 values" base="Int32" type="Explicit" ul="urn:x-ul:060E2B34.0104.0101.04010300.00000000"/>
@@ -334,7 +335,7 @@
 			<ProductName detail="Name of the application which created or modified this file" use="required" type="UTF16String" key="3c 02" globalKey="06 0e 2b 34 01 01 01 02  05 20 07 01 03 01 00 00"/>
 			<ProductVersion detail="Maj.min.tweak.build.rel  version number of this application" use="optional" type="ProductVersionType" minLength="10" maxLength="10" key="3c 03" globalKey="06 0e 2b 34 01 01 01 02  05 20 07 01 04 00 00 00"/>
 			<VersionString detail="Human readable name of the application version" use="required" type="UTF16String" key="3c 04" globalKey="06 0e 2b 34 01 01 01 02  05 20 07 01 05 01 00 00"/>
-			<ProductUID detail="A unique identification for the product which created this file (defined by the manufacturer)" use="required" type="AUID" minLength="16" maxLength="16" key="3c 05" globalKey="06 0e 2b 34 01 01 01 02  05 20 07 01 07 00 00 00"/>
+			<ProductUID detail="A unique identification for the product which created this file (defined by the manufacturer)" use="required" type="UUID" minLength="16" maxLength="16" key="3c 05" globalKey="06 0e 2b 34 01 01 01 02  05 20 07 01 07 00 00 00"/>
 			<ModificationDate detail="Time &amp; date an application created or modified this file and created this Identification set" use="required" type="Timestamp" minLength="8" maxLength="8" key="3c 06" globalKey="06 0e 2b 34 01 01 01 02  07 02 01 10 02 03 00 00"/>
 			<ToolkitVersion detail="Maj.min.tweak.build.rel version of software or hardware codec used" use="optional" type="ProductVersionType" minLength="10" maxLength="10" key="3c 07" globalKey="06 0e 2b 34 01 01 01 02  05 20 07 01 0a 00 00 00"/>
 			<Platform detail="Human readable name of the operating system used." use="optional" type="UTF16String" key="3c 08" globalKey="06 0e 2b 34 01 01 01 02  05 20 07 01 06 01 00 00"/>
@@ -379,7 +380,7 @@
 		</EventTrack>
 		<StructuralComponent base="InterchangeObject" detail="Structural Component Superclass" type="localSet" baseline="yes" key="urn:x-ul:060E2B34.0253.0101.0D010101.01010200">
 			<ComponentDataDefinition detail="current~DataDefinition The kind of data or metadata this structure refers to" use="required" type="DictReferenceDataDefinition" key="02 01" globalKey="06 0e 2b 34 01 01 01 02  04 07 01 00 00 00 00 00"/>
-      <ComponentLength detail="Duration (in units of edit rate)" use="optional" type="LengthType" minLength="8" maxLength="8" key="02 02" globalKey="06 0e 2b 34 01 01 01 02  07 02 02 01 01 03 00 00"/>
+      <ComponentLength detail="Duration (in units of edit rate)" use="optional" type="LengthType" minLength="8" maxLength="8" key="02 02" globalKey="06 0e 2b 34 01 01 01 02  07 02 02 01 01 03 00 00" dvalue="-1"/>
 		</StructuralComponent>
 		<Segment key="06 0E 2B 34 02 53 01 01 0d 01 01 01 01 01 03 00" base="StructuralComponent" baseline="yes" />
 		<Sequence base="Segment" detail="Sequence of Segments" type="localSet" baseline="yes" key="06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 0f 00">
@@ -480,8 +481,9 @@
 			<DataEssenceCoding detail="Specifies the data essence coding type" type="AUID" key="3e 01" globalKey="06 0e 2b 34 01 01 01 05  04 03 03 02 00 00 00 00" use="decoder required"/>
 		</GenericDataEssenceDescriptor>
 		<VBIDataDescriptor base="GenericDataEssenceDescriptor" detail="Defines the VBI Data Descriptor Set" key="06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 5b 00"/>
-		<ANCDataDescriptor base="GenericDataEssenceDescriptor" detail="Defines the VBI Data Descriptor Set" key="06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 5c 00"/>
-		<MultipleDescriptor base="FileDescriptor" detail="Defines the Multiple Descriptor set" baseline="yes" key="06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 44 00">
+		<ANCDataDescriptor base="GenericDataEssenceDescriptor" detail="Defines the VBI Data Descriptor Set" key="06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 5c 00">
+    </ANCDataDescriptor>
+    <MultipleDescriptor base="FileDescriptor" detail="Defines the Multiple Descriptor set" baseline="yes" key="06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 44 00">
 			<FileDescriptors detail="Unordered array of strong references to File Descriptor sets (1 per interleaved item within the Essence Container)" use="required" type="StrongReferenceVectorFileDescriptor" key="3f 01" globalKey="06 0e 2b 34 01 01 01 04  06 01 01 04 06 0b 00 00"/>
 		</MultipleDescriptor>
 		<MPEG2VideoDescriptor base="CDCIEssenceDescriptor" detail="Defines the MPEG2 Picture Essence Descriptor set" baseline="yes" key="06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 51 00">
@@ -777,6 +779,7 @@
 
 
 
+  <!-- Metaglue AAF Minimal Dictionary Classes -->
   <MXFTypes>
     <Interpretation>
       <StringArray detail="Unicode UTF-16 coded strings, each zero terminated in a single outer string" base="UTF16String" ul="urn:x-ul:060E2B34.0104.0101.04010500.00000000"/>
@@ -918,7 +921,10 @@
           <ElementNames detail="Specifies the names associated with each enumerated value" globalKey="06 0E 2B 34 01 01 01 02 03 01 02 03 04 00 00 00" key="00 15" type="StringArray" use="required"/>
           <ElementValues detail="Specifies the valid enumerated values" globalKey="06 0E 2B 34 01 01 01 02 03 01 02 03 05 00 00 00" key="00 16" type="Int64Batch" use="required"/>
       </TypeDefinitionEnumeration>
-      <TypeDefinitionExtendibleEnumeration detail="Defines the TypeDefinitionExtendibleEnumeration set" key="06 0E 2B 34 02 53 01 01 0D 01 01 01 02 20 00 00" base="TypeDefinition" />
+    <TypeDefinitionExtendibleEnumeration detail="Defines the TypeDefinitionExtendibleEnumeration set" key="06 0E 2B 34 02 53 01 01 0D 01 01 01 02 20 00 00" base="TypeDefinition" >
+      <ExtElementNames detail="ElementNames for Legacy TypeDefinitionExtendibleEnumeration" key="060e2b34.0101.0102.03010203.07000000" tag="00 1f" type="StringArray" use="optional"/>
+      <ExtElementValues detail="ElementValues for Legacy TypeDefinitionExtendibleEnumeration" key="060e2b34.0101.0102.03010203.08000000" tag="00 20" type="AUIDArray" use="optional"/>
+    </TypeDefinitionExtendibleEnumeration>
       <TypeDefinitionFixedArray detail="Defines the TypeDefinitionFixedArray set" key="06 0E 2B 34 02 53 01 01 0D 01 01 01 02 08 00 00" base="TypeDefinition">
           <FixedArrayElementType detail="Specifies the TypeDefinition that defines the type of each element of the array" globalKey="06 0E 2B 34 01 01 01 02 06 01 01 07 0C 00 00 00" key="00 17" type="MetaReferenceTypeDefinition" use="required"/>
           <ElementCount detail="Specifies the number of elements in the array" globalKey="06 0E 2B 34 01 01 01 02 03 01 02 03 03 00 00 00" key="00 18" type="UInt32" use="required"/>

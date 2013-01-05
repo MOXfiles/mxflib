@@ -11,28 +11,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *	Portions Copyright (c) 2003, Metaglue Corporation
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 #ifndef MXFLIB__METADATA_H
 #define MXFLIB__METADATA_H
@@ -320,7 +317,7 @@ namespace mxflib
 
 
 		//! Parse an existing MDObject into a SourceClip object
-		static SourceClipPtr Parse(MDObjectPtr BaseObject, bool Managed = false);
+		static SourceClipPtr Parse(MDObjectPtr BaseObject);
 
 	protected:
 				
@@ -380,6 +377,7 @@ namespace mxflib
 		//! Parse an existing MDObject into a TimecodeComponent object
 		static TimecodeComponentPtr Parse(MDObjectPtr BaseObject);
 
+
 	protected:
 	};
 }
@@ -401,6 +399,8 @@ namespace mxflib
 		DMSegment(const UL &BaseUL) : Component(BaseUL) {};
 		DMSegment(ULPtr &BaseUL) : Component(BaseUL) {};
 
+
+
 		//! Make a link to a specified track
 		/*! \note This is redefined here to prevent hiding caused by our own MakeLink below */
 		virtual bool MakeLink(TrackPtr SourceTrack, Int64 StartPosition = 0) { return Component::MakeLink(SourceTrack, StartPosition); }
@@ -420,6 +420,8 @@ namespace mxflib
 
 		//! Parse an existing MDObject into a DMSegment object
 		static DMSegmentPtr Parse(MDObjectPtr BaseObject);
+
+
 	};
 }
 
@@ -443,6 +445,7 @@ namespace mxflib
 			TrackTypeAuxiliary,					//!< Auxiliary track
 			TrackTypeParsedText,				//!< Parsed Text track
 		};
+
 
 	public:
 		ComponentList Components;				//!< Each component on this track
@@ -544,6 +547,9 @@ namespace mxflib
 		//! Determine the type of this track
 		TrackType GetTrackType(void);
 
+		//! Determine the edit rate for this track, or (0,0) if not known
+		Rational GetEditRate(void);
+
 
 		//! Set the name of this track
 		void SetName(std::string Value);
@@ -551,7 +557,7 @@ namespace mxflib
 		//! Get the name of this track
 		std::string GetName(std::string Default = "");
 
-		//! Get the track number this track
+		//! Get the track number of this track
 		UInt32 GetTrackNumber(void);
 
 		//! Get the single word description for the type of this track
@@ -686,6 +692,8 @@ namespace mxflib
 		// Get the Package Name
 		std::string GetName(std::string Default = "");
 
+		// Set the Package Name
+		void SetName(std::string Name);
 
 
 
@@ -782,7 +790,6 @@ namespace mxflib
 		void UpdateDurations(void);
 
 
-
 		//! Return the containing "Package" object for this MDObject
 		/*! \return NULL if MDObject is not contained in a Package object
 		 */
@@ -806,6 +813,7 @@ namespace mxflib
 
 namespace mxflib
 {
+
 	//! Holds data relating to a single partition
 	class Metadata : public ObjectInterface, public RefCount<Metadata>
 	{
@@ -836,7 +844,13 @@ namespace mxflib
 		void SetTime(std::string TimeStamp) { ModificationTime = TimeStamp; }
 
 		//! Add a DMScheme to the listed schemes
-		void AddDMScheme(ULPtr Scheme);
+		void AddDMScheme(const UL *Scheme);
+
+		//! Add a DMScheme to the listed schemes
+		void AddDMScheme(const ULPtr Scheme) { AddDMScheme(Scheme.GetPtr()); }
+
+		//! Add a DMScheme to the listed schemes
+		void AddDMScheme(const UL Scheme) { AddDMScheme(&Scheme); }
 
 		//! Add an essence type UL to the listed essence types
 		/*! Only added if it does not already appear in the list */
@@ -891,8 +905,16 @@ namespace mxflib
 
 
 		// Add a lower-level source package to the metadata
-		PackagePtr AddSourcePackage(UMIDPtr PackageUID) { return AddPackage(SourcePackage_UL, "", PackageUID, 0); }
-		PackagePtr AddSourcePackage(std::string PackageName = "", UMIDPtr PackageUID = NULL) { return AddPackage(SourcePackage_UL, PackageName, PackageUID, 0); }
+		PackagePtr AddSourcePackage(UMIDPtr PackageUID) 
+		{ 
+			return AddPackage(SourcePackage_UL, "", PackageUID, 0); 
+		}
+		
+		// Add a named lower-level source package to the metadata
+		PackagePtr AddSourcePackage(std::string PackageName = "", UMIDPtr PackageUID = NULL)
+		{
+			return AddPackage(SourcePackage_UL, PackageName, PackageUID, 0); 
+		}
 
 		//! Add an entry into the essence container data set for a given essence stream
 		bool AddEssenceContainerData(UMIDPtr TheUMID, UInt32 BodySID, UInt32 IndexSID = 0);
@@ -945,6 +967,7 @@ namespace mxflib
 		//! Determine the next free SID (for use as BodySID, IndexSID or Generic Stream SID)
 		UInt32 FindNextSID(void);
 
+
 		// Allow contained objects to access our protected methods
 		friend class Package;
 	};
@@ -988,6 +1011,7 @@ inline MDObjectPtr DMSegmentPtr::operator[](const char *ChildName) { return GetP
 inline MDObjectPtr DMSegmentPtr::operator[](MDOTypePtr ChildType) { return GetPtr()->Object[ChildType]; }
 inline MDObjectPtr DMSegmentPtr::operator[](const UL &ChildType) { return GetPtr()->Object[ChildType]; }
 inline MDObjectPtr DMSegmentPtr::operator[](ULPtr &ChildType) { return GetPtr()->Object[*ChildType]; }
+
 
 
 }

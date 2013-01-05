@@ -1,33 +1,31 @@
 /*! \file	mxfdump.cpp
  *	\brief	Simple application to dump an MXF file using MXFLib
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *  Portions Copyright (c) 2003, Metaglue Corporation
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include <mxflib/mxflib.h>
 
 using namespace mxflib;
+
 
 #ifdef COMPILED_DICT
 bool UseCompiledDict = true;
@@ -81,6 +79,7 @@ static bool SortedDump = false;
 //! Flag to say whether IDs such as UUID and UMID and Timestamps will be dumped
 static bool DumpIDs = true;
 
+
 //! Flag to say whether Ident version details such as ProductVersion will be dumped
 static bool DumpIdents = true;
 
@@ -91,6 +90,7 @@ static bool BootstrapDict = false;
 //! Flag for diplaying baseline UL of sets unsing the ObjectClass extention mechanism
 static bool ShowBaseline = false;
 #endif // OPTION3ENABLED
+
 
 //! Dump the specified file
 /*! \ret 0 if all OK */
@@ -106,14 +106,21 @@ namespace
 	{
 		std::string Message;
 
+
 	public:
 		virtual std::string Name() const { return "{}::MessageTraits=" + Message; };
 		MessageTraits(std::string Message) : Message(Message) {};
 
 	protected:
 		virtual std::string GetString(const MDObject *Object, OutputFormatEnum Format) const { return GetString(Object); }
-		virtual std::string GetString(const MDObject *) const { return Message; }
+		virtual std::string GetString(const MDObject *Object) const
+		{
+			return Message;
+		};
+
 	};
+
+
 }
 
 
@@ -547,6 +554,10 @@ int DumpFile(std::string Name)
 	}
 */
 
+
+
+
+
 	TestFile->Close();
 
 /*	PrimerPtr NewPrimer = new Primer;
@@ -696,10 +707,10 @@ void DumpObject(MDObjectPtr Object, std::string Prefix)
 					printf("%s%s = %s\n", Prefix.c_str(), Object->Name().c_str(), Object->GetString().c_str());
 
 //else			printf("%s%s\n", Prefix.c_str(), Object->Name().c_str());
-//if(Object->GetRefType() == ClassRefMeta)
-//	printf("%s%s is an unsatisfied MetaRef\n", Prefix.c_str(), Object->Name().c_str());
-//else if(Object->GetRefType() == ClassRefDict)
-//	printf("%s%s is an unsatisfied DictRef\n", Prefix.c_str(), Object->Name().c_str());
+if(Object->GetRefType() == ClassRefMeta)
+	printf("%s%s is an unsatisfied MetaRef\n", Prefix.c_str(), Object->Name().c_str());
+else if(Object->GetRefType() == ClassRefDict)
+	printf("%s%s is an unsatisfied DictRef\n", Prefix.c_str(), Object->Name().c_str());
 			}
 			else
 			{

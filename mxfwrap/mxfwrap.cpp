@@ -4,44 +4,33 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *	Portions Copyright (c) 2003-5, Metaglue Corporation
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include "mxflib/mxflib.h"
+using namespace mxflib;
 
 #include "libprocesswrap/process.h"
 
-#define PRODUCT_VERSION_MAJOR "1"
-#define PRODUCT_VERSION_MINOR "2"
-#define PRODUCT_VERSION_TWEAK "7"
-#define PRODUCT_VERSION_BUILD "20120425"
-#define PRODUCT_VERSION_REL 1
- 
 
-
-
-using namespace mxflib;
 
 #include "parseoptions.h"
 
@@ -51,7 +40,10 @@ using namespace mxflib;
 #include <iostream>
 
 
+
+
 using namespace std;
+
 
 
 //! Debug flag for MXFLib
@@ -159,11 +151,6 @@ int main_process(int argc, char *argv[]);
 //! Do the main processing and pause if required
 int main(int argc, char *argv[]) 
 { 
-	char VersionText[256];
-	snprintf(VersionText, 255, "MXFWrap %s.%s.%s(%s)%s of %s %s", PRODUCT_VERSION_MAJOR, PRODUCT_VERSION_MINOR, PRODUCT_VERSION_TWEAK, PRODUCT_VERSION_BUILD,
-		     MXFLIB_VERSION_RELTEXT(PRODUCT_VERSION_REL), __DATE__, __TIME__);
-	HandleVersionRequest(argc, argv, VersionText);
-
 	int Ret = main_process(argc, argv);
 
 	if( PauseBeforeExit>0 ) PauseForInput();
@@ -175,6 +162,11 @@ int main(int argc, char *argv[])
 int main_process(int argc, char *argv[])
 {
 	printf( "MXFlib File Wrapper\n\n" );
+
+#ifdef MG_LICENCE
+	CHECK_LICENCE;
+
+#endif
 
 	// ProcessOptions - struct to contain all the options and flags obtained from the client
 	// declared and constructed in Process.h
@@ -215,10 +207,15 @@ int main_process(int argc, char *argv[])
 			DMFileList::iterator dd_it = Opt.DMDicts.begin();
 			while( !DictLoadResult && dd_it != Opt.DMDicts.end() )
 			{
-				DictLoadResult=LoadDictionary( (char *)(*dd_it).c_str() );
-				if( DictLoadResult ) error( "DM Dictionary ", (char *)(*dd_it).c_str(), " failed to load\n" );
+				int Result = LoadDictionary( (char *)(*dd_it).c_str() );
+				if( Result )
+				{
+					error( "DM Dictionary ", (char *)(*dd_it).c_str(), " failed to load\n" );
+					DictLoadResult = Result;
+				}
 				dd_it++;
 			}
+
 
 			if( DictLoadResult ) return 1;
 
@@ -255,8 +252,24 @@ int main_process(int argc, char *argv[])
 		FileParserPtr FParser = new FileParser(Opt.InFilename[i]);
 
 
-		// Wrapping config to use
+		// Wrapping config to use (Optionally listing the available options);
+		if(Opt.SelectedWrappingOption == 0) printf("\nAvailable wrapping options for %s\n", Opt.InFilename[i]);
 		EssenceParser::WrappingConfigPtr WCP = ChooseWrapping(FParser, Opt);
+
+		// If we have more than one -w option, shuffle in the next
+		if(!Opt.SecondaryWrapping.empty())
+		{
+			Opt.SelectedWrappingOption = Opt.SecondaryWrapping.front();
+			Opt.SecondaryWrapping.pop_front();
+		}
+		if(!Opt.SecondaryWrappingText.empty())
+		{
+			Opt.SelectedWrappingOptionText = Opt.SecondaryWrappingText.front();
+			Opt.SecondaryWrappingText.pop_front();
+		}
+
+		// If simply listing the options, move to the next now
+		if(Opt.SelectedWrappingOption == 0) continue;
 
 		if(!WCP) return 3;
 
@@ -350,7 +363,10 @@ int main_process(int argc, char *argv[])
 						*(WrapCfg->WrapOpt) = *(WCP->WrapOpt);
 
 						WrapCfg->EssenceDescriptor = OriginalDescriptor->MakeCopy();
-						WrapCfg->EssenceDescriptor->SetInt("ChannelCount", ChanCount);
+						WrapCfg->EssenceDescriptor->SetInt(ChannelCount_UL, ChanCount);
+						
+						WrapCfg->EssenceDescriptor->SetInt(BlockAlign_UL, (OriginalDescriptor->GetInt(BlockAlign_UL) * ChanCount) / OriginalDescriptor->GetInt(ChannelCount_UL));
+						WrapCfg->EssenceDescriptor->SetUInt(AvgBps_UL, (OriginalDescriptor->GetUInt(AvgBps_UL) * ChanCount) / OriginalDescriptor->GetInt(ChannelCount_UL));
 						
 						// Install this new essence descriptor in the source
 						FParser->SetDescriptor(WrapCfg->EssenceDescriptor);
@@ -500,8 +516,16 @@ int main_process(int argc, char *argv[])
 		}
 	}
 
+	// Exit now once we have displayed all wrapping options
+	if(Opt.SelectedWrappingOption == 0) return 3;
+
 	fflush(stderr);
 	fflush(stdout);
+
+#ifdef MG_LICENCE
+	CHECK_LICENCE;
+
+#endif
 
 
 	// Generate UMIDs for each file package
@@ -593,6 +617,9 @@ int main_process(int argc, char *argv[])
 				);
 
 		printf( "Duration = %s edit units\n", UInt64toString( dur ).c_str() );
+
+		// output Duration to log file
+		if( Opt.Stats ) fprintf(stderr,"%s\n",UInt64toString( dur ).c_str());
 
 		// Close the file - all done!
 		Out->Close();
@@ -744,7 +771,6 @@ EssenceParser::WrappingConfigPtr ChooseWrapping(FileParserPtr &FParser, ProcessO
 			if(!WCP)
 			{
 				int nWrOpt = 0;
-				printf("\nAvailable wrapping options:\n");
 
 				EssenceParser::WrappingConfigList::iterator it = WCList.begin();
 				while(it != WCList.end())
@@ -769,9 +795,10 @@ EssenceParser::WrappingConfigPtr ChooseWrapping(FileParserPtr &FParser, ProcessO
 
 		// Select the nth config
 		EssenceParser::WrappingConfigList::iterator it = WCList.begin();
-		while(Opt.SelectedWrappingOption-- > 1) it++;
+		int n = Opt.SelectedWrappingOption;
+		while(n-- > 1) it++;
 		WCP = *it;
-		
+
 		WCP->KAGSize = Opt.KAGSize;
 		
 		FParser->SelectWrappingOption(WCP);

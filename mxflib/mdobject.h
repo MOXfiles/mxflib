@@ -10,28 +10,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2004, Matt Beard
- *  Portions copyright (c) 2002, BBC R&D
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 #ifndef MXFLIB__MDOBJECT_H
 #define MXFLIB__MDOBJECT_H
@@ -121,6 +118,9 @@ namespace mxflib
 
 		//! Get the name of this symbol space
 		const std::string &Name(void) const { return SymName; }
+
+		//! Clear all defined 
+		static void ClearSymbols(void);
 	};
 }
 
@@ -294,7 +294,7 @@ namespace mxflib
 		bool IsNestedRef(void) const { return (RefType == ClassRefStrong) ? Nested : false; };
 
 		//! Accessor for Reference Target
-		const MDOTypeParent &GetRefTarget(void) const { return RefTarget; };
+		const MDOTypeParent GetRefTarget(void) const { return RefTarget; };
 
 		//! Accessor for Reference Target Name
 		/*!< \note This must only be used during dictionary parsing or for error reporting,
@@ -522,6 +522,11 @@ namespace mxflib
 
 		//! Define a class based on a ClassRecord - recursive version to allow out-of order definitions
 		static MDOTypePtr DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr DefaultSymbolSpace, ClassRecordList *Unresolved = NULL, MDOTypePtr Parent = NULL);
+
+		//! Unload all classes from memory
+		/*! \note Classes still in use will remain until they are no longer referenced */
+		static void ClearClasses(void);
+
 
 		/* Interface IMDOTypeDeprecated */
 		/********************************/
@@ -889,13 +894,12 @@ namespace mxflib
 		}
 
 		//! Get the reference target
-		const MDOTypeParent &GetRefTarget(void) const
+		const MDOTypeParent GetRefTarget(void) const
 		{ 
 			if(IsSubItem || (!Type))
 			{
 				mxflib_assert(ValueType);
-error("UNSUPPORTED: Trying to determine ref target of %s\n", FullName().c_str());
-//				return MDOType::Find(ValueType->EffectiveRefTarget());
+				return ValueType->EffectiveRefTarget();
 			}
 			mxflib_assert(Type);
 			return Type->GetRefTarget();
@@ -1614,7 +1618,13 @@ error("UNSUPPORTED: Trying to determine ref target of %s\n", FullName().c_str())
 		static void SetULTranslator(ULTranslator Trans) { UL2NameFunc = Trans; }
 
 		//! Set the "attempt to parse dark metadata" flag
-		static void SetParseDark(bool Value) { ParseDark = Value; }
+		/*! \return The *OLD* value before setting the flag */
+		static bool SetParseDark(bool Value) 
+		{ 
+			bool Ret = ParseDark;
+			ParseDark = Value;
+			return Ret;
+		}
 
 
 		/* Interface IMDValueIO */
@@ -2019,7 +2029,7 @@ namespace mxflib
 		const MDOType *GetType(void) const { return Object ? Object->GetType() : NULL; }
 
 		//! Get the type of this object (returns self if this is a type, may return NULL for sub-items of a complex type)
-		const MDOTypePtr GetType(void) { if(Object) return Object->GetType(); else return MDOTypePtr(NULL); }
+		const MDOTypePtr GetType(void) { if(Object) return Object->GetType(); else return NULL; }
 
 		//! Get the type of the value for this object (returns NULL if a group rather than an element)
 		const MDTypePtr &GetValueType(void) const { return Object ? Object->GetValueType() : NullObject->GetValueType(); }
@@ -2052,7 +2062,7 @@ namespace mxflib
 		TypeRef GetRefType(void) const { return  Object ? Object->GetRefType() : TypeRefUndefined; }
 
 		//! Get the reference target
-		const MDOTypeParent &GetRefTarget(void) const { return  Object ? Object->GetRefTarget() : NullObject->GetRefTarget(); }
+		const MDOTypeParent GetRefTarget(void) const { return  Object ? Object->GetRefTarget() : NullObject->GetRefTarget(); }
 
 		//! Accessor for Reference Target Name
 		/*!< \note This must only be used during dictionary parsing or for error reporting,
@@ -2389,7 +2399,7 @@ namespace mxflib
 		MXFFilePtr GetParentFile(void) const { if(Object) return Object->GetParentFile(); else return NULL; }
 
 		//! Make a copy of this object
-		MDObjectPtr MakeCopy(void) const 
+		virtual MDObjectPtr MakeCopy(void) const 
 		{ 
 			// DRAGONS: Each derived class should provide thier own version which builds an outer object too
 			warning("Copy made of higher-level object %s with ObjectInterface::MakeCopy() - new outer not built\n", FullName().c_str());

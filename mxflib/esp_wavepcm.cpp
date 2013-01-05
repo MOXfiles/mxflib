@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include "mxflib/mxflib.h"
@@ -110,13 +108,23 @@ WrappingOptionList mxflib::WAVE_PCM_EssenceSubParser::IdentifyWrappingOptions(Fi
 	WrappingOptionPtr ClipWrap = new WrappingOption;
 
 	ClipWrap->Handler = this;							// Set us as the handler
-	ClipWrap->Description = "SMPTE 382M clip wrapping of wave audio";
 
-	BaseUL[14] = 0x02;									// Clip wrapping
+	if( Feature(FeatureForceAES) )
+	{
+		ClipWrap->Description = "SMPTE 382M clip wrapping of AES audio";
+		BaseUL[14] = 0x04;								// Clip wrapping
+		ClipWrap->GCElementType = 0x04;					// Wave clip wrapped elemenet
+	}
+	else
+	{
+		ClipWrap->Description = "SMPTE 382M clip wrapping of Wave audio";
+		BaseUL[14] = 0x02;								// Clip wrapping
+		ClipWrap->GCElementType = 0x02;					// Wave clip wrapped elemenet
+	}
+
 	ClipWrap->Name = "clip";							// Set the wrapping name
 	ClipWrap->WrappingUL = new UL(BaseUL);				// Set the UL
 	ClipWrap->GCEssenceType = 0x16;						// GP Sound wrapping type
-	ClipWrap->GCElementType = 0x02;						// Wave clip wrapped elemenet
 	ClipWrap->ThisWrapType = WrappingOption::Clip;		// Clip wrapping
 	ClipWrap->CanSlave = true;							// Can use non-native edit rate
 	ClipWrap->CanIndex = true;							// Safe to use default VBR indexing for this essence
@@ -127,13 +135,23 @@ WrappingOptionList mxflib::WAVE_PCM_EssenceSubParser::IdentifyWrappingOptions(Fi
 	WrappingOptionPtr FrameWrap = new WrappingOption;
 
 	FrameWrap->Handler = this;							// Set us as the handler
-	FrameWrap->Description = "SMPTE 382M frame wrapping of wave audio";
 
-	BaseUL[14] = 0x01;									// Frame wrapping
+	if( Feature(FeatureForceAES) )
+	{
+		FrameWrap->Description = "SMPTE 382M frame wrapping of AES audio";
+		BaseUL[14] = 0x03;								// Clip wrapping
+		FrameWrap->GCElementType = 0x03;				// Wave clip wrapped elemenet
+	}
+	else
+	{
+		FrameWrap->Description = "SMPTE 382M frame wrapping of Wave audio";
+		BaseUL[14] = 0x01;								// Clip wrapping
+		FrameWrap->GCElementType = 0x01;				// Wave clip wrapped elemenet
+	}
+
 	FrameWrap->Name = "frame";							// Set the wrapping name
 	FrameWrap->WrappingUL = new UL(BaseUL);				// Set the UL
 	FrameWrap->GCEssenceType = 0x16;					// GP Sound wrapping type
-	FrameWrap->GCElementType = 0x01;					// Wave frame wrapped elemenet
 	FrameWrap->ThisWrapType = WrappingOption::Frame;	// Frame wrapping
 	FrameWrap->CanSlave = true;							// Can use non-native edit rate
 	FrameWrap->CanIndex = true;							// Safe to use default VBR indexing for this essence
@@ -232,7 +250,7 @@ DataChunkPtr WAVE_PCM_EssenceSubParser::ESP_EssenceSource::GetEssenceData(size_t
 		else pCaller->CurrentPosition=pCaller->CalcCurrentPosition();
 	}
 
-	// If we get too few bytes - and padding has been selected, padd this wrapping unit
+	// If we get too few bytes - and padding has been selected, pad this wrapping unit
 	if((Ret->Size < Bytes) && PaddingEnabled)
 	{
 		size_t OldSize = Ret->Size;
@@ -240,10 +258,23 @@ DataChunkPtr WAVE_PCM_EssenceSubParser::ESP_EssenceSource::GetEssenceData(size_t
 		memset(&Ret->Data[OldSize], 0, Bytes - OldSize);
 	}
 
-	if(Ret && (Ret->Size > 0) && pCaller->Manager)
+	if(Ret && (Ret->Size > 0))
 	{
-		// Offer this index table data to the index manager
-		pCaller->Manager->OfferEditUnit(pCaller->ManagedStreamID, IndexedEditUnit, 0, 0x80);
+		if(pCaller->Manager)
+		{
+			// Offer this index table data to the index manager
+			pCaller->Manager->OfferEditUnit(pCaller->ManagedStreamID, IndexedEditUnit, 0, 0x80);
+		}
+	}
+	else
+	{
+		// Flag all done when no more to read
+
+		// Undo removing the size by calling SamplesThisEditUnit so that the padding sequence stays corrent
+		if(PaddingEnabled) pCaller->PushBackSize();
+
+		AtEndOfData = true;
+		return NULL;
 	}
 
 	return Ret;
@@ -295,7 +326,11 @@ bool WAVE_PCM_EssenceSubParser::ESP_EssenceSource::SetOption(std::string Option,
 	if(Option == "EndPadding")
 	{
 		if(Param) PaddingEnabled = true; else PaddingEnabled = false;
-
+		return true;
+	}
+	if(Option == "AudioRollout")
+	{
+		ExtraSamples=Param;
 		return true;
 	}
 
@@ -585,9 +620,22 @@ MDObjectPtr mxflib::WAVE_PCM_EssenceSubParser::BuildWaveAudioDescriptor(FileHand
 			if(ChunkData->Size < 16) return Ret;
 
 			UInt16 AudioFormat = GetU16_LE(&ChunkData->Data[0]);
-			if(AudioFormat != 1) return Ret;
+			if(AudioFormat != 1 && AudioFormat != (UInt16)-2) return Ret;
+			if(AudioFormat ==(UInt16)-2)
+			{ //WAV_EXTENSIBLE FORMAT
+				UInt8 KSDATAFORMAT_SUBTYPE_PCM_GUID[]= {  0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71};
 
-			Ret = new MDObject(WaveAudioDescriptor_UL);
+				const int startWavExtension=16;
+				const int startGUID=8;
+				for ( int i=0; i<16; i++) //check we have the PCM guid
+				{
+					if(ChunkData->Data[startWavExtension+startGUID+i]!=KSDATAFORMAT_SUBTYPE_PCM_GUID[i])
+						return Ret;
+				}
+			}
+
+			if( Feature(FeatureForceAES) ) Ret = new MDObject(AES3PCMDescriptor_UL);
+			else Ret = new MDObject(WaveAudioDescriptor_UL);
 			if(!Ret) return Ret;
 
 			// Set the sample rate
@@ -616,6 +664,40 @@ MDObjectPtr mxflib::WAVE_PCM_EssenceSubParser::BuildWaveAudioDescriptor(FileHand
 
 			// Set the byte-rate
 			Ret->SetUInt(AvgBps_UL, GetU32_LE(&ChunkData->Data[8]));
+
+			// AS-10
+			if( Feature(FeatureFullDescriptors) )
+			{
+				// Assume Locked
+				// TODO override this after scanning
+				Ret->SetUInt(Locked_UL, 1);
+
+				Ret->SetInt(AudioRefLevel_UL, 0);
+			}
+
+			if( Feature(FeatureRDD9Properties) )
+			{
+				/* Build fixed channel status */
+				MDObjectPtr ModeBatch = Ret->AddChild(ChannelStatusMode_UL);
+				MDObjectPtr FixedObject = Ret->AddChild(FixedChannelStatusData_UL);
+				if(ModeBatch && FixedObject)
+				{
+					// Minimum status, but matching the RDD9 meaning rather than the AES3 one
+					UInt8 FixedStatus[24];
+					FixedStatus[0] = 0x85;
+					memset(&FixedStatus[1], 0, 23);
+
+					// Set minimum status of Professional PCM for each channel
+					for(int i=0; i<Chan; i++)
+					{
+						MDObjectPtr Mode = ModeBatch->AddChild();
+						if(Mode) Mode->SetString("ChannelStatusMode_Minimum");
+
+						MDObjectPtr Status = FixedObject->AddChild();
+						if(Status) Status->SetData(24, FixedStatus);
+					}
+				}
+			}
 		}
 		else if(Header.first == ID_data)
 		{
@@ -685,9 +767,9 @@ size_t mxflib::WAVE_PCM_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32
 	// How many sample are required?
 	UInt32 SamplesPerEditUnit = SamplesThisEditUnit();
 
-	// Return anything we can find if in clip wrapping
-	if(SelectedWrapping->ThisWrapType == WrappingOption::Clip) Ret = Max;
-	else 
+	// Return anything we can find if in clip wrapping, and not forced to allow VBR indexing
+	if((SelectedWrapping->ThisWrapType == WrappingOption::Clip) && (!ForcedVBR)) Ret = Max;
+	else
 	{
 		Ret = SamplesPerEditUnit * SampleSize;
 		if(Count) Ret *= Count;

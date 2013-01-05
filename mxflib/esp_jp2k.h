@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2005, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #ifndef MXFLIB__ESP_JP2K_H
@@ -54,8 +52,12 @@ namespace mxflib
 
 		size_t CachedDataSize;								//!< The size of the next data to be read, or (size_t)-1 if not known
 
-		MDObjectParent CurrentDescriptor;					//!< Pointer to the last essence descriptor we built
+		MDObjectParent CurrentDescriptor;					//!< Pointer to the last essence descriptor we built for RGBA or CDCI (our best guess)
 															/*!< This is used as a quick-and-dirty check that we know how to process this source */
+		MDObjectParent CDCICurrentDescriptor;				//!< Pointer to the last essence descriptor we built for CDCI
+															/*!< This is used as a quick-and-dirty check that we know how to process this source */
+
+		UInt32 InterleaveFactor;							//!< The number of SampleUnits per EditUnit (default 1, Progressive) TODO Stereo
 
 	public:
 		//! Class for EssenceSource objects for parsing/sourcing <Type> essence
@@ -117,6 +119,8 @@ namespace mxflib
 			UseEditRate.Denominator = 1;
 
 			CachedDataSize = static_cast<size_t>(-1);
+
+			InterleaveFactor = 1;						// Default = Progressive
 		}
 
 		//! Build a new parser of this type and return a pointer to it
@@ -147,6 +151,12 @@ namespace mxflib
 		virtual void Use(UInt32 Stream, WrappingOptionPtr &UseWrapping)
 		{
 			SelectedWrapping = UseWrapping;
+
+			if( CurrentDescriptor )
+			{
+				if( CurrentDescriptor->GetInt( FrameLayout_UL )==SeparateFields )
+					SetOption( "Interleave", 2 );
+			}
 
 			CurrentPos = 0;
 		}
@@ -194,6 +204,10 @@ namespace mxflib
 		//! Write a number of wrapping items from the specified stream to an MXF file
 		virtual Length Write(FileHandle InFile, UInt32 Stream, MXFFilePtr OutFile, UInt64 Count = 1);
 
+		//! Set a parser specific option
+		/*! \return true if the option was successfully set */
+		virtual bool SetOption(std::string Option, Int64 Param = 0);
+
 		//! Get a unique name for this sub-parser
 		/*! The name must be all lower case, and must be unique.
 		 *  The recommended name is the part of the filename of the parser header after "esp_" and before the ".h".
@@ -214,11 +228,11 @@ namespace mxflib
 
 		//! Read the essence information from the codestream at the specified position in the source file and build an essence descriptor
 		/*! \note This call will modify properties SampleRate, DataStart and DataSize */
-		MDObjectPtr BuildDescriptorFromCodeStream(FileHandle InFile, Position Offset = 0 );
+		MDObjectPtr BuildDescriptorFromCodeStream(FileHandle InFile, Position Offset = 0, bool ForceCDCI = false);
 
 		//! Read the essence information at the start of the "JP2" format source file and build an essence descriptor
 		/*! \note This call will modify properties SampleRate, DataStart and DataSize */
-		MDObjectPtr BuildDescriptorFromJP2(FileHandle InFile);
+		MDObjectPtr BuildDescriptorFromJP2(FileHandle InFile, bool ForceCDCI = false);
 
 		//! Scan the essence to calculate how many bytes to transfer for the given edit unit count
 		size_t ReadInternal(FileHandle InFile, UInt32 Stream, Length Count);

@@ -1,4 +1,4 @@
-# MXFSplit Makefile
+# Makefile for mxfsplit
 
 include ../build/make/standard.mk
 
@@ -19,8 +19,8 @@ INCLUDE += -I../include
 OBJS := \
 	$(OBJSDIR)/mxfsplit.o \
 
-$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)/marker  $(OBJS) $(DESTDIR)/lib/libmxf.a
-	$(CC) -o $(TARGET) $(OBJS) $(LIBRARIES) $(DESTDIR)/lib/libmxf.a
+$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)/marker  $(OBJS) $(DESTDIR)/lib/libmxf.a $(DESTDIR)/lib/libutility.a $(DESTDIR)/lib/libmxfsplit.a
+	$(CC) -o $(TARGET) $(OBJS) $(DESTDIR)/lib/libmxf.a $(DESTDIR)/lib/libutility.a $(DESTDIR)/lib/libmxfsplit.a $(LIBRARIES)
 
 
 include ../build/make/rules.mk

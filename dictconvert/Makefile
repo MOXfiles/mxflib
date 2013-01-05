@@ -21,7 +21,7 @@ OBJS := \
 
 
 $(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)/marker $(OBJS) $(DESTDIR)/lib/libmxf.a
-	$(CC) -o $(TARGET) $(OBJS) $(LIBRARIES) $(DESTDIR)/lib/libmxf.a
+	$(CC) -o $(TARGET) $(OBJS) $(DESTDIR)/lib/libmxf.a $(LIBRARIES)
 
 
 include ../build/make/rules.mk

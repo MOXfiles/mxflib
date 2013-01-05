@@ -4,8 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2005, Metaglue Corporation. All rights reserved.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 
@@ -24,6 +41,33 @@ using namespace mxflib;
 
 		// Set the value, and infer the FPS and drop if we have not been given values
 		Set(arg, (fps == defaultfps));
+	}
+
+	// construct from  unsigned, fps and drop flag
+	// note that defaults to 1000 fps - MUST call SetFPS() before persisting
+	Timecode_t::Timecode_t( MXFLIB_TYPE(Position) arg /* = 0 */, const unsigned fps /* = defaultfps */, const bool drop /* = false */ )
+		: _start(arg),_valid(false),_fps(fps),_drop(drop),_text(NULL)
+	{
+		/*	bad idea here - compensation has already been done
+
+			if( _drop && _fps!=defaultfps )
+			{
+				MXFLIB_TYPE(Position) mins = _start / (60*_fps);
+				MXFLIB_TYPE(Position) tenmins = mins/10;
+				_start -= 2*(mins-tenmins);
+			}
+		*/
+
+		if( _fps!=defaultfps ) _valid = true;
+	}
+
+	// construct from  Hours, Minutes, Seconds, Frames, fps and drop flag  (and default)
+	// note that defaults to 1000 fps - MUST call SetFPS() before persisting
+	Timecode_t::Timecode_t( const unsigned h, const unsigned m, const unsigned s, const unsigned f, const unsigned fps /*= defaultfps */, const bool drop /*= false */ )
+		: _start(0),_valid(false),_fps(fps),_drop(drop),_text(NULL)
+	{
+		Set( h,m,s,f );
+		if( _fps!=defaultfps ) _valid = true;
 	}
 
 	//! Set the value from a string, optionally inferring the FPS and drop (return true if OK)
@@ -196,25 +240,17 @@ using namespace mxflib;
 
 
 	//! Set from Hours, Minutes, Seconds, Frames
-	void Timecode_t::Set( int Hours, int Minutes, int Seconds, int Frames)
+	void Timecode_t::Set( const unsigned Hours, const unsigned Minutes, const unsigned Seconds, const unsigned Frames )
 	{
 		_start = Frames + (_fps * Seconds) + (60 * _fps * Minutes) + (60 * 60 * _fps * Hours);
-	}
-
-
-	// construct from  unsigned, fps and drop flag
-	// note that defaults to 1000 fps - MUST call SetFPS() before persisting
-	Timecode_t::Timecode_t( MXFLIB_TYPE(Position) arg /* = 0 */, const unsigned fps /* = defaultfps */, const bool drop /* = false */ )
-		: _start(arg),_valid(false),_fps(fps),_drop(drop),_text(NULL)
-	{
 		if( _drop && _fps!=defaultfps )
 		{
 			MXFLIB_TYPE(Position) mins = _start / (60*_fps);
 			MXFLIB_TYPE(Position) tenmins = mins/10;
 			_start -= 2*(mins-tenmins);
 		}
-		if( _fps!=defaultfps ) _valid = true;
 	}
+
 
 	// Set the frames per second indicator and update the framecount accordingly
 	void Timecode_t::SetFPS( unsigned fps, bool drop )
@@ -258,6 +294,9 @@ using namespace mxflib;
 
 	// Intermediate function that calculates H:M:S:F
 	// Returns an unsigned int with HMSF as unsigned ints in each byte
+
+	// DRAGONS this only gives the right answer up to 255 hours (10.5 days)
+	//		   beyond that will always say 255
 	unsigned int Timecode_t::toHMSF()
 	{
 		unsigned int result=0;
@@ -283,7 +322,7 @@ using namespace mxflib;
 			MXFLIB_TYPE(Position) ma   = tm*10 + m;
 			if( f_m<2 && m>0 ) ma -= 1;
 			
-			hours = static_cast<unsigned int>((tm / 6) % 24);
+			hours = static_cast<unsigned int>((tm / 6));
 			minutes =static_cast<unsigned int>(ma % 60);
 			seconds = static_cast<unsigned int>(f_ma / fps);
 			frames = static_cast<unsigned int>(f_ma % fps);
@@ -302,7 +341,7 @@ using namespace mxflib;
 			MXFLIB_TYPE(Position) ma   = tm*10 + m;
 			if( f_m<2 && m>0 ) ma -= 1;
 			
-			hours = static_cast<unsigned int>((tm / 6) % 24);
+			hours = static_cast<unsigned int>((tm / 6));
 			minutes = static_cast<unsigned int>(ma % 60);
 			seconds = static_cast<unsigned int>(f_ma / fps);
 			frames = static_cast<unsigned int>(f_ma % fps);
@@ -315,11 +354,11 @@ using namespace mxflib;
 			MXFLIB_TYPE(Position) m = static_cast<unsigned int>(s / 60);
 			seconds = static_cast<unsigned int>(s % 60);
 
-			hours = static_cast<unsigned int>((m / 60) % 24);
+			hours = static_cast<unsigned int>((m / 60));
 			minutes = static_cast<unsigned int>(m % 60);
 		}
 
-		result  = hours<<24;
+		result  = ( (hours>255)?(255):(hours) )<<24;
 		result |= minutes<<16;
 		result |= seconds<<8;
 		result |= frames;
@@ -397,25 +436,33 @@ using namespace mxflib;
 	// cast to string
 	Timecode_t::operator char*()
 	{
+		return GetString();
+	}
+
+	// Make a string - with optional specified separator
+	char *Timecode_t::GetString(char Sep /*=0*/)
+	{
 		// only allocate when first used
 		if( !_text) _text = new char[16];
 
-		char q;
-		switch( _fps )
+		if(Sep == 0)
 		{
-		case 24: q='+'; break;
+			switch( _fps )
+			{
+			case 24: Sep='+'; break;
 
-		case 25: q='/'; break;
+			case 25: Sep='/'; break;
 
-		case 30: if( _drop) q=';'; else q=':'; break;
+			case 30: if( _drop) Sep=';'; else Sep=':'; break;
 
-		case 50: q='='; break;
+			case 50: Sep='='; break;
 
-		case 60: if( _drop) q='~'; else q='-'; break;
+			case 60: if( _drop) Sep='~'; else Sep='-'; break;
 
-		case 100: q='#'; break;
+			case 100: Sep='#'; break;
 
-		default: q='?'; break;
+			default: Sep='?'; break;
+			}
 		}
 
 		int HMFS=toHMSF();
@@ -425,7 +472,7 @@ using namespace mxflib;
 		unsigned minutes =  (HMFS & 0x00ff0000)>>16;
 		unsigned hours =    (HMFS & 0xff000000)>>24;
 
-		sprintf( _text, "%02d%c%02d%c%02d%c%02d", hours,':',minutes,':',seconds,q,frames );
+		sprintf( _text, "%02d%c%02d%c%02d%c%02d", hours,':',minutes,':',seconds,Sep,frames );
 		return _text;
 	}
 

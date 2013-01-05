@@ -7,28 +7,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *	Portions Copyright (c) 2003, Metaglue Corporation
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include "mxflib/mxflib.h"
@@ -92,7 +89,7 @@ void Metadata::Init(void)
 
 
 //! Add a DMScheme to the listed schemes
-void Metadata::AddDMScheme(ULPtr Scheme)
+void Metadata::AddDMScheme(const UL *Scheme)
 {
 	// Read the string value of this scheme once only
 	std::string SchemeString = Scheme->GetString();
@@ -161,8 +158,8 @@ void Package::InitPackage(std::string PackageName, UMIDPtr PackageUID, UInt32 Bo
 	if(Ptr) Ptr = Ptr[Packages_UL];
 	if(Ptr) Ptr->AddChild()->MakeRef(Object);
 
-	if(BodySID) Parent->AddEssenceContainerData(PackageUID, BodySID);
 }
+
 
 
 //! Get a pointer to the primary package
@@ -215,9 +212,19 @@ bool SourceClip::MakeLink(TrackPtr SourceTrack, Int64 StartPosition /*=0*/)
 	if(!SourceTrack) return false;
 
 	
-	SetInt64(StartPosition_UL, StartPosition);
-	SetUInt(SourceTrackID_UL, SourceTrack->GetInt(TrackID_UL));
-	SetValue(SourcePackageID_UL,SourceTrack->GetParent()[PackageUID_UL]);
+	if(Object)
+	{
+		UInt32 TrackID = SourceTrack->GetInt(TrackID_UL);
+		MDObjectPtr PackageObject = SourceTrack->GetParent()->Child(PackageUID_UL);
+		DataChunkPtr PackageID_Data;
+		if(PackageObject) PackageID_Data = PackageObject->PutData();
+		UMID NewPackageID;
+		if(PackageID_Data && (PackageID_Data->Size == 32)) NewPackageID.Set(PackageID_Data->Data);
+		UMID OldPackageID(GetString(SourcePackageID_UL));
+		if(GetInt64(StartPosition_UL, StartPosition + 1) != StartPosition) SetInt64(StartPosition_UL, StartPosition);
+		if(GetUInt(SourceTrackID_UL, TrackID + 1) != TrackID) SetUInt(SourceTrackID_UL, TrackID);
+		if(NewPackageID != OldPackageID) SetString(SourcePackageID_UL, NewPackageID.GetString());
+	}
 
 	return true;
 }
@@ -256,6 +263,8 @@ void Component::SetDuration(Int64 Duration /*=-1*/)
 		Parent->UpdateDuration();
 	}
 }
+
+
 
 
 //! Add an entry into the essence container data set for a given essence stream
@@ -746,12 +755,14 @@ bool Track::InitTrack(ULPtr DataDef, UInt32 TrackNumber, Rational EditRate, std:
 	SetInt(TrackNumber_UL, TrackNumber);
 	SetInt64(Origin_UL, 0);
 
-	MDObjectPtr Ptr = AddChild(EditRate_UL);
-	if(Ptr)
+	MDObjectPtr EditRateObject;
+	EditRateObject = AddChild(EditRate_UL);
+	if(EditRateObject)
 	{
-		Ptr->SetInt("Numerator", EditRate.Numerator);
-		Ptr->SetInt("Denominator", EditRate.Denominator);
+		EditRateObject->SetInt("Numerator", EditRate.Numerator);
+		EditRateObject->SetInt("Denominator", EditRate.Denominator);
 	}
+
 
 	// Auto set the track ID if not supplied
 	if(TrackID == 0)
@@ -1302,7 +1313,7 @@ TrackPtr Track::Parse(MDObjectPtr BaseObject)
 
 
 //! Parse an existing MDObject into a SourceClip object
-SourceClipPtr SourceClip::Parse(MDObjectPtr BaseObject, bool Managed /*=false*/)
+SourceClipPtr SourceClip::Parse(MDObjectPtr BaseObject)
 {
 	SourceClipPtr Ret;
 
@@ -1355,6 +1366,8 @@ TimecodeComponentPtr TimecodeComponent::Parse(MDObjectPtr BaseObject)
 
 	return Ret;
 }
+
+
 
 
 //! Parse an existing MDObject into a DMSegment object
@@ -1616,7 +1629,7 @@ Track::TrackType mxflib::Track::ParseTrackTypeText(std::string Text)
 	//! Type for each entry in TrackWordList
 	struct TrackWordType
 	{
-		char const *Word;			//!< A descriptive word
+		char const *Word;				//!< A descriptive word
 		Track::TrackType Type;			//!< The track type this word implies
 	};
 
@@ -1730,6 +1743,38 @@ std::string Package::GetName(std::string Default /*=""*/)
 }
 
 
+// Set the Package Name
+void Package::SetName(std::string Name)
+{
+    if(Object) return Object->SetString(PackageName_UL, Name);
+}
+
+
+
+
+//! Determine the edit rate for this track, or (0,0) if not known
+Rational Track::GetEditRate(void)
+{
+
+	// See if we have already set an edit rate in the instance for this track
+	if(Object)
+	{
+		MDObjectPtr EditRate = Object->Child(EditRate_UL);
+		if(!EditRate) EditRate = Object->Child(EventEditRate_UL);
+		if(EditRate)
+		{
+			Rational Ret;
+			Ret.Numerator = EditRate->GetInt("Numerator");
+			Ret.Denominator = EditRate->GetInt("Denominator");
+			return Ret;
+		}
+	}
+
+
+	return Rational(0,0);
+}
+
+
 
 //! Add an essence type UL to the listed essence types
 /*! Only added if it does not already appear in the list */
@@ -1753,3 +1798,6 @@ void Metadata::AddEssenceType(const UL &ECType)
 	// New type, so add it
 	Object->Child(EssenceContainers_UL)->AddChild()->SetValue(ECTypeValue);
 }
+
+
+

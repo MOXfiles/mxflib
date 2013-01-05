@@ -1,28 +1,22 @@
-# Makefile for MXFWRAP
+# Makefile for mxfwrap
 
 include ../build/make/standard.mk
 
 
-INCLUDE+= 
-OBJSDIR=obj
-BINDIR=$(DESTDIR)/bin
-LIBDIR=$(DESTDIR)/lib
-
-
 # Output binary
 TARGETDIR := $(BINDIR)
-TARGET := $(BINDIR)/mxfwrap
+TARGET := $(TARGETDIR)/mxfwrap
 
-INCLUDE += -I../include
-LIBRARIES += $(DESTDIR)/lib/libprocesswrap.a
 
-# List of our object files
+# List of our object files, used to create mxfwrap executable
 OBJS := \
 	$(OBJSDIR)/mxfwrap.o \
 	$(OBJSDIR)/parseoptions.o \
 
-$(TARGET):  $(PREREQDIR)/marker $(OBJSDIR)/marker $(BINDIR)/marker $(TARGETDIR)/marker  $(OBJS) $(DESTDIR)/lib/libmxf.a
-	$(CC) -o $(TARGET) $(OBJS) $(LIBRARIES) $(DESTDIR)/lib/libmxf.a
+$(TARGET): $(PREREQDIR)/marker $(OBJSDIR)/marker $(TARGETDIR)/marker  $(OBJS) $(LICENCELIB) $(DESTDIR)/lib/libutility.a $(DESTDIR)/lib/libmxf.a $(DESTDIR)/lib/libprocesswrap.a $(LIBDNX)
+	$(CC) $(LINKOPTS) -o $(TARGET) $(OBJS) $(LICENCELIB) $(DESTDIR)/lib/libprocesswrap.a $(DESTDIR)/lib/libmxf.a $(DESTDIR)/lib/libutility.a $(LIBDNX) $(LIBRARIES)
+	$(PREPARE_LIC) 
+
 
 
 include ../build/make/rules.mk

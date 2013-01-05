@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include "mxflib/mxflib.h"
@@ -64,6 +62,35 @@ void mxflib::SetMXFVersion(int Year)
 {
 	if((Year == 2004) || (Year == 2009)) MXFVersionYear = Year;
 	else error("Unknown MXFVersion %d\n", Year);
+}
+
+
+//! Convert an ISO 8601 Date/Time string (as per TimeStamp) to a struct tm
+/*! \ret Converted time, or all zero on error - can be detected by tm_mday which is never normally 0 */
+struct tm mxflib::StringToTm(std::string String)
+{
+	struct tm Time;
+	Time.tm_isdst = 0;
+
+	if(String.length() < 18)
+	{
+		Time.tm_year = 0;
+		Time.tm_mon = 0;
+		Time.tm_mday = 0;
+		Time.tm_hour = 0;
+		Time.tm_min = 0;
+		Time.tm_sec = 0;
+		return Time;
+	}
+
+	Time.tm_year = atoi(&String.c_str()[0]) - 1970;
+	Time.tm_mon = atoi(&String.c_str()[5]) - 1;
+	Time.tm_mday = atoi(&String.c_str()[8]);
+	Time.tm_hour = atoi(&String.c_str()[11]);
+	Time.tm_min = atoi(&String.c_str()[14]);
+	Time.tm_sec = atoi(&String.c_str()[17]);
+
+	return Time;
 }
 
 
@@ -524,14 +551,15 @@ std::string mxflib::SearchPath(const char *Path, const char *Filename)
 // but is false for all GC sets and packs. Once this matches we can do a full memcmp.
 bool mxflib::IsPartitionKey(const UInt8 *Key)
 {
+	// Fast-fail for essence keys
 	if(Key[12] != 1) return false;
 
-	// DRAGONS: This has version 1 hard coded as byte 8
-	const UInt8 DegeneratePartition[13] = { 0x06, 0x0E, 0x2B, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01 };
-	if( memcmp(Key, DegeneratePartition, 13) == 0 )
+	// DRAGONS: The comparison skip around byte 8 so the compare is versionless - Note that byte 13 is tested above
+	const UInt8 DegeneratePartition[13] = { 0x06, 0x0E, 0x2B, 0x34, 0x02, 0x05, 0x01, 0xff, 0x0d, 0x01, 0x02, 0x01, 0x01 };
+	if( (memcmp(Key, DegeneratePartition, 6) == 0) && (memcmp(&Key[8], &DegeneratePartition[8], 5) == 0)) 
 	{
-		// Treat all matches as partition packs EXCEPT the RIP
-		return Key[13] != 0x11;
+		// Treat all matches as partition packs EXCEPT the RIP and Primer
+		return (Key[13] != 0x11) && (Key[13] != 0x05);
 	}
 
 	return false;
@@ -1106,7 +1134,7 @@ namespace mxflib
 	{
 		for(int i=0; i<argc; i++)
 		{
-			if(argv[i][0] == '-')
+			if( argv[i] && argv[i][0] == '-')
 			{
 				char const *p = &argv[i][1];
 				if(*p == '-') p++;

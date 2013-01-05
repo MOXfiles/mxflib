@@ -35,7 +35,13 @@ private:
 	// size of biggest buffer; you can make this as big as you dare
 	static const size_t BIGGESTSIZE = 65536;
 
+	// internal builder
+	void build_osprintf( const char *fmt, va_list args );
+
 public:
+	// usual constructor - like sprintf
+	osprintf( const char *fmt, va_list args );
+
 	// usual constructor - like sprintf
 	osprintf( const char *fmt, ... );
 

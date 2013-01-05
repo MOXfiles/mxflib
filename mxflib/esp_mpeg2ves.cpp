@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include <mxflib/mxflib.h>
@@ -208,6 +206,7 @@ void MPEG2_VES_EssenceSubParser::Use(UInt32 Stream, WrappingOptionPtr &UseWrappi
 	CurrentPos = 0;
 	GOPOffset = 0;
 	ClosedGOP = false;					// Start by assuming the GOP is closed
+	GOP_place = GOP_unknown;
 //	IndexMap.clear();
 }
 
@@ -483,9 +482,11 @@ MDObjectPtr MPEG2_VES_EssenceSubParser::BuildMPEG2VideoDescriptor(FileHandle InF
 		pSeqExt++;
 	}
 
+	bool MPEG1 = false;
 	if((pSeqExt[0] != 1) || (pSeqExt[1] != 0xb5))
 	{
 		warning("Building MPEG2VideoDescriptor - extension does not follow sequence header (possibly MPEG1), some assumptions made\n");
+		MPEG1 = true;
 	}
 	else
 	{
@@ -548,8 +549,12 @@ printf("Chroma vertical sub-sampling = %d\n", VChromaSub);
 
 	if(Progressive) Ret->SetInt(FrameLayout_UL, 0); else Ret->SetInt(FrameLayout_UL, 1);
 
+	if( Feature(FeatureRDD9Properties) )
+		Ret->SetUInt(StoredHeight_UL, (((Progressive ? VSize : (VSize / 2))+15)/16)*16 ); // round up to multiple of 16
+	else
+		Ret->SetUInt(StoredHeight_UL, Progressive ? VSize : (VSize / 2) );
+
 	Ret->SetUInt(StoredWidth_UL, HSize);
-	Ret->SetUInt(StoredHeight_UL, Progressive ? VSize : (VSize / 2));
 
 	if(Aspect) Ret->SetString(AspectRatio_UL, Aspect); else Ret->SetDValue(AspectRatio_UL);
 
@@ -587,41 +592,147 @@ printf("Chroma vertical sub-sampling = %d\n", VChromaSub);
 		}
 	}
 
+	// AS-10
+	if( Feature(FeatureFullDescriptors) )
+	{
+		Ret->SetUInt(SignalStandard_UL, ( VSize==1080 )?4:5 );
+
+		if( Feature(FeatureRDD9Properties) )
+			Ret->SetUInt(SampledHeight_UL, Progressive ? VSize : (VSize / 2) );
+		else
+			Ret->SetUInt(SampledHeight_UL, (((Progressive ? VSize : (VSize / 2))+15)/16)*16 ); // round up to multiple of 16
+
+		Ret->SetUInt(SampledWidth_UL, HSize);
+		Ret->SetUInt(SampledYOffset_UL, 0);
+		Ret->SetUInt(SampledXOffset_UL, 0);
+
+		Ret->SetUInt(DisplayHeight_UL, Progressive ? VSize : (VSize / 2) );
+		Ret->SetUInt(DisplayWidth_UL, HSize);
+		Ret->SetUInt(DisplayYOffset_UL, 0);
+		Ret->SetUInt(DisplayXOffset_UL, 0);
+
+		Ret->SetUInt(StoredF2Offset_UL,0);
+		Ret->SetUInt(DisplayF2Offset_UL, 0);
+
+		// TODO other Transfer_Characteristics
+		const UInt8 ITU_R_BT709_Transfer_Characteristic_UL_Data[16] = { 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01, 0x04, 0x01, 0x01, 0x01, 0x01, 0x02, 0x00, 0x00 };
+		const UL ITU_R_BT709_Transfer_Characteristic_UL(ITU_R_BT709_Transfer_Characteristic_UL_Data);
+
+		Ret->SetString(TransferCharacteristic_UL, "urn:smpte:ul:060E2B34.04010101.04010101.01020000");
+
+		Ret->SetUInt(ImageAlignmentOffset_UL,0);
+		Ret->SetUInt(ImageStartOffset_UL,0);
+		Ret->SetUInt(ImageEndOffset_UL,0);
+
+		Ret->SetUInt(FieldDominance_UL,1);
+		Ret->SetUInt(ReversedByteOrder_UL,0);
+		Ret->SetUInt(PaddingBits_UL,0);
+		Ret->SetUInt(BlackRefLevel_UL,16);
+		Ret->SetUInt(WhiteReflevel_UL,235);
+		Ret->SetUInt(ColorRange_UL,225);
+	}
+  
 	Ret->SetUInt(ComponentDepth_UL, 8);
 
 	Ret->SetUInt(HorizontalSubsampling_UL, HChromaSub);
 	Ret->SetUInt(VerticalSubsampling_UL, VChromaSub);
 
 	if((HChromaSub == 2) && (VChromaSub == 2))
-		Ret->SetUInt(ColorSiting_UL, 3);				// Quincunx 4:2:0
+	{
+		if( MPEG1 )
+			Ret->SetUInt(ColorSiting_UL, 3);		// Quincunx 4:2:0
+		else if( (MXFVersion() == 2004) && !Feature(FeatureRDD9Properties) )
+			Ret->SetUInt(ColorSiting_UL, 3);		// Quincunx 4:2:0
+		else
+			Ret->SetUInt(ColorSiting_UL, 6);		// vertical midpoint 4:2:0 (377-1-2009 onwards only)
+	}
 	else if((HChromaSub == 2) && (VChromaSub == 1))
-		Ret->SetUInt(ColorSiting_UL, 4);				// Rec 601 style 4:2:2
-	if((HChromaSub == 1) && (VChromaSub == 1))
-		Ret->SetUInt(ColorSiting_UL, 0);				// 4:4:4
+		Ret->SetUInt(ColorSiting_UL, 4);			// Rec 601 style 4:2:2
+	else if((HChromaSub == 1) && (VChromaSub == 1))
+		Ret->SetUInt(ColorSiting_UL, 0);			// 4:4:4
+	else
+		Ret->SetUInt(ColorSiting_UL, 0xff);			// unknown
 
 	if(Progressive)	Ret->SetUInt(CodedContentType_UL, 1); else 	Ret->SetUInt(CodedContentType_UL, 2);
+
 	if(LowDelay)	Ret->SetUInt(LowDelay_UL, 1); else	Ret->SetUInt(LowDelay_UL, 0);
 
 	if(BitRate != 0x3ffff) Ret->SetUInt(BitRate_UL, BitRate * 400);
 
 	Ret->SetUInt(ProfileAndLevel_UL, PandL);
 
+	// AS-10
+	if( Feature(FeatureFullDescriptors) )
+	{
+		Ret->SetUInt(ClosedGOP_UL, 0);			// TODO from IBP Descriptor, check while parsing
+		Ret->SetUInt(IdenticalGOP_UL, 1);		// TODO from IBP Descriptor, check while parsing
+		Ret->SetUInt(MaxGOP_UL,	15);			// TODO from IBP Descriptor, check while parsing
+
+		Ret->SetUInt(BPictureCount_UL, 2);		// TODO evaluate while parsing
+		Ret->SetUInt(ConstantBFrames_UL, 0);	// TODO evaluate while parsing
+		Ret->SetUInt(SingleSequence_UL, 0);		// TODO evaluate while parsing
+	}
+
 #if defined(AS_CNN)
 	// AS-CNN only - default values
 	//! DRAGONS: should be evaluated while wrapping and set when rewriting Header
-	Ret->SetUInt(ClosedGOP_UL,			1);				// from IBP Descriptor, check while parsing
-	Ret->SetUInt(IdenticalGOP_UL,	1);				// from IBP Descriptor, check while parsing
-	Ret->SetUInt(MaxGOP_UL,				15);			// from IBP Descriptor, check while parsing
-	Ret->SetUInt(BPictureCount_UL, 2);				// evaluate while parsing
+	Ret->SetUInt(ClosedGOP_UL, 1);				// from IBP Descriptor, check while parsing
+	Ret->SetUInt(IdenticalGOP_UL, 1);			// from IBP Descriptor, check while parsing
+	Ret->SetUInt(MaxGOP_UL,	15);				// from IBP Descriptor, check while parsing
+
+	Ret->SetUInt(BPictureCount_UL, 2);			// evaluate while parsing
 #endif
 
-	const char *PECL_MPML_IFrame = "06.0E.2B.34.04.01.01.03.04.01.02.02.01.01.10.00";
-	const char *PECL_MPML_LongGop = "06.0E.2B.34.04.01.01.03.04.01.02.02.01.01.11.00";
-	const char *PECL_HPHL_IFrame = "06.0E.2B.34.04.01.01.09.04.01.02.02.01.07.02.00";
-	const char *PECL_HPHL_LongGop = "06.0E.2B.34.04.01.01.09.04.01.02.02.01.07.03.00";
+	const UInt8 PandL_MP_ML		= 0x48;
+	const UInt8 PandL_MP_HL		= 0x44; // HD420 1440x1080, 17.5M/35M
+										// HD420 1280x720, 25M/35M
+										// HD420 1440x540, 8.75M/17.5M (Over Crank of HD420 1440x1080, 17.5M/35M)	MP@HL
+	const UInt8 PandL_MP_H14	= 0x46; // HD420 1440x1080, 25M
+										// HD420 1440x540, 12.5M (Over Crank of HD420 1440x1080, 25M)	MP@H-14
 
-	if(PandL == 0x14) Ret->SetString(PictureEssenceCoding_UL, PECL_HPHL_LongGop);
-	else if(PandL == 0x48)  Ret->SetString(PictureEssenceCoding_UL, PECL_MPML_LongGop);
+	const UInt8 PandL_HP_ML		= 0x18;
+	const UInt8 PandL_HP_HL		= 0x14;
+	const UInt8 PandL_HP_H14	= 0x16;
+
+	const UInt8 PandL_422P_ML	= 0x85;
+	const UInt8 PandL_422P_HL	= 0x82; // HD422 1920x1080, 50M
+										// HD422 1280x720, 50M
+										// HD422 1920x540, 25M (Over Crank of HD422 1920x1080, 50M)	422P@HL
+
+	const char *MPEG2_MP_ML_I_Frame		= "06.0E.2B.34.04.01.01.03.04.01.02.02.01.01.10.00"; // MPEG2_MP_ML_I_Frame
+	const char *MPEG2_MP_ML_Long_GOP	= "06.0E.2B.34.04.01.01.03.04.01.02.02.01.01.11.00"; //	MPEG2_MP_ML_Long_GOP
+	const char *MPEG2_MP_HL_Long_GOP	= "06 0e 2b 34 04 01 01 03 04 01 02 02 01 03 03 00"; // HD420 1440x1080, 17.5M/35M HD420 1280x720, 25M/35M	MP@HL Long GOP
+	const char *MPEG2_MP_H14_Long_GOP	= "06 0e 2b 34 04 01 01 08 04 01 02 02 01 05 03 00"; // HD420 1440x1080, 25M	MP@H-14 Long GOP
+
+	const char *MPEG2_HP_ML_Long_GOP	= "060E2B34.04010109.04010202.01060300"; // MPEG2_HP_ML_Long_GOP
+	const char *MPEG2_HP_HL_I_Frame		= "06.0E.2B.34.04.01.01.09.04.01.02.02.01.07.02.00"; // MPEG2_HP_HL_I_Frame
+	const char *MPEG2_HP_HL_Long_GOP	= "06.0E.2B.34.04.01.01.09.04.01.02.02.01.07.03.00"; // MPEG2_HP_HL_Long_GOP
+	const char *MPEG2_HP_H14_Long_GOP	= "060E2B34.04010109.04010202.01080300"; // MPEG2_HP_H14_Long_GOP
+
+	const char *MPEG2_422P_ML_I_Frame	= "06 0e 2b 34 04 01 01 03 04 01 02 02 01 02 02 00"; // MPEG2_422P_ML_I_Frame
+	const char *MPEG2_422P_ML_Long_GOP	= "06 0e 2b 34 04 01 01 03 04 01 02 02 01 02 03 00"; // MPEG2_422P_ML_Long_GOP
+	const char *MPEG2_422P_HL_I_Frame	= "06 0e 2b 34 04 01 01 03 04 01 02 02 01 04 02 00"; // MPEG2_422P_HL_I_Frame
+	const char *MPEG2_422P_HL_Long_GOP	= "06 0e 2b 34 04 01 01 03 04 01 02 02 01 04 03 00"; // HD422 1920x1080, 50M    HD422 1280x720, 50M	422P@HL Long GOP
+
+	const char *Sony_OverCrank_MP_HL_Long_GOP	= "06 0e 2b 34 04 01 01 03 0e 06 41 02 01 03 03 01"; // HD420 1440x540, 8.75M/17.5M (Over Crank of HD420 1440x1080, 17.5M/35M)	MP@HL Long GOP Over Crank
+	const char *Sony_OverCrank_MP_H14_Long_GOP	= "06 0e 2b 34 04 01 01 03 0e 06 41 02 01 05 03 01"; // HD420 1440x540, 12.5M (Over Crank of HD420 1440x1080, 25M)	MP@H-14 Long GOP Over Crank 
+	const char *Sony_OverCrank_422P_HL_Long_GOP	= "06 0e 2b 34 04 01 01 03 0e 06 41 02 01 04 03 01"; // HD422 1920x540, 25M (Over Crank of HD422 1920x1080, 50M)	422P@HL Long GOP Over Crank
+
+	     if( PandL == PandL_MP_ML )  Ret->SetString(PictureEssenceCoding_UL, MPEG2_MP_ML_Long_GOP);
+	else if( PandL == PandL_MP_HL )  Ret->SetString(PictureEssenceCoding_UL, MPEG2_MP_HL_Long_GOP);
+	else if( PandL == PandL_MP_H14 )  Ret->SetString(PictureEssenceCoding_UL, MPEG2_MP_H14_Long_GOP);
+
+	else if( PandL == PandL_HP_ML )  Ret->SetString(PictureEssenceCoding_UL, MPEG2_HP_ML_Long_GOP);
+	else if( PandL == PandL_HP_HL )  Ret->SetString(PictureEssenceCoding_UL, MPEG2_HP_HL_Long_GOP);
+	else if( PandL == PandL_HP_H14 )  Ret->SetString(PictureEssenceCoding_UL, MPEG2_HP_H14_Long_GOP);
+
+	else if( PandL == PandL_422P_ML )  Ret->SetString(PictureEssenceCoding_UL, MPEG2_422P_ML_Long_GOP);
+	else if( PandL == PandL_422P_HL )  Ret->SetString(PictureEssenceCoding_UL, MPEG2_HP_HL_Long_GOP);
+
+	// TODO Set PictureEssenceCoding_UL for Sony mode
+
+	// TODO Set PictureEssenceCoding_UL for I_Frame
+
 
 	/* Scan the buffer for a GOP header to pick out the starting timecode */
 
@@ -736,6 +847,11 @@ size_t MPEG2_VES_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Stream
 						int TemporalReference = PictureData >> 6;
 						int PictureType = (PictureData >> 3) & 0x07;
 
+						if( GOP_place==GOP_start && PictureType==1 )		 GOP_place = GOP_first_I;
+						else if( GOP_place==GOP_first_I && PictureType==3 )  GOP_place = GOP_consec_B;
+						else if( GOP_place==GOP_first_I && PictureType==1 )  GOP_place = GOP_second_I;
+						else if( GOP_place==GOP_consec_B && PictureType!=3 ) GOP_place = GOP_post_B;
+
 						int Flags;
 						switch(PictureType)
 						{
@@ -743,8 +859,10 @@ size_t MPEG2_VES_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Stream
 							AnchorFrame = PictureNumber;
 							Flags = 0x00;
 							break;
-						case 2: Flags = 0x22; break;
-						case 3: Flags = 0x33; break;
+						case 2: 
+							Flags = 0x22; 
+							break;
+						case 3: Flags = (ClosedGOP && GOP_place==GOP_consec_B) ? 0x13 : 0x33; break;
 						}
 
 
@@ -761,7 +879,8 @@ size_t MPEG2_VES_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Stream
 
 						// Now we have determined if this is an anchor frame we can work out the anchor offset
 						// DRAGONS: In MPEG all offsets are -ve
-						int AnchorOffset = (int)(AnchorFrame - PictureNumber);
+						int AnchorOffset;
+							AnchorOffset = (int)(AnchorFrame - PictureNumber);
 						
 						// As stated in 381M section A.2 if AnchorOffset bursts the range, it will be fixed at the
 						// "maximum value which can be represented" (note: not the minimum!) and bit 3 of the flags byte be set
@@ -778,15 +897,15 @@ size_t MPEG2_VES_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Stream
 						Manager->OfferTemporalOffset(PictureNumber - (GOPOffset - TemporalReference), GOPOffset - TemporalReference);
 
 						// diagnostics
-						if(PictureNumber < 35)
+						if(PictureNumber < 150)
 							debug( "  OfferEditUnit[%3d]: Tpres=%3d Aoff=%2d A=%3d 0x%02x. Reorder Toff[%2d]=%2d\n",
 											(int)PictureNumber,
 											(int)TemporalReference,
 											(int)AnchorOffset,
 											(int)AnchorFrame,
 											(int)Flags,
-                      (int)(PictureNumber - (GOPOffset - TemporalReference)),
-                      (int)(GOPOffset - TemporalReference)
+											(int)(PictureNumber - (GOPOffset - TemporalReference)),
+											(int)(GOPOffset - TemporalReference)
 										 );
 					}
 
@@ -796,14 +915,16 @@ size_t MPEG2_VES_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Stream
 				else if(Scan == 0x000001b8)
 				{
 					GOPOffset = 0;
+					GOP_place = GOP_start;
+
 					BuffGetU8(InFile);
 					BuffGetU8(InFile);
 					BuffGetU8(InFile);
 
 					ClosedGOP = (BuffGetU8(InFile) & 0x40)? true:false;
 
-					//if( PictureNumber < 35 )
-					if( ClosedGOP ) debug( "Closed GOP\n" ); else debug( "Open GOP\n" );
+					if( PictureNumber < 150 )
+						if( ClosedGOP ) debug( "Closed GOP\n" ); else debug( "Open GOP\n" );
 
 					CurrentPos += 4;
 				}

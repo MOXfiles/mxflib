@@ -1580,6 +1580,13 @@ std::string UMID::FormatString(UInt8 const *Ident, OutputFormatEnum Format /*=-1
 //! Set the value of a UMID, based on a string
 void mxflib::UMID::SetString(std::string Val)
 {
+	// Remove any leading urn specifier
+	if(strcasecmp(Val.substr(0,4).c_str(), "urn:") == 0)
+	{
+		size_t pos = Val.find_last_of(':');
+		Val = Val.substr(pos + 1);
+	}
+
 	// Make a safe copy of the value that will not be cleaned-up by string manipulation
 	const int VALBUFF_SIZE = 256;
 	char ValueBuff[VALBUFF_SIZE];
@@ -1660,5 +1667,179 @@ void mxflib::UMID::SetString(std::string Val)
 		memcpy(Temp, &Ident[24], 8);
 		memcpy(&Ident[24], &Ident[16], 8);
 		memcpy(&Ident[16], Temp, 8);
+	}
+}
+
+
+//! Set the value of a UL, based on a string
+void mxflib::UL::SetString(std::string Val)
+{
+	// Make a safe copy of the value that will not be cleaned-up by string manipulation
+	const int VALBUFF_SIZE = 256;
+	char ValueBuff[VALBUFF_SIZE];
+	strncpy(ValueBuff, Val.c_str(), VALBUFF_SIZE -1);
+	const char *p = ValueBuff;
+
+	size_t Count = 16;
+	int Value = -1;
+	UInt8 *pD = Ident;
+
+	bool EndSwap = false;
+
+	// During this loop Value = -1 when no digits of a number are mid-process
+	// This stops a double space being regarded as a small zero in between two spaces
+	while(Count)
+	{
+		int digit;
+		
+		if((*p == 0) && (Value == -1)) Value = 0;
+
+		if(*p >= '0' && *p <='9') digit = (*p) - '0';
+		else if(*p >= 'a' && *p <= 'f') digit = (*p) - 'a' + 10;
+		else if(*p >= 'A' && *p <= 'F') digit = (*p) - 'A' + 10;
+		else
+		{
+			// If we meet "{" before the digits, it is a UUID - which will need to be end-swapped
+			if((*p == '{') && (Count == 16))
+			{
+				EndSwap = true;
+			}
+
+			if(Value == -1)
+			{
+				// Skip second or subsiquent non-digit
+				p++;
+				continue;
+			}
+			else 
+			{
+				*pD = Value;
+				*pD++;
+
+				Count--;
+
+				if(*p) p++;
+				
+				Value = -1;
+
+				continue;
+			}
+		}
+
+		if(Value == -1) Value = digit;
+		else 
+		{
+			Value <<=4;
+			Value += digit;
+
+			*pD = Value;
+			*pD++;
+
+			Count--;
+
+			if(*p) p++;
+			
+			Value = -1;
+
+			continue;
+		}
+
+		p++;
+	}
+
+	// If the value was a UUID, end-swap it
+	if(EndSwap)
+	{
+		UInt8 Temp[8];
+		memcpy(Temp, &Ident[8], 8);
+		memcpy(&Ident[8], &Ident[0], 8);
+		memcpy(&Ident[0], Temp, 8);
+	}
+}
+
+
+//! Set the value of a UUID, based on a string
+void mxflib::UUID::SetString(std::string Val)
+{
+	// Make a safe copy of the value that will not be cleaned-up by string manipulation
+	const int VALBUFF_SIZE = 256;
+	char ValueBuff[VALBUFF_SIZE];
+	strncpy(ValueBuff, Val.c_str(), VALBUFF_SIZE -1);
+	const char *p = ValueBuff;
+
+	size_t Count = 16;
+	int Value = -1;
+	UInt8 *pD = Ident;
+
+	bool EndSwap = false;
+
+	// During this loop Value = -1 when no digits of a number are mid-process
+	// This stops a double space being regarded as a small zero in between two spaces
+	while(Count)
+	{
+		int digit;
+		
+		if((*p == 0) && (Value == -1)) Value = 0;
+
+		if(*p >= '0' && *p <='9') digit = (*p) - '0';
+		else if(*p >= 'a' && *p <= 'f') digit = (*p) - 'a' + 10;
+		else if(*p >= 'A' && *p <= 'F') digit = (*p) - 'A' + 10;
+		else
+		{
+			// If we meet "[" before the digits, it is a UL - which will need to be end-swapped
+			if((*p == '[') && (Count == 16))
+			{
+				EndSwap = true;
+			}
+
+			if(Value == -1)
+			{
+				// Skip second or subsiquent non-digit
+				p++;
+				continue;
+			}
+			else 
+			{
+				*pD = Value;
+				*pD++;
+
+				Count--;
+
+				if(*p) p++;
+				
+				Value = -1;
+
+				continue;
+			}
+		}
+
+		if(Value == -1) Value = digit;
+		else 
+		{
+			Value <<=4;
+			Value += digit;
+
+			*pD = Value;
+			*pD++;
+
+			Count--;
+
+			if(*p) p++;
+			
+			Value = -1;
+
+			continue;
+		}
+
+		p++;
+	}
+
+	// If the value was a UL, end-swap it
+	if(EndSwap)
+	{
+		UInt8 Temp[8];
+		memcpy(Temp, &Ident[8], 8);
+		memcpy(&Ident[8], &Ident[0], 8);
+		memcpy(&Ident[0], Temp, 8);
 	}
 }

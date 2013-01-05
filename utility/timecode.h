@@ -4,8 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2012, Metaglue Corporation. All rights reserved.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 
@@ -70,19 +87,23 @@ public:
 	// note that defaults to 1000 fps - MUST call SetFPS() before persisting
 	Timecode_t( MXFLIB_TYPE(Position) arg = 0, const unsigned fps = defaultfps, const bool drop = false );
 
-	// Set the frames per second indicator and update the framecount accordingly
-	// do NOT affect _valid
-	void SetFPS( unsigned fps, bool drop=false );
+	// construct from  Hours, Minutes, Seconds, Frames, fps and drop flag  (and default)
+	// note that defaults to 1000 fps - MUST call SetFPS() before persisting
+	Timecode_t( const unsigned h, const unsigned m, const unsigned s, const unsigned f, const unsigned fps = defaultfps, const bool drop = false );
+
+	//! Set the value from a string, optionally inferring the FPS and drop (return true if OK)
+	bool Set( const char *arg, bool InferFPS = false);
 
 	// Set to a frame count
 	// does NOT affect _drop
 	void Set( MXFLIB_TYPE(Position) start, unsigned fps = defaultfps );
 
-	//! Set the value from a string, optionally inferring the FPS and drop (return true if OK)
-	bool Set( const char *arg, bool InferFPS = false);
-
 	//! Set from Hours, Minutes, Seconds, Frames
-	void Set( int Hours, int Minutes, int Seconds, int Frames);
+	void Set( const unsigned Hours, const unsigned Minutes, const unsigned Seconds, const unsigned Frames );
+
+	// Set the frames per second indicator and update the framecount accordingly
+	// do NOT affect _valid
+	void SetFPS( unsigned fps, bool drop=false );
 
 	// Get the frames per second indicator
 	unsigned GetFPS( ) const { return _fps; };
@@ -142,10 +163,12 @@ public:
 	// get frame count
 	MXFLIB_TYPE(Position) Start() const { return _start; } // even if !_valid
 
+	// Make a string - with optional specified separator
+	char *GetString(char Sep = 0);
+
 	// cast to string
 	operator char*();
 	operator char const*();
-	char const *GetString() { return operator char const *(); }
 };
 
 #endif //_TIMECODE_H_

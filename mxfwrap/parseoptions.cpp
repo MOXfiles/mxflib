@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2010, Metaglue Corporation
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include "parseoptions.h"
@@ -35,12 +33,22 @@ using namespace std;
 
 #include "mxflib/system.h" // for stricmp/strcasecmp
 
-
 #include "libprocesswrap/process.h"
+
+#define KXS					"kxs"
+#define KXS_Used			"kxu"
+#define KXS_Loaded			"kxl"
+#define Metadict_Ext		"kmx"
+#define Metadict_Used		"kmu"
+#define Metadict_Loaded		"kml"
 
 
 #include <stdio.h>
 #include <iostream>
+
+#ifdef WIN32
+#include <direct.h>
+#endif
 
 #ifdef COMPILED_DICT
 const bool DefaultCompiledDict = true;
@@ -56,15 +64,18 @@ void HelpText()
 		printf("Usage:    mxfwrap [options] <inputfiles> <mxffile>\n\n");
 
 		printf("Syntax for input files:\n");
-		printf("         a,b = file a followed by file b\n");
-		printf("         a+b = file a ganged with file b\n");
-		printf("     a+b,c+d = file a ganged with file b\n");
-		printf("               followed by file c ganged with file d\n\n");
+		printf("         a,b = file <a> followed by file <b>\n");
+		printf("         a+b = file <a> ganged with file <b>\n");
+		printf("     a+b,c+d = file <a> ganged with file <b>\n");
+		printf("               followed by file <c> ganged with file <d>\n\n");
 
 		printf("Note: There must be the same number of ganged files in each sequential set\n");
 		printf("      Also all files in each set must be the same duration\n\n");
 
+
+
 		printf("Options:\n");
+		printf("    -0         = Don't print timing information\n");
 		printf("    -1         = Use a version 1 KLVFill item key\n");
 
 
@@ -102,6 +113,7 @@ void HelpText()
 		// printf("    -mp?=<name> = Add a physical source package derived from <name> \n" );
 
 
+		printf("    -mv=<f>/<n>=<v> = Add Metadata value <v> to item <n> in DMFramework <f>\n");
 		printf("    -mz        = Enable DM Custom\n");
 
 		printf("    -n         = Use negative indexing during pre-charge (aligns 0 with start)\n");
@@ -135,7 +147,9 @@ void HelpText()
 		printf("    -w         = List available wrapping options (does not build a file)\n");
 		printf("    -w=<num>   = Use wrapping option <num>\n");
 
+
 		printf("    -z         = Pause for input before final exit\n");
+		printf("    -zz        = send basic stats to stderr upon final exit\n");
 
 }
 
@@ -146,6 +160,8 @@ int EvaluateConfigurationfromFile( const char * filename , int &argc, char **arg
 /*!	\return true if all parsed ok, false if an error or none supplied */
 int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 {
+	HandleVersionRequest(argc, argv, GetVersionText());
+
 	//! Should we pause before exit?
 	int PauseBeforeExit = 0;
 
@@ -166,8 +182,7 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 			// DRAGONS: exclude filenames that might be like "1/16", to allow legacy use of -c=N/W for channel-splitting
 			if( Opt == 'c' )
 			{
-				if( strlen(Val)<2
-				||	strlen(Val)>4
+				if( strlen(Val)>4
 				||	!isdigit(Val[0])
 				||	( Val[1]!=':' && Val[1]!='/' )
 				||	!isdigit(Val[2]) )
@@ -208,6 +223,10 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 				// See if the user has requested for a 2-partition OP-Atom file
 				if(p[1] == '2') pOpt->OPAtom2Part = true;
 			}
+			else if(Opt == '0') 
+			{
+				pOpt->ShowTiming = false;
+			}
 			else if(Opt == '1') 
 			{
 				SetFeature(FeatureVersion1KLVFill);
@@ -220,13 +239,13 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 				{
 					char *temp;
 					pOpt->BodyMode = Body_Duration;
-					pOpt->BodyRate = strtoul(Val, &temp, 0);
+					pOpt->BodyRate = (UInt32)strtoul(Val, &temp, 0);
 				}
 				else if(tolower(p[1]) == 's')
 				{
 					char *temp;
 					pOpt->BodyMode = Body_Size;
-					pOpt->BodyRate = strtoul(Val, &temp, 0);
+					pOpt->BodyRate = (UInt32)strtoul(Val, &temp, 0);
 				}
 				else error("Unknown body partition mode '%c'\n", p[1]);
 			}
@@ -290,16 +309,16 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 				{
 					// -hs for header size
 					Val++;
-					pOpt->HeaderSize = strtoul(Val, &temp, 0);
+					pOpt->HeaderSize = (UInt32)strtoul(Val, &temp, 0);
 				}
 				else if(tolower(p[1]) == 'p')
 				{
 					// -hp for header padding
 					Val++;
-					pOpt->HeaderPadding = strtoul(Val, &temp, 0);
+					pOpt->HeaderPadding = (UInt32)strtoul(Val, &temp, 0);
 				}
 				else // -h legacy
-					pOpt->HeaderPadding = strtoul(Val, &temp, 0);
+					pOpt->HeaderPadding = (UInt32)strtoul(Val, &temp, 0);
 			}
 			else if(Opt == 'k') 
 			{
@@ -308,10 +327,10 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 				{
 					// -ka for KAG
 					Val++;
-					pOpt->KAGSize = strtoul(Val, &temp, 0);
+					pOpt->KAGSize = (UInt32)strtoul(Val, &temp, 0);
 				}
 				else // -k legacy
-					pOpt->KAGSize = strtoul(Val, &temp, 0);
+					pOpt->KAGSize = (UInt32)strtoul(Val, &temp, 0);
 			}
 			else if(Opt == 'u') 
 			{
@@ -325,8 +344,18 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 
 				if(true) // For later expansion...
 				{
-					pOpt->SelectedWrappingOption = strtoul(name, &temp, 0);
-					pOpt->SelectedWrappingOptionText = name;
+					// Store the first -w value in SelectedWrappingOption (and ...Text)
+					if(pOpt->SelectedWrappingOption == -1)
+					{
+						pOpt->SelectedWrappingOption = (UInt32)strtoul(name, &temp, 0);
+						pOpt->SelectedWrappingOptionText = name;
+					}
+					// Store any extras for further files
+					else
+					{
+						pOpt->SecondaryWrapping.push_back((UInt32)strtoul(name, &temp, 0));
+						pOpt->SecondaryWrappingText.push_back(name);
+					}
 				}
 			}
 			else if(Opt == 'd') // dictionary
@@ -377,7 +406,8 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 			else if(Opt == 'v') pOpt->DebugMode = true;
 			else if(Opt == 'z') 
 			{
-				PauseBeforeExit = 1;
+				if( tolower(p[1])=='z' ) pOpt->Stats = true;
+				else PauseBeforeExit = 1;
 			}
 			else 
 			{
@@ -543,12 +573,6 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 			printf("%s", pOpt->OutFilename[i]);
 		}
 		printf("\n");
-	}
-
-	if((pOpt->SelectedWrappingOption >= 0) && (pOpt->InFileGangCount * pOpt->InFileGangSize) != 1)
-	{
-		error("Selection of wrapping options only currently available with single input files\n");
-		//pOpt->SelectedWrappingOption = -1;
 	}
 
 	// Sanity check use of -ii
@@ -717,7 +741,6 @@ int ParseOptions(int &argc, char **argv, ProcessOptions *pOpt)
 	{
 		printf("KLVFill items will be written with a version 1 key, for compatibility\n");
 	}
-
 
 	// Check for stray parameters as a space in the wrong place can otherise cause us to overwrite input files!
 	if(argc > 3)

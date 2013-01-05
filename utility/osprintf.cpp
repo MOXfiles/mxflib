@@ -4,7 +4,7 @@
 
 namespace utility {
 
-osprintf::osprintf( const char *fmt, ... ) : buf(NULL),sz(0),next_sz(FIRSTSIZE)
+void osprintf::build_osprintf( const char *fmt, va_list args )
 {
 	while( next_sz < BIGGESTSIZE ) // run away from runaway
 	{
@@ -13,10 +13,7 @@ osprintf::osprintf( const char *fmt, ... ) : buf(NULL),sz(0),next_sz(FIRSTSIZE)
 		sz = next_sz;
 
 		// thanks to http://perfec.to/vsnprintf/ for portable interpretation of vsnprintf
-		va_list	args;
-		va_start(args, fmt);
 		int outsize = vsnprintf( buf, sz, fmt, args );
-		va_end(args);
 
 		if( outsize == -1 )
 		{
@@ -48,9 +45,23 @@ osprintf::osprintf( const char *fmt, ... ) : buf(NULL),sz(0),next_sz(FIRSTSIZE)
 		else
 		{
 			/* Output was not truncated */
+			buf[outsize] = '\0';			// force a null terminator just in case
 			break;
 		}
 	}
+};
+
+osprintf::osprintf( const char *fmt, va_list args ) : buf(NULL),sz(0),next_sz(FIRSTSIZE)
+{
+	build_osprintf(fmt, args);
+};
+
+osprintf::osprintf( const char *fmt, ... ) : buf(NULL),sz(0),next_sz(FIRSTSIZE)
+{
+	va_list args;
+	va_start(args, fmt);
+	build_osprintf(fmt, args);
+	va_end(args);
 };
 
 } // namespace utility

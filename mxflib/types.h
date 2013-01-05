@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #ifndef MXFLIB__TYPES_H
@@ -42,6 +40,59 @@
 #ifdef _WIN32
 #pragma warning(disable : 4995) //turn off warnings about sprintf deprecated
 #endif
+
+
+// the following code enables creation of mxflib identifiers from constants that are
+// defined using the AAF style of using structured UUIDs, for example:
+//		const aafUID_t kASPATypeID_Float = {0x01020100, 0x0000, 0x0000, {0x06, 0x0e, 0x2b, 0x34, 0x01, 0x04, 0x01, 0x01}};
+//		UL Float = UL( kASPATypeID_Float );
+//
+// this code includes the crucial AAF typedefs, so a copy of AAF.h is not needed to build mxflib
+// you may prefer to include AAF.h so that your specific AAFPlatform.h definitions are used
+// if an application simultaneously uses both the AAFSDK and mxflib, you must include AAF.h
+// you must always include AAF.h BEFORE mxflib.h:
+//		#include "AAF.h"
+//		#include "mxflib/mxflib.h"
+//
+//	to REMOVE this code, sumply uncomment the following #define
+
+// #define EXCLUDE_AAF_TYPES
+
+#ifndef EXCLUDE_AAF_TYPES
+
+/* replicate AAF Types */
+#ifndef __AAFTypes_h__
+#define __AAFTypes_h__
+
+#ifdef _WIN32
+typedef unsigned char aafUInt8;
+typedef unsigned short int aafUInt16;
+typedef unsigned long int aafUInt32;
+#else
+#include <inttypes.h>
+typedef int8_t			aafInt8;
+typedef int16_t			aafInt16;
+typedef int32_t			aafInt32;
+typedef int64_t			aafInt64;
+
+typedef uint8_t			aafUInt8;
+typedef uint16_t		aafUInt16;
+typedef uint32_t		aafUInt32;
+typedef uint64_t		aafUInt64;
+#endif
+
+typedef struct _aafUID_t
+    {
+    aafUInt32 Data1;
+    aafUInt16 Data2;
+    aafUInt16 Data3;
+    aafUInt8 Data4[ 8 ];
+    } 	aafUID_t;
+
+#endif
+
+#endif
+
 
 /*                        */
 /* Basic type definitions */
@@ -215,6 +266,15 @@ namespace mxflib
 		//! Construct a UL from an end-swapped UUID
 		UL(const UUID *RHS) { operator=(*RHS); }
 
+		//! Construct a UL from an AAF-style AUID (end-swapped)
+		UL(const aafUID_t &RHS)
+		{
+			memcpy( Ident, RHS.Data4, 8 );
+			mxflib::PutU32( RHS.Data1, Ident+8 );
+			mxflib::PutU16( RHS.Data2, Ident+12 );
+			mxflib::PutU16( RHS.Data3, Ident+14 );
+		}
+
 		//! Fast compare a UL based on testing most-likely to fail bytes first
 		bool operator==(const UL &RHS) const;
 
@@ -251,6 +311,9 @@ namespace mxflib
 
 		//! Format using one of the "standard" formats
 		static std::string FormatString(UInt8 const *Ident, OutputFormatEnum Format = -1);
+
+		//! Set the value of a UL from a string
+		void SetString(std::string Val);
 	};
 
 	//! A smart pointer to a UL object
@@ -289,6 +352,9 @@ namespace mxflib
 		/*! \note The byte string must contain at least 16 bytes or errors will be produced when it is used
 		 */
 		UUID(const UInt8 *ID) : Identifier16(ID) {}
+
+		//! Construct based on a string
+		UUID(std::string Val) { SetString(Val); }
 
 		//! Construct a UUID as a copy of another UUID
 		UUID(const SmartPtr<UUID> ID) 
@@ -351,6 +417,9 @@ namespace mxflib
 
 		//! Format using one of the "standard" UUID formats
 		static std::string FormatString(UInt8 const *Ident, OutputFormatEnum Format = -1);
+
+		//! Set the value of a UUID, based on a string
+		void SetString(std::string Val);
 	};
 }
 
@@ -829,6 +898,69 @@ namespace mxflib
 		static bool Matches(const std::string Name, const UInt8 *Value);
 	};
 }
+
+
+namespace mxflib
+{
+	// Common enumerated types
+	// TODO build these from dict
+
+	enum _LayoutType
+	{
+		FullFrame		= 0,
+		SeparateFields	= 1,
+		OneField		= 2,
+		MixedFields		= 3,
+		SegmentedFrame	= 4,
+		UnknownLayout	= -1
+	};
+
+	typedef enum _LayoutType LayoutType;
+
+	enum _SignalStandardType
+	{
+		SignalStandard_None			= 0,
+		SignalStandard_ITU601		= 1,
+		SignalStandard_ITU1358		= 2,
+		SignalStandard_SMPTE347		= 3,
+		SignalStandard_SMPTE274		= 4,
+		SignalStandard_SMPTE296		= 5,
+		SignalStandard_SMPTE349		= 6,
+		SignalStandard_SMPTE428		= 7
+	};
+
+	typedef enum _SignalStandardType SignalStandardType;
+
+	//types for Edgecode components
+
+	enum _EdgeType_t
+	{	
+		kEtInvalid		= -1,
+		kEtNull			= 0,
+		kEtKeycode		= 1,
+		kEtEdgenum4		= 2,
+		kEtEdgenum5		= 3,
+		kEtHeaderSize	= 8
+	} 	;
+
+	typedef enum _EdgeType_t EdgeType_t;
+
+
+	enum _FilmType_t
+	{
+		kFtInvalid	= -1,
+		kFtNull		= 0,
+		ktFt35MM	= 1,
+		ktFt16MM	= 2,
+		kFt8MM		= 3,
+		kFt65MM		= 4
+	} ;
+
+	typedef enum _FilmType_t FilmType_t;
+}
+
+
+
 
 
 #endif // MXFLIB__TYPES_H

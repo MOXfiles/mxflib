@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2010, Metaglue Corporation
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include <stdio.h>
@@ -37,11 +35,21 @@ using namespace mxflib;
 
 
 #include "process.h"
-
 #include "process_utils.h"
 
 
 #include "productIDs.h"
+
+
+FILE * hLogout=stdout; //file handle to send all the informational output to
+
+std::string GetVersionText()
+{
+	char VersionText[256];
+	snprintf(VersionText, 255, "MXFWrap %s.%s.%s(%s)%s of %s %s", PRODUCT_VERSION_MAJOR, PRODUCT_VERSION_MINOR, PRODUCT_VERSION_TWEAK, PRODUCT_VERSION_BUILD,
+		     MXFLIB_VERSION_RELTEXT(PRODUCT_VERSION_REL), __DATE__, __TIME__);
+	return VersionText;
+}
 
 
 
@@ -61,17 +69,19 @@ void SetUpIndex(int OutFileNum,
 	int PreviousFP = -1;								// The index of the previous file package used - allows us to know if we treat this is a sub-stream
 	int iStream = -1;									// Stream index (note that it will be incremented to 0 in the first iteration)
 	int iTrack=0;
+	bool IndexAdded = false;							// Set once we have added an index so we only add to the first stream in frame-group
 	WrapCfgList_it = WrapCfgList.begin();
 	while(WrapCfgList_it != WrapCfgList.end())
 	{
+
 		// Move on to a new stream if we are starting a new file package
 		if(Source[iTrack].first != PreviousFP) iStream++;
 
 		// Only process the index for the first stream of a file package
 		if((Source[iTrack].first != PreviousFP || pOpt->OPAtom ) && (!(*WrapCfgList_it)->IsExternal))
 		{
-			// Only index for written file packeges
-			bool WriteFP = ((!pOpt->OPAtom) || (iStream == OutFileNum));
+		// Write File Packages except for externally ref'ed essence in OP-Atom
+			bool WriteFP = (!pOpt->OPAtom) || (iStream == OutFileNum);
 
 			if(WriteFP)
 			{
@@ -84,12 +94,13 @@ void SetUpIndex(int OutFileNum,
 					|| Source[iTrack].second->EnableVBRIndexMode() )))
 				{
 					if(		( pOpt->OPAtom && iTrack==OutFileNum)
-						||	(!pOpt->OPAtom && pOpt->FrameGroup && iTrack==0)
+						||	(!pOpt->OPAtom && pOpt->FrameGroup && (!IndexAdded))
 						||	(!pOpt->OPAtom && !pOpt->FrameGroup) )
 					{
 						UInt32 BodySID;				// Body SID for this essence stream
 						UInt32 IndexSID;			// Index SID for the index of this essence stream
 
+						IndexAdded = true;
 							BodySID = EssStrInf[iStream].Stream->GetBodySID();
 							IndexSID = BodySID + 128;
 							EssStrInf[iStream].Stream->SetIndexSID(IndexSID);
@@ -173,6 +184,14 @@ Length ProcessEssence(int OutFileNum,
 	else
 		EssenceDuration = -1;
 
+#ifdef DEMO
+
+	if(EssenceDuration>20)
+	{
+		puts("Evaluation version cannot make file this long");
+		return 0;
+	}
+#endif
 
 
 #ifdef _WIN32
@@ -186,7 +205,10 @@ Length ProcessEssence(int OutFileNum,
 		float time=((float)diff)/Freq.QuadPart;
 		float fps=EssenceDuration/time;
 
-		printf("Completed %d samples at %4.3f per second\n",(int)EssenceDuration,fps);
+
+		if(pOpt->ShowTiming) printf("Completed %s samples at %4.3f per second\n", Int64toString(EssenceDuration).c_str(), fps);
+		else printf("Completed %s samples\n", Int64toString(EssenceDuration).c_str());
+
 	}
 #else
 	struct timeval end;
@@ -196,9 +218,10 @@ Length ProcessEssence(int OutFileNum,
 	float time=(float)secs+(float)usecs/1000000.0;
 	float fps=EssenceDuration/time;
 
-	printf("Completed %d samples at %4.3f per second\n",(int)EssenceDuration,fps);
-#endif
+	if(pOpt->ShowTiming) printf("Completed %s samples at %4.3f per second\n", Int64toString(EssenceDuration).c_str(), fps);
+	else printf("Completed %s samples\n", Int64toString(EssenceDuration).c_str());
 
+#endif
 
 	// Update the modification time
 	MData->SetTime();
@@ -208,9 +231,9 @@ Length ProcessEssence(int OutFileNum,
 
 	// Update Material Package Timecode Track Duration
 	Length EditRateDuration = (Length) EssenceDuration * ( EditRate/(EssStrInf[IndexBaseTrack].Stream->GetSource()->GetEditRate()) );
+	fprintf( hLogout,"EditRateDuration = %s\n", Int64toString(EditRateDuration).c_str());
 
-	if(pOpt->PutTCTrack)
-		MPTimecodeComponent->SetDuration(EditRateDuration);
+	if(MPTimecodeComponent) MPTimecodeComponent->SetDuration(EditRateDuration);
 
 	EssenceParser::WrappingConfigList::iterator WrapCfgList_it;
 
@@ -226,7 +249,7 @@ Length ProcessEssence(int OutFileNum,
 
 		if(EssStrInf[iTrack].MPClip)
 		{
-			EssStrInf[iTrack].MPClip->SetDuration(EssenceDuration);
+			EssStrInf[iTrack].MPClip->SetDuration(EditRateDuration);
 
 			// Set sub-track durations
 			if(!EssStrInf[iTrack].MPSubTracks.empty())
@@ -234,21 +257,20 @@ Length ProcessEssence(int OutFileNum,
 				TrackList::iterator m_it = EssStrInf[iTrack].MPSubTracks.begin();
 				while(m_it != EssStrInf[iTrack].MPSubTracks.end())
 				{
-					if(!(*m_it)->Components.empty()) (*m_it)->Components.front()->SetDuration(EssenceDuration);
+					if(!(*m_it)->Components.empty()) (*m_it)->Components.front()->SetDuration(EditRateDuration);
 					m_it++;
 				}
 			}
 
 			if( (!pOpt->OPAtom) || (iStream == OutFileNum) )
 			{
-				if(pOpt->PutTCTrack)
-					if((iTrack==0) || (!pOpt->FrameGroup))
-						if(EssStrInf[iStream].FPTimecodeComponent)
-							EssStrInf[iStream].FPTimecodeComponent->SetDuration(EditRateDuration);
+				if(EssStrInf[iTrack].FPTimecodeComponent) EssStrInf[iTrack].FPTimecodeComponent->SetDuration(EditRateDuration);
 
 					EssStrInf[iTrack].FPClip->SetDuration(EssenceDuration);
 
-				EssStrInf[iTrack].FPClip->SetDuration(EssenceDuration);
+				//IDB july2012 this line was here negating the point of the logic above 
+				//           - I assume there is no reason so we can delete in a bit if there are no consequences
+				//EssStrInf[iTrack].FPClip->SetDuration(EssenceDuration);
 
 				// Set sub-track durations
 				if(!EssStrInf[iTrack].FPSubTracks.empty())
@@ -306,6 +328,7 @@ Length ProcessEssence(int OutFileNum,
 		WrapCfgList_it++;
 		iTrack++;
 	}
+
 
 	// return the finished length to the caller
 	return EssenceDuration;
@@ -432,7 +455,12 @@ Length Process(
 
 	// Kludge to find the most likely BERSize
 	EssenceSourcePtr Stream0 = EssStrInf[ OutFileNum ].Stream ? *(EssStrInf[ OutFileNum ].Stream->begin()) : EssenceSourcePtr(NULL);
-	if( !Stream0 || Stream0->GetBERSize() == 0) DynamicOffset -= 4; else DynamicOffset -= Stream0->GetBERSize();
+	if( !Stream0 || Stream0->GetBERSize() == 0) 
+	{
+		if(Stream0 && (EssStrInf[ OutFileNum ].Stream->GetWrapType() == ClipWrap) ) DynamicOffset -= 8;
+		else DynamicOffset -= 4;
+	}
+	else DynamicOffset -= Stream0->GetBERSize();
 
 		if( pOpt->BlockSize )
 		{
@@ -558,8 +586,13 @@ Length Process(
 				// or the manager for the first CBR essence stream,
 				// or NULL
 
-				if(pManager)
+				// Read the index types and see what is requested
+				BodyStream::IndexType IndexFlags = pStream->GetIndexType();
+
+				if(pManager && ( IndexFlags&(BodyStream::StreamIndexSparseFooter) ) )
 				{
+
+
 					IndexTablePtr Index = pManager->MakeIndex();
 					if(Index)
 					{
@@ -592,8 +625,8 @@ Length Process(
 				{
 					ThisPartition->SetUInt(IndexSID_UL, 0);
 					Out->ReWritePartition(ThisPartition);
-					printf("Note: An attempt was made to add a full index table to the Header.\n");
-					printf("      This failed, but the header is still valid without the index table.\n");
+					fprintf( hLogout,"Note: An attempt was made to add a full index table to the Header.\n");
+					fprintf( hLogout,"      This failed, but the header is still valid without the index table.\n");
 				}
 			}
 			else

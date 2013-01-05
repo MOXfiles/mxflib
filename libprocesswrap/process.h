@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2010, Metaglue Corporation
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #ifndef _PROCESS_H_
@@ -39,6 +37,10 @@ using namespace mxflib;
 
 
 
+//! return the text version of the productIDs
+// TODO move somewhere else
+std::string GetVersionText();
+
 
 //! The empirically smallest Header
 const UInt32 EmpiricalSmallestHeader=16*1024;
@@ -46,7 +48,10 @@ const UInt32 EmpiricalSmallestHeader=16*1024;
 //! DM Dictionaries
 typedef std::list<std::string> DMFileList;
 
-//UserComments
+//! DM Items - name-value pairs for insertion into DM Frameworks
+typedef std::pair<std::string,std::string> DMItem;
+
+//! UserComments
 typedef std::pair<std::string,std::string> BinComment;
 
 enum PartitionMode {		//!< Allowed modes of body partition insertion
@@ -154,6 +159,10 @@ public:
 
 	//! Debug flag for MXFLib
 	bool DebugMode;
+	std::string  TestMode;   //String to contol test modes
+
+	bool Stats;				//!< enable basic Sdats output at final exit
+	bool ShowTiming;			//!< Show timing 
 
 	/*********************************************************
 	***
@@ -246,7 +255,9 @@ public:
 
 
 	int SelectedWrappingOption;				//!< Selected wrapping option: -1 = auto, 0 = list choices
+	std::list<int> SecondaryWrapping;		//!< A list of 2nd, 3rd, 4th etc -w= values for 2nd, 3rd, 4th etc. source files
 	std::string SelectedWrappingOptionText;	//!< Selected wrapping option name
+	StringList SecondaryWrappingText;		//!< A list of 2nd, 3rd, 4th etc -w= values for 2nd, 3rd, 4th etc. source files
 
 	/*********************************************************
 	***
@@ -274,10 +285,14 @@ public:
 
 	DMFileList DMDicts;						//!< DM Dictionaries
 	DMFileList DMMaterialInstances;			//!< DM Instance data files for Material Package
+
+	std::list<DMItem> DMItems;			//!< name-value pairs for insertion into DM Frameworks
+
 	DMFileList DMFileInstances;			    //!< DM Instance data files for File Package
 
 	std::string OrthodoxDict;				//!< Default filename of orthodox Dictionary
 	bool OverrideDictionary;		//!< true to use Compiled dictionary in place of xml dictionary (or vice versa)
+
 
 
 
@@ -304,6 +319,8 @@ public:
 		OPUL(OP1a_Data)
 	{
 		DebugMode = false;
+		Stats = false;
+		ShowTiming = true;
 
 		SelectedWrappingOption=-1;
 
@@ -351,6 +368,7 @@ public:
 
 
 
+
 		MobName = "Material Package" ;	// Default Name of material package
 
 
@@ -366,6 +384,7 @@ public:
 		nAudChannels=0;;						// Number of Audio channels that will be passed by buffer
 		AudioSampleRate=48000;					// Audio sample rate - currently only 48000 is supported
 		AudioBitDepth=16;
+		AudioBits=0;
 		ExtractAudio=false;                     //Will only be valid if using compressed audio
 
 

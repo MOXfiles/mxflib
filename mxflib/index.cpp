@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include "mxflib/mxflib.h"
@@ -513,7 +511,7 @@ void IndexTable::AddSegments(DataChunkPtr &IndexChunk)
 	UInt8 const *pData = IndexChunk->Data;
 	Length Size = IndexChunk->Size;
 
-//printf("0x%04x bytes at %p\n", (int)Size, pData);
+	debug("In IndexTable::AddSegments() - 0x%s bytes at %p\n", Int64toHexString(Size, 4).c_str(), pData);
 	while(Size > 17)
 	{
 		UL SetKey(pData);
@@ -533,7 +531,7 @@ void IndexTable::AddSegments(DataChunkPtr &IndexChunk)
 
 		if(SetKey.Matches(IndexTableSegment_UL))
 		{
-//printf("%s is 0x%04x bytes at %p\n", SetKey.GetString().c_str(), (int)SetLength, pData);
+			debug("%s is 0x%s bytes at %p\n", SetKey.GetString().c_str(), Int64toHexString(SetLength, 4).c_str(), pData);
 			AddSegment(pData, SetLength, 2);
 		}
 		else if(!SetKey.Matches(KLVFill_UL))
@@ -875,8 +873,12 @@ IndexSegmentPtr IndexTable::AddSegment(UInt8 const *pSegment, Length Size, int L
 
 
 //! Create a new empty index table segment
+/*! DRAGONS: Will return the existing segment if one already exists for this start position */
 IndexSegmentPtr IndexTable::AddSegment(Int64 StartPosition)
 {
+	IndexSegmentMap::iterator it = SegmentMap.find(StartPosition);
+	if(it != SegmentMap.end()) return (*it).second;
+
 	IndexSegmentPtr Segment = IndexSegment::AddIndexSegmentToIndexTable(this, StartPosition);
 
 	SegmentMap.insert(IndexSegmentMap::value_type(StartPosition, Segment));
@@ -1593,8 +1595,8 @@ int IndexManager::AddSubStream(int PosTableIndex, UInt32 ElementSize)
 		int *NewPosTableList = new int[NewSize];
 		UInt32 *NewElementSizeList = new UInt32[NewSize];
 		
-		memcpy(NewPosTableList, PosTableList, StreamListSize);
-		memcpy(NewElementSizeList, ElementSizeList, StreamListSize);
+		memcpy(NewPosTableList, PosTableList, StreamListSize * sizeof(int));
+		memcpy(NewElementSizeList, ElementSizeList, StreamListSize * sizeof(UInt32));
 
 		delete[] PosTableList;
 		delete[] ElementSizeList;

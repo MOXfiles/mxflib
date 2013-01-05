@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2005, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #include "mxflib/mxflib.h"
@@ -39,6 +37,11 @@ using namespace mxflib;
 //! Local definitions
 namespace
 {
+	const char *PictureEssenceCoding_Base = "060e2b34.04010107.04010202.03010100";
+	const Uint8 PictureEssenceCoding_Base_Data[]={ 0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x07,
+											  0x04, 0x01, 0x02, 0x02, 0x03, 0x01, 0x01, 0x00 };
+
+
 	//! Modified UUID for <Source Type>
 	const UInt8 JP2K_Format[] = { 0x45, 0x54, 0x57, 0x62,  0xd6, 0xb4, 0x2e, 0x4e,  0xf3, 'j', 'p', '2',  'k', 0x00, 0x00, 0x00 };
 
@@ -150,8 +153,31 @@ EssenceStreamDescriptorList mxflib::JP2K_EssenceSubParser::IdentifyEssence(FileH
 		// Record a pointer to the descriptor so we can check if we are asked to process this source
 		CurrentDescriptor = DescObj;
 
-		// Set the single descriptor
+		// Add the descriptor
 		Ret.push_back(Descriptor);
+
+		if(DescObj->IsA(RGBAEssenceDescriptor_UL))
+		{
+			// Identify the RGBA version
+			Descriptor->Description = "JPEG 2000 RGBA Image data";
+
+			/** Make a CDCI descriptor version **/
+			MDObjectPtr CDCIDescObj = BuildDescriptorFromCodeStream(InFile, 0, true);
+			if(!CDCIDescObj) return Ret;
+
+			Descriptor = new EssenceStreamDescriptor;
+
+			Descriptor->ID = 0;
+			Descriptor->Description = "JPEG 2000 CDCI Image data";
+			Descriptor->SourceFormat.Set(JP2K_Format);
+			Descriptor->Descriptor = CDCIDescObj;
+
+			// Record a pointer to the descriptor so we can check if we are asked to process this source
+			CDCICurrentDescriptor = CDCIDescObj;
+
+			// Add this new CDCI descrtiptor as the default
+			Ret.push_front(Descriptor);
+		}
 
 		return Ret;
 	}
@@ -171,8 +197,31 @@ EssenceStreamDescriptorList mxflib::JP2K_EssenceSubParser::IdentifyEssence(FileH
 	// Record a pointer to the descriptor so we can check if we are asked to process this source
 	CurrentDescriptor = DescObj;
 
-	// Set the single descriptor
+	// Add the descriptor
 	Ret.push_back(Descriptor);
+
+	if(DescObj->IsA(RGBAEssenceDescriptor_UL))
+	{
+		// Identify the RGBA version
+		Descriptor->Description = "JPEG 2000 RGBA Image data";
+
+		/** Make a CDCI descriptor version **/
+		MDObjectPtr CDCIDescObj = BuildDescriptorFromJP2(InFile, true);
+		if(!CDCIDescObj) return Ret;
+
+		Descriptor = new EssenceStreamDescriptor;
+
+		Descriptor->ID = 0;
+		Descriptor->Description = "JPEG 2000 CDCI Image data";
+		Descriptor->SourceFormat.Set(JP2K_Format);
+		Descriptor->Descriptor = CDCIDescObj;
+
+		// Record a pointer to the descriptor so we can check if we are asked to process this source
+		CDCICurrentDescriptor = CDCIDescObj;
+
+		// Add this new CDCI descrtiptor as the default
+		Ret.push_front(Descriptor);
+	}
 
 	return Ret;
 }
@@ -194,7 +243,7 @@ WrappingOptionList mxflib::JP2K_EssenceSubParser::IdentifyWrappingOptions(FileHa
 	if(memcmp(Descriptor.SourceFormat.GetValue(), JP2K_Format, 16) != 0) return Ret;
 
 	// The identify step configures some member variables so we can only continue if we just identified this very source
-	if((!CurrentDescriptor) || (Descriptor.Descriptor != CurrentDescriptor)) return Ret;
+	if((!CurrentDescriptor) || ((Descriptor.Descriptor != CurrentDescriptor) && (Descriptor.Descriptor != CDCICurrentDescriptor))) return Ret;
 
 	// TODO: Only fill in the supported wrapping types
 
@@ -202,7 +251,7 @@ WrappingOptionList mxflib::JP2K_EssenceSubParser::IdentifyWrappingOptions(FileHa
 	WrappingOptionPtr ClipWrap = new WrappingOption;
 
 	ClipWrap->Handler = this;							// Set us as the handler
-	ClipWrap->Description = "SMPTE 422M clip wrapping of JPEG 2000 image data";
+	ClipWrap->Description = "SMPTE 422M clip wrapping of " + Descriptor.Description;
 
 	BaseUL[14] = 0x02;									// Clip wrapping
 	ClipWrap->Name = "clip";							// Set the wrapping name
@@ -219,7 +268,7 @@ WrappingOptionList mxflib::JP2K_EssenceSubParser::IdentifyWrappingOptions(FileHa
 	WrappingOptionPtr FrameWrap = new WrappingOption;
 
 	FrameWrap->Handler = this;							// Set us as the handler
-	FrameWrap->Description = "SMPTE 422M frame wrapping of JPEG 2000 image data";
+	FrameWrap->Description = "SMPTE 422M frame wrapping of " + Descriptor.Description;
 
 	BaseUL[14] = 0x01;									// Frame wrapping
 	FrameWrap->Name = "frame";							// Set the wrapping name
@@ -329,7 +378,7 @@ Length mxflib::JP2K_EssenceSubParser::Write(FileHandle InFile, UInt32 Stream, MX
 
 //! Read the essence information from the codestream at the specified position in the source file and build an essence descriptor
 /*! \note This call will modify properties SampleRate, DataStart and DataSize */
-MDObjectPtr mxflib::JP2K_EssenceSubParser::BuildDescriptorFromCodeStream(FileHandle InFile, Position Offset /*=0*/)
+MDObjectPtr mxflib::JP2K_EssenceSubParser::BuildDescriptorFromCodeStream(FileHandle InFile, Position Offset /*=0*/, bool ForceCDCI /*=false*/)
 {
 	MDObjectPtr Ret;
 
@@ -421,11 +470,119 @@ MDObjectPtr mxflib::JP2K_EssenceSubParser::BuildDescriptorFromCodeStream(FileHan
 		Index++;
 	}
 
-	if(IsRGB)
+	/* create RGBA or CDCI Desciptor */
+	if(IsRGB && (!ForceCDCI))
 	{
 		Ret = new MDObject(RGBAEssenceDescriptor_UL);
 		if(!Ret) return Ret;
+	}
+	else
+	{
+		Ret = new MDObject(CDCIEssenceDescriptor_UL);
+		if(!Ret) return Ret;
+	}
 
+	/* File Descriptor items */
+
+	// Set 24Hz as the default sample rate
+	Ret->SetString(SampleRate_UL, "24/1");
+
+	// PictureEssenceCoding
+	Ret->SetString(PictureEssenceCoding_UL, PictureEssenceCoding_Base );
+
+	// TODO apply to other ESPs as well
+	/* Picture Essence Descriptor Items */
+	UInt32 Aspect_n = Width-XOsiz;
+	UInt32 Aspect_d = Height-YOsiz;
+
+	// infer Signal Standard from number of lines
+	// TODO ST 347, ST 349
+	SignalStandardType Sig = SignalStandard_None;
+
+	if( Aspect_d==540 || Aspect_d==1080 )
+	{
+		if( Aspect_n==1920 ) Sig = SignalStandard_SMPTE274; // have seen some Amberfin files using SignalStandard_ITU601
+		else Sig = SignalStandard_SMPTE296;
+	}
+	else if( Aspect_d==858 || Aspect_d==1716 || Aspect_d==2160 ) Sig = SignalStandard_SMPTE428;
+	else if( Aspect_d>=240 || Aspect_d<=248 ) Sig = SignalStandard_ITU601; // 525
+	else if( Aspect_d>=280 || Aspect_d<=296 ) Sig = SignalStandard_ITU601; // 635
+	else if( Aspect_d>=480 || Aspect_d<=496 ) Sig = SignalStandard_ITU1358;
+	else if( Aspect_d==360 || Aspect_d==720 ) Sig = SignalStandard_SMPTE296;
+
+	if( Sig!=SignalStandard_None )
+	{
+		MDObjectPtr SigS = Ret->AddChild( SignalStandard_UL );
+		if( SigS ) SigS->SetInt( (Int32)Sig );
+	}
+
+	MDObjectPtr VLMItem = Ret->AddChild(VideoLineMap_UL);
+	if(VLMItem)
+	{
+		VLMItem->Resize(2);
+		VLMItem[0]->SetInt(1);
+		VLMItem[1]->SetInt(0);
+
+		switch(Sig)
+		{
+		case SignalStandard_SMPTE274:
+			VLMItem[0]->SetInt(21);
+			if( (2*Aspect_n) > (5*Aspect_d) ) VLMItem[1]->SetInt(584);
+			break;
+		case SignalStandard_ITU601:
+			if( Aspect_d<260 ) VLMItem[0]->SetInt(20); else VLMItem[1]->SetInt(23);
+			if( Aspect_d<260 ) VLMItem[1]->SetInt(283); else VLMItem[1]->SetInt(336); 
+			break;
+		case SignalStandard_ITU1358:
+			VLMItem[0]->SetInt(43);
+			break; 
+		case SignalStandard_SMPTE296:
+			VLMItem[0]->SetInt(26);
+			break; 
+		default:
+			VLMItem[0]->SetInt(1);
+			if( (2*Aspect_n) > (5*Aspect_d) ) VLMItem[1]->SetInt(Aspect_d+1);
+			break;
+		}
+	}
+
+	// Aspect Ratio
+	// if n/d > 5/2, infer SeparateFields
+	// ST 429-2 shows that widest DCP aspect ratio is 2048:858 = 2.39, and 640:240 = 2.66
+	if( (2*Aspect_n) > (5*Aspect_d) )
+	{
+		Ret->SetUInt(FrameLayout_UL, SeparateFields);
+		Aspect_d = Aspect_d*2;
+
+		Ret->SetUInt(FieldDominance_UL, 1);
+	}
+	else
+	{
+		Ret->SetUInt(FrameLayout_UL, FullFrame);
+	}
+	ReduceRational(Aspect_n, Aspect_d);
+
+	MDObjectPtr AspectItem = Ret->AddChild(AspectRatio_UL);
+	if(AspectItem)
+	{
+		AspectItem->SetInt("Numerator", (Int32)Aspect_n);
+		AspectItem->SetInt("Denominator", (Int32)Aspect_d);
+	}
+
+	Ret->SetUInt(StoredWidth_UL, Width-XTOsiz);
+	Ret->SetUInt(StoredHeight_UL, Height-YTOsiz);
+	Ret->SetUInt(SampledWidth_UL, Width);
+	Ret->SetUInt(SampledHeight_UL, Height);
+	Ret->SetUInt(SampledXOffset_UL, XTOsiz);
+	Ret->SetUInt(SampledYOffset_UL, YTOsiz);
+	Ret->SetUInt(DisplayWidth_UL, Width-XOsiz);
+	Ret->SetUInt(DisplayHeight_UL, Height-YOsiz);
+	Ret->SetUInt(DisplayXOffset_UL, XOsiz);
+	Ret->SetUInt(DisplayYOffset_UL, YOsiz);
+
+	if(IsRGB && (!ForceCDCI))
+	{
+		// RGBA
 		if(Components < 1) Ret->SetInt(ComponentDepth_UL, 0);
 		else Ret->SetInt(ComponentDepth_UL, CDepth[0] + 1);
 
@@ -453,69 +610,22 @@ MDObjectPtr mxflib::JP2K_EssenceSubParser::BuildDescriptorFromCodeStream(FileHan
 	}
 	else
 	{
-		Ret = new MDObject(CDCIEssenceDescriptor_UL);
-		if(!Ret) return Ret;
-
+		// CDCI
 		if(Components < 1) Ret->SetInt(ComponentDepth_UL, 0);
 		else Ret->SetInt(ComponentDepth_UL, CDepth[0] + 1);
 
 		if((Components < 2) || (XRsiz[0] == 0)) Ret->SetInt(HorizontalSubsampling_UL, 0);
 		else Ret->SetInt(HorizontalSubsampling_UL, XRsiz[1] / XRsiz[0]);
 
-		if((Components >= 2) && (XRsiz[0] != 0)) Ret->SetInt(VerticalSubsampling_UL, XRsiz[1] / XRsiz[0]);
+		if((Components >= 2) && (YRsiz[0] != 0)) Ret->SetInt(VerticalSubsampling_UL, YRsiz[1] / YRsiz[0]);
 
 		// Assume component 4 is alpha
 		if(Components >= 4) Ret->SetInt(AlphaSampleDepth_UL, CDepth[3] + 1);
 	}
 
-
-	/* File Descriptor items */
-
-	// Set 24Hz as the default sample rate
-	Ret->SetString(SampleRate_UL, "24/1");
-
-
-	/* Picture Essence Descriptor Items */
-
-	Ret->SetUInt(FrameLayout_UL, 0);
-
-	Ret->SetUInt(StoredWidth_UL, Width-XTOsiz);
-	Ret->SetUInt(StoredHeight_UL, Height-YTOsiz);
-	Ret->SetUInt(SampledWidth_UL, Width);
-	Ret->SetUInt(SampledHeight_UL, Height);
-	Ret->SetUInt(SampledXOffset_UL, XTOsiz);
-	Ret->SetUInt(SampledYOffset_UL, YTOsiz);
-	Ret->SetUInt(DisplayWidth_UL, Width-XOsiz);
-	Ret->SetUInt(DisplayHeight_UL, Height-YOsiz);
-	Ret->SetUInt(DisplayXOffset_UL, XOsiz);
-	Ret->SetUInt(DisplayYOffset_UL, YOsiz);
-
-	MDObjectPtr AspectItem = Ret->AddChild(AspectRatio_UL);
-	if(AspectItem)
-	{
-		// TODO: Find a way to compensate for non-square pixels
-
-		UInt32 Aspect_n = Width-XOsiz;
-		UInt32 Aspect_d = Height-YOsiz;
-
-		ReduceRational(Aspect_n, Aspect_d);
-
-		AspectItem->SetInt("Numerator", (Int32)Aspect_n);
-		AspectItem->SetInt("Denominator", (Int32)Aspect_d);
-	}
-
-	MDObjectPtr VLMItem = Ret->AddChild(VideoLineMap_UL);
-	if(VLMItem)
-	{
-		VLMItem->Resize(2);
-		VLMItem[0]->SetInt(1);
-		VLMItem[1]->SetInt(0);
-	}
-
-	// TODO: Add alpha transparency?
-
+	// TODO: Add Alpha transparency? Others?
 	
-	// Link the sub-descrioptor to the file descriptor
+	// Link the sub-descriptor to the file descriptor
 	MDObjectPtr Link = Ret->AddChild(SubDescriptors_UL);
 	if(Link) Link = Link->AddChild();
 	if(Link) Link->MakeRef(SubDescriptor);
@@ -526,7 +636,7 @@ MDObjectPtr mxflib::JP2K_EssenceSubParser::BuildDescriptorFromCodeStream(FileHan
 
 //! Read the essence information at the start of the "JP2" format source file and build an essence descriptor
 /*! \note This call will modify properties SampleRate, DataStart and DataSize */
-MDObjectPtr mxflib::JP2K_EssenceSubParser::BuildDescriptorFromJP2(FileHandle InFile)
+MDObjectPtr mxflib::JP2K_EssenceSubParser::BuildDescriptorFromJP2(FileHandle InFile, bool ForceCDCI /*=false*/)
 {
 	MDObjectPtr Ret;
 
@@ -561,7 +671,7 @@ MDObjectPtr mxflib::JP2K_EssenceSubParser::BuildDescriptorFromJP2(FileHandle InF
 		else return Ret;
 	}
 	
-	Ret = BuildDescriptorFromCodeStream(InFile, DataStart);
+	Ret = BuildDescriptorFromCodeStream(InFile, DataStart, ForceCDCI);
 	
 	return Ret;
 }
@@ -595,38 +705,11 @@ size_t mxflib::JP2K_EssenceSubParser::ReadInternal(FileHandle InFile, UInt32 Str
 		return CachedDataSize;
 	}
 
-	// If the size is unknown we assume the rest of the file is data
-	// DRAGONS: Should work even for JP2 files as an "unknown" length must be the last item in a JP2 file
-	FileSeekEnd(InFile);
-	Ret = static_cast<Length>(FileTell(InFile) - CurrentPos);
-	
-	// Move back to the current position
-	FileSeek(InFile, CurrentPos);
 
-	// If we have an index manager we need to perform indexing operations
-	if((Ret != 0) && (Manager))
-	{
-		// Offer this index table data to the index manager
-		Manager->OfferEditUnit(ManagedStreamID, PictureNumber, 0, 0x80);
-	}
+	/* Scan the Codestream */
 
-	// Validate the size
-	if((sizeof(size_t) < 8) && (Ret > 0xffffffff))
-	{
-		error("This edit unit > 4GBytes, but this platform can only handle <= 4GByte chunks\n");
-		Ret = 0;
-	}
-
-	// Store so we don't have to calculate if called again without reading
-	CachedDataSize =  static_cast<size_t>(Ret);
-	
-	return CachedDataSize;
-
-/* Codestream scanning code...
-
-// Maximum chunk size for a single read
-//	const size_t MaxChunkSize = 1 * 1024 * 1024;
-const size_t MaxChunkSize = 77;
+	// Maximum chunk size for a single read
+	const size_t MaxChunkSize = 4 * 1024 * 1024;
 
 	DataChunkPtr Buffer = new DataChunk(MaxChunkSize);
 
@@ -638,17 +721,30 @@ const size_t MaxChunkSize = 77;
 	Pos = CurrentPos;
 	FileSeek(InFile, Pos);
 
+	// Work out how many codestreams we will return per read
+	Length CodestreamsRemaining = Count ? InterleaveFactor * Count : InterleaveFactor; 
+
 	// Read the first chunk
 	size_t Bytes = (size_t)FileRead(InFile, Buffer->Data, MaxChunkSize);
 	if(Bytes < MaxChunkSize) Buffer->Resize(Bytes);
-printf("@ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
+//printf("@ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
 
 	// Quit if less than 2 bytes available
-	if(Bytes < 2) return Ret;
+	if(Bytes < 2)
+	{
+		FileSeek(InFile, CurrentPos);;
+		CachedDataSize =  static_cast<size_t>(Ret);
+		return CachedDataSize;
+	}
 
 	// Verify that the first byte of the first marker is 0xff
 	UInt8 *p = Buffer->Data;
-	if((*p++) != 0xff) return Ret;
+	if((*p++) != 0xff) 
+	{
+		FileSeek(InFile, CurrentPos);;
+		CachedDataSize =  static_cast<size_t>(Ret);
+		return CachedDataSize;
+	}
 
 	// Read the first marker
 	UInt8 Marker = *(p++);
@@ -657,30 +753,104 @@ printf("@ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
 	Ret += 2;
 	Pos += 2;
 	Bytes -= 2;
+
 	for(;;)
 	{
-printf("Marker 0x%02x:\n", (int)Marker);
+//printf("Marker 0x%02x:\n", (int)Marker);
 		// Parsing ends once we read EOC
-		if(Marker == 0xd9) break;
+		if(Marker == 0xd9)
+		{
+			// Is this the last desired codestream?
+			if(!(--CodestreamsRemaining)) break;
+		}
+
+		// SOT - skip over the tile
+		if(Marker == 0x90)
+		{
+			// Ensure we have the whole SOT segment
+			if(Bytes < 10)
+			{
+//printf("Bytes remaining %d so will re-read\n", Bytes);
+				// Seek to the current position
+				FileSeek(InFile, Pos);
+
+				// Read the next chunk starting at the start of the next marker
+				Bytes = (size_t)FileRead(InFile, Buffer->Data, 10);
+				Buffer->Resize(Bytes);
+//printf("@ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
+
+				// Quit if less than 10 bytes available
+				if(Bytes < 10)
+				{
+					FileSeek(InFile, CurrentPos);
+					CachedDataSize =  static_cast<size_t>(Ret + Bytes);
+					return CachedDataSize;
+				}
+
+				// Reset the pointer
+				p = Buffer->Data;
+			}
+
+			// Read the tile length "Psot"
+			UInt32 TileSize = GetU32(&p[4]);
+
+			// Skip over the tile (which includes the SOT, which we have already accounted for 2 bytes of)
+			Pos += TileSize - 2;
+			Ret += TileSize - 2;
+//printf("Skipping 0x%s bytes to 0x%s\n", Int64toHexString(TileSize, 4).c_str(), Int64toHexString(Pos, 8).c_str());
+
+			// Seek to the new position
+			FileSeek(InFile, Pos);
+
+			// Read the next chunk starting at the start of the next marker
+			Bytes = (size_t)FileRead(InFile, Buffer->Data, MaxChunkSize);
+			Buffer->Resize(Bytes);
+//printf("@ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
+
+			// Quit if less than 2 bytes available
+			if(Bytes < 2)
+			{
+				FileSeek(InFile, CurrentPos);
+				CachedDataSize =  static_cast<size_t>(Ret + Bytes);
+				return CachedDataSize;
+			}
+
+			// Reset the pointer
+			p = Buffer->Data;
+
+			// Validate the first byte of the marker
+			if((*p++) != 0xff) break;
+
+			// Read the marker
+			Marker = *(p++);
+
+			// Add the next marker bytes
+			Pos += 2;
+			Ret += 2;
+			Bytes -= 2;
+
+			// Try the next marker
+			continue;
+		}
 
 		// If we have a segment skip over it
 		if(MarkerSegments[Marker])
 		{
-printf("  Is a segment\n");
+//printf("  Is a segment\n");
 			// If there are not enough bytes left for the length, restart the scan at this marker
 			if(Bytes < 2)
 			{
-printf("  Bytes remaining %d so will re-read\n", Bytes);
-			// Seek to the current position
-			FileSeek(InFile, Pos);
+//printf("  Bytes remaining %d so will re-read\n", Bytes);
+				// Seek to the current position
+				FileSeek(InFile, Pos);
 
 				// Read the next chunk starting at the byte following the current marker
 				size_t Bytes = (size_t)FileRead(InFile, Buffer->Data, MaxChunkSize);
 				if(Bytes < MaxChunkSize) Buffer->Resize(Bytes);
-printf("  @ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
+//printf("  @ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
 
 				// Quit if less than 2 bytes available
-				if(Bytes < 2) return Ret;
+				if(Bytes < 2) break;
 
 				// Reset the pointer
 				p = Buffer->Data;
@@ -691,14 +861,14 @@ printf("  @ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
 			// Read the length
 			UInt16 SegmentLength = GetU16(p);
 			mxflib_assert(SegmentLength > 2);
-printf("  Length = 0x%04x\n", SegmentLength);
+//printf("  Length = 0x%04x\n", SegmentLength);
 
 			// Add the segment length to the byte count
 			Ret += SegmentLength;
 
 			// Skip over the value (and the length)
 			Pos += SegmentLength;
-printf("  Now @ 0x%08x\n", (int)Pos);
+//printf("  Now @ 0x%08x\n", (int)Pos);
 
 			// Reduce the count of bytes left in the buffer
 			if(Bytes >= SegmentLength) 
@@ -712,24 +882,24 @@ printf("  Now @ 0x%08x\n", (int)Pos);
 		// If there are not enough bytes left for a marker, restart the scan at the current position
 		if(Bytes < 2)
 		{
-printf("Bytes remaining %d so will re-read\n", Bytes);
+//printf("Bytes remaining %d so will re-read\n", Bytes);
 			// Seek to the current position
 			FileSeek(InFile, Pos);
 
 			// Read the next chunk starting at the start of the next marker
 			Bytes = (size_t)FileRead(InFile, Buffer->Data, MaxChunkSize);
 			if(Bytes < MaxChunkSize) Buffer->Resize(Bytes);
-printf("@ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
+//printf("@ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
 
 			// Quit if less than 2 bytes available
-			if(Bytes < 2) return Ret;
+			if(Bytes < 2) break;
 
 			// Reset the pointer
 			p = Buffer->Data;
 		}
 
 		// Validate the first byte of the marker
-		if((*p++) != 0xff) return Ret;
+		if((*p++) != 0xff) break;
 
 		// Read the marker
 		Marker = *(p++);
@@ -739,13 +909,17 @@ printf("@ 0x%08x Read 0x%08x bytes\n", (int)Pos, (int)Bytes);
 		Ret += 2;
 		Bytes -= 2;
 	}
-
-printf("Read Done\n");
+//printf("Read Done\n");
 
 	// TODO: Determine if this is the end of the file
 
-	return Ret;
-*/
+	// Seek to the start of the current data
+	FileSeek(InFile, CurrentPos);
+
+	// Store so we don't have to calculate if called again without reading
+	CachedDataSize =  static_cast<size_t>(Ret);
+
+	return CachedDataSize;
 }
 
 
@@ -981,4 +1155,22 @@ bool mxflib::JP2K_EssenceSubParser::ParseJP2KCodestreamHeader(FileHandle InFile,
 	}
 
 	return true;
+}
+
+//! Set a source type or parser specific option
+/*! \return true if the option was successfully set */
+bool JP2K_EssenceSubParser::SetOption(std::string Option, Int64 Param /*=0*/)
+{
+	if(Option == "Interleave")
+	{
+		// {Interleave} === {Interleave=2}. {Interleave=1} means Progressive, default = Progressive
+		// DRAGONS: Interleave of zero will force behaviour similar to clip-wrap
+		if(Param) InterleaveFactor = (UInt32)Param; else InterleaveFactor = 2;
+
+		return true;
+	}
+
+	warning("JP2K_EssenceSubParser::SetOption(\"%s\", %s) not a known option\n", Option.c_str(), ::Int64toString(Param).c_str() );
+
+	return false;
 }

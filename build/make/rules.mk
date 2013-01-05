@@ -66,4 +66,3 @@ $(CPREREQDIR)/%.d : %.c makefile
 .PRECIOUS : $(PREREQDIR)/%.d
 
 -include $(PREREQDIR)/*.d
-

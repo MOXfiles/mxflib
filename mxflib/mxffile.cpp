@@ -7,27 +7,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 // Required for strerror()
@@ -114,8 +112,8 @@ bool mxflib::MXFFile::OpenMemory(DataChunkPtr Buff /*=NULL*/, Position Offset /*
 
 	BufferOffset = Offset;
 
-	// Start at the start of the stream
-	BufferCurrentPos = 0;
+	// Start at the start of the buffer
+	BufferCurrentPos = Offset;
 
 	isOpen = true;
 
@@ -1060,72 +1058,78 @@ namespace
 			warning("Full metadictionary of all known classes, properties and types, not currently supported\n");
 		}
 
-		// Build the metadictionary
-		MDObjectPtr MetaDict = BuildMetadictionary(ThisPartition->AllMetadata, UsePrimer);
+		
+		/* Locate the preface */
 
-		// Return if the build failed
-		if(!MetaDict) return;
 
-		if(Feature(FeatureKXSMetadict))
+		MDObjectPtr Preface;
+		MDObjectList::iterator it = ThisPartition->TopLevelMetadata.begin();
+		while(it != ThisPartition->TopLevelMetadata.end())
 		{
-			MDObjectPtr Preface;
+			if((*it)->IsA(Preface_UL))
+			{
+				Preface = (*it);
+			}
+			else if((*it)->IsA(Root_UL))
+			{
+				Preface = (*it)->GetRef(RootPreface_UL);
+			}
 
-			// Locate the preface
-			MDObjectList::iterator it = ThisPartition->TopLevelMetadata.begin();
-			while(it != ThisPartition->TopLevelMetadata.end())
+
+			it++;
+		}
+
+		// Long scan if quick find failed
+		if(!Preface)
+		{
+			MDObjectList::iterator it = ThisPartition->AllMetadata.begin();
+			while(it != ThisPartition->AllMetadata.end())
 			{
 				if((*it)->IsA(Preface_UL))
 				{
 					Preface = (*it);
 					break;
 				}
-
-				if((*it)->IsA(Root_UL))
-				{
-					Preface = (*it)->GetRef(RootPreface_UL);
-					break;
-				}
 				it++;
 			}
+		}
 
-			// Long scan if quick find failed
-			if(!Preface)
+		if(!Preface)
+		{
+			error("No Preface set found in WriteMetadict()\n");
+			return;
+		}
+
+
+		// Build the metadictionary
+		MDObjectPtr MetaDict;
+		MetaDict = BuildMetadictionary(ThisPartition->AllMetadata, UsePrimer);
+
+		// Return if the build failed
+		if(!MetaDict) return;
+
+		if(Feature(FeatureKXSMetadict))
+		{
+			MDObjectPtr Root = new MDObject(Root_UL);
+			if(Root)
 			{
-				MDObjectList::iterator it = ThisPartition->AllMetadata.begin();
-				while(it != ThisPartition->AllMetadata.end())
-				{
-					if((*it)->IsA(Preface_UL))
-					{
-						Preface = (*it);
-						break;
-					}
-					it++;
-				}
-			}
+				// Add the single extension set
+				// FIXME: Need to have a UL available!  Ptr = Root->AddChild(RootExtensions_UL);
+				MDObjectPtr Ptr = Root->AddChild("RootExtensions");
+				if(Ptr) Ptr = Ptr->AddChild();
+				if(Ptr) Ptr->MakeRef(MetaDict);
 
-			if(Feature(FeatureKXSMetadict))
-			{
-				MDObjectPtr Root = new MDObject(Root_UL);
-				if(Root)
-				{
-					// Add the single extension set
-					// FIXME: Need to have a UL available!  Ptr = Root->AddChild(RootExtensions_UL);
-					MDObjectPtr Ptr = Root->AddChild("RootExtensions");
-					if(Ptr) Ptr = Ptr->AddChild();
-					if(Ptr) Ptr->MakeRef(MetaDict);
+				// Add the structure version number for KXS 1b
+				Root->SetInt(RootFormatVersion_UL, 0x12);
 
-					// Add the structure version number for KXS 1b
-					Root->SetInt(RootFormatVersion_UL, 0x12);
+				// Add reference to the preface
+				// DRAGONS: This must be after all the other definitions as this will cause the 
+				//          definitions to be written before the items that they define!
+				Ptr = Root->AddChild(RootPreface_UL);
+				if(Ptr && Preface) Ptr->MakeRef(Preface);
 
-					// Add reference to the preface
-					// DRAGONS: This must be after all the other definitions as this will cause the 
-					//          definitions to be written before the items that they define!
-					Ptr = Root->AddChild(RootPreface_UL);
-					if(Ptr && Preface) Ptr->MakeRef(Preface);
-
-					// Add the root
-					Root->WriteLinkedObjects(Buffer, UsePrimer);
-				}
+				// Add the root
+				Root->WriteLinkedObjects(Buffer, UsePrimer);
 			}
 		}
 		else
@@ -1157,10 +1161,12 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 	//! Previous partition if re-writing
 	PartitionPtr OldPartition;
 
-	//! Start from a Primer that contains only built-in knowledge
-	//! and add other entries as encountered within the Metadata
+	// Start from either the specified primer, or the existing primer or a primer that contains
+	// only built-in knowledge and add other entries as encountered within the Metadata
 	PrimerPtr ThisPrimer;
-	if(UsePrimer) ThisPrimer = UsePrimer; else ThisPrimer = MDOType::MakeBuiltInPrimer();
+	if(UsePrimer) ThisPrimer = UsePrimer;
+	else if(ThisPartition->PartitionPrimer) ThisPrimer = ThisPartition->PartitionPrimer;
+	else ThisPrimer = MDOType::MakeBuiltInPrimer();
 
 	DataChunkPtr RootBuffer = new DataChunk;		//! for Root and MetaDict - remains empty for non Avid
 	DataChunkPtr MetadataBuffer = new DataChunk;	//! for Header Metadata, aka Preface object
@@ -1191,9 +1197,9 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 	{
 		if(IncludeMetadata)
 		{
-			// FIXME: This is a fudge to prevent the preface being written twice with KXS
-			//        We still need to write any other "top level" items
-			if(WritePreface || (!(*it)->IsA(Preface_UL)))
+				// FIXME: This is a fudge to prevent the preface being written twice with KXS
+				//        We still need to write any other "top level" items
+				if(WritePreface || (!(*it)->IsA(Preface_UL)))
 				(*it)->WriteLinkedObjects(MetadataBuffer, ThisPrimer);
 		}
 
@@ -1337,7 +1343,7 @@ bool MXFFile::WritePartitionInternal(bool ReWrite, PartitionPtr ThisPartition, b
 				// TODO: Actually the padding may be OK at < 17 if we are aligning to a KAG. Better checking could be done...
 				if(((NewHeaderByteCount+NewIndexByteCount) > (OldHeaderByteCount+OldIndexByteCount)) || (Padding < 17))
 				{
-					warning("Not enough space to re-write updated header metadata at position 0x%s in %s\n", Int64toHexString(Tell(), 8).c_str(), Name.c_str());
+					debug("Not enough space to re-write updated header metadata at position 0x%s in %s\n", Int64toHexString(Tell(), 8).c_str(), Name.c_str());
 					return false;
 				}
 

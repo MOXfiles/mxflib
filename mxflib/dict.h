@@ -1,5 +1,5 @@
 
-	// Types definitions converted from file dict.xml
+	// Types definitions converted from file ./dict.xml
 	MXFLIB_TYPE_START(DictData_Types)
 		MXFLIB_TYPE_BASIC("Float32", "32 bit IEEE Floating Point", "urn:smpte:ul:060e2b34.01040101.01020100.00000000", 4, false, false)
 		MXFLIB_TYPE_BASIC("Float64", "64 bit IEEE Floating Point", "urn:smpte:ul:060e2b34.01040101.01020300.00000000", 8, false, false)
@@ -47,6 +47,7 @@
 		MXFLIB_TYPE_INTERPRETATION_EX("RGBACode", "Enumerated value specifying component in an RGBALayoutItem", "UInt8", "urn:x-ul:060E2B34.0104.0101.0201010e.00000000", 0, false, ClassRefUndefined, NULL, NULL, TypeFlags_Baseline)
 		MXFLIB_TYPE_INTERPRETATION("UTF7", "RFC 2152 7-Bit Coded UNICODE Character", "ISO7", "", 0, false)
 		MXFLIB_TYPE_MULTIPLE("UTFString", "Unicode coded string - unknown format", "UTF", "", ARRAYSTRING, 0)
+		MXFLIB_TYPE_MULTIPLE("UInt16Batch", "Batch of UInt16", "UInt16", "", ARRAYEXPLICIT, 0)
 		MXFLIB_TYPE_MULTIPLE_EX("UTF16String", "Unicode UTF-16 coded string", "UTF16", "urn:x-ul:060E2B34.0104.0101.01100200.00000000", ARRAYSTRING, 0, ClassRefUndefined, NULL, NULL, TypeFlags_Baseline)
 		MXFLIB_TYPE_MULTIPLE("UInt32Array", "Array of UInt32", "UInt32", "urn:x-ul:060e2b34.0104.0101.04010900.00000000", ARRAYIMPLICIT, 0)
 		MXFLIB_TYPE_MULTIPLE("Int64Array", "Array of Int64", "Int64", "urn:x-ul:060E2B34.0104.0101.04010400.00000000", ARRAYIMPLICIT, 0)
@@ -200,7 +201,7 @@
 		MXFLIB_TYPE_MULTIPLE_EX("PartitionArray", "Array of Partition Start Positions", "PartitionInfo", "", ARRAYIMPLICIT, 0, ClassRefUndefined, NULL, NULL, TypeFlags_Baseline)
 	MXFLIB_TYPE_END
 
-	// Class definitions converted from file dict.xml
+	// Class definitions converted from file ./dict.xml
 	MXFLIB_CLASS_START(DictData_Classes)
 		MXFLIB_CLASS_ITEM("KLVFill", "KLV Filler packet", ClassUsageOptional, "RAW", 0, 0, 0x0000, "06 0E 2B 34 01 01 01 02 03 01 02 10 01 00 00 00", NULL, NULL)
 		MXFLIB_CLASS_FIXEDPACK_EX("PartitionMetadata", "Identifies a Partition Pack", "", "urn:x-ul:060E2B34.0206.0101.0D010200.00000000", NULL, ClassFlags_ExtendSubs + ClassFlags_Baseline)
@@ -286,7 +287,7 @@
 			MXFLIB_CLASS_ITEM("ProductName", "Name of the application which created or modified this file", ClassUsageRequired, "UTF16String", 0, 0, 0x3c02, "06 0e 2b 34 01 01 01 02  05 20 07 01 03 01 00 00", NULL, NULL)
 			MXFLIB_CLASS_ITEM("ProductVersion", "Maj.min.tweak.build.rel  version number of this application", ClassUsageOptional, "ProductVersionType", 10, 10, 0x3c03, "06 0e 2b 34 01 01 01 02  05 20 07 01 04 00 00 00", NULL, NULL)
 			MXFLIB_CLASS_ITEM("VersionString", "Human readable name of the application version", ClassUsageRequired, "UTF16String", 0, 0, 0x3c04, "06 0e 2b 34 01 01 01 02  05 20 07 01 05 01 00 00", NULL, NULL)
-			MXFLIB_CLASS_ITEM("ProductUID", "A unique identification for the product which created this file (defined by the manufacturer)", ClassUsageRequired, "AUID", 16, 16, 0x3c05, "06 0e 2b 34 01 01 01 02  05 20 07 01 07 00 00 00", NULL, NULL)
+			MXFLIB_CLASS_ITEM("ProductUID", "A unique identification for the product which created this file (defined by the manufacturer)", ClassUsageRequired, "UUID", 16, 16, 0x3c05, "06 0e 2b 34 01 01 01 02  05 20 07 01 07 00 00 00", NULL, NULL)
 			MXFLIB_CLASS_ITEM("ModificationDate", "Time & date an application created or modified this file and created this Identification set", ClassUsageRequired, "Timestamp", 8, 8, 0x3c06, "06 0e 2b 34 01 01 01 02  07 02 01 10 02 03 00 00", NULL, NULL)
 			MXFLIB_CLASS_ITEM("ToolkitVersion", "Maj.min.tweak.build.rel version of software or hardware codec used", ClassUsageOptional, "ProductVersionType", 10, 10, 0x3c07, "06 0e 2b 34 01 01 01 02  05 20 07 01 0a 00 00 00", NULL, NULL)
 			MXFLIB_CLASS_ITEM("Platform", "Human readable name of the operating system used.", ClassUsageOptional, "UTF16String", 0, 0, 0x3c08, "06 0e 2b 34 01 01 01 02  05 20 07 01 06 01 00 00", NULL, NULL)
@@ -333,7 +334,7 @@
 		MXFLIB_CLASS_SET_END
 		MXFLIB_CLASS_SET_EX("StructuralComponent", "Structural Component Superclass", "InterchangeObject", 2, 2, "urn:x-ul:060E2B34.0253.0101.0D010101.01010200", NULL, ClassFlags_ExtendSubs + ClassFlags_Baseline)
 			MXFLIB_CLASS_ITEM("ComponentDataDefinition", "current~DataDefinition The kind of data or metadata this structure refers to", ClassUsageRequired, "DictReferenceDataDefinition", 0, 0, 0x0201, "06 0e 2b 34 01 01 01 02  04 07 01 00 00 00 00 00", NULL, NULL)
-			MXFLIB_CLASS_ITEM("ComponentLength", "Duration (in units of edit rate)", ClassUsageOptional, "LengthType", 8, 8, 0x0202, "06 0e 2b 34 01 01 01 02  07 02 02 01 01 03 00 00", NULL, NULL)
+			MXFLIB_CLASS_ITEM("ComponentLength", "Duration (in units of edit rate)", ClassUsageOptional, "LengthType", 8, 8, 0x0202, "06 0e 2b 34 01 01 01 02  07 02 02 01 01 03 00 00", NULL, "-1")
 		MXFLIB_CLASS_SET_END
 		MXFLIB_CLASS_SET_EX("Segment", "", "StructuralComponent", 2, 2, "06 0E 2B 34 02 53 01 01 0d 01 01 01 01 01 03 00", NULL, ClassFlags_ExtendSubs + ClassFlags_Baseline)
 		MXFLIB_CLASS_SET_END
@@ -487,7 +488,7 @@
 		MXFLIB_CLASS_SET_END
 	MXFLIB_CLASS_END
 
-	// Class definitions converted from file dict.xml
+	// Class definitions converted from file ./dict.xml
 	MXFLIB_CLASS_START(DictData_Classes_2)
 		MXFLIB_CLASS_SET_EX("Event", "", "Segment", 2, 2, "06 0E 2B 34 02 53 01 01 0D 01 01 01 01 01 06 00", NULL, ClassFlags_ExtendSubs + ClassFlags_Baseline)
 			MXFLIB_CLASS_ITEM("EventStartPosition", "Offset into the descriptive metadata track in edit units", ClassUsageRequired, "Position", 8, 8, 0x0601, "06 0e 2b 34 01 01 01 02  07 02 01 03 03 03 00 00", NULL, NULL)
@@ -509,7 +510,7 @@
 		MXFLIB_CLASS_SET_END
 	MXFLIB_CLASS_END
 
-	// Types definitions converted from file dict.xml
+	// Types definitions converted from file ./dict.xml
 	MXFLIB_TYPE_START(DictData_Types_2)
 		MXFLIB_TYPE_INTERPRETATION("ComponentSamplePrecisionType", "JPEG 2000 component sample precision", "UInt8", "", 0, false)
 		MXFLIB_TYPE_INTERPRETATION("CodingStyleType", "JPEG 2000 coding style", "UInt8", "", 0, false)
@@ -552,7 +553,7 @@
 		MXFLIB_TYPE_MULTIPLE("ComponentSizingBatch", "Batch of Component Sizing details for JPEG 2000", "ComponentSizing", "", ARRAYEXPLICIT, 0)
 	MXFLIB_TYPE_END
 
-	// Class definitions converted from file dict.xml
+	// Class definitions converted from file ./dict.xml
 	MXFLIB_CLASS_START(DictData_Classes_3)
 		MXFLIB_CLASS_SET("JPEG2000PictureSubDescriptor", "JPEG 2000 Picture Sub Descriptor", "InterchangeObject", "06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 5a 00")
 			MXFLIB_CLASS_ITEM("Rsiz", "An enumerated value that defines the decoder capabilities", ClassUsageRequired, "UInt16", 0, 0, 0x0000, "06 0e 2b 34 01 01 01 0a  04 01 06 03 01 00 00 00", NULL, NULL)
@@ -571,7 +572,7 @@
 		MXFLIB_CLASS_SET_END
 	MXFLIB_CLASS_END
 
-	// Class definitions converted from file dict.xml
+	// Class definitions converted from file ./dict.xml
 	MXFLIB_CLASS_START(DictData_Classes_4)
 		MXFLIB_CLASS_SET("PackageMarkerObject", "Package Marker Object", "InterchangeObject", "06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 60 00")
 			MXFLIB_CLASS_ITEM("TimebaseReferenceTrackID", "Timebase ReferenceTrack ID", ClassUsageRequired, "UInt32", 0, 0, 0x0000, "06 0e 2b 34 01 01 01 0C  06 01 01 03 0e 00 00 00", NULL, NULL)
@@ -583,13 +584,13 @@
 		MXFLIB_CLASS_SET_END
 	MXFLIB_CLASS_END
 
-	// Types definitions converted from file dict.xml
+	// Types definitions converted from file ./dict.xml
 	MXFLIB_TYPE_START(DictData_Types_3)
 		MXFLIB_TYPE_INTERPRETATION_REF("GlobalReferenceApplicationPluginObject", "Global Reference to Application Plugin Object", "GlobalRef", "", 0, false, ClassRefUndefined, "ApplicationPluginObject")
 		MXFLIB_TYPE_MULTIPLE_REF("StrongReferenceSetApplicationPluginObject", "Set of StrongReferences to Application Plug-In Objects", "StrongRef", "", ARRAYEXPLICIT, 0, ClassRefUndefined, "ApplicationPluginObject")
 	MXFLIB_TYPE_END
 
-	// Class definitions converted from file dict.xml
+	// Class definitions converted from file ./dict.xml
 	MXFLIB_CLASS_START(DictData_Classes_5)
 		MXFLIB_CLASS_EXTEND("InterchangeObject", "", "", "")
 			MXFLIB_CLASS_ITEM("ApplicationPluginBatch", "Application Plug-In Batch", ClassUsageOptional, "AUIDSet", 0, 0, 0x0000, "06.0E.2B.34.01.01.01.0C.06.01.01.04.02.0e.00.00", NULL, NULL)
@@ -610,12 +611,12 @@
 		MXFLIB_CLASS_EXTEND_END
 	MXFLIB_CLASS_END
 
-	// Types definitions converted from file dict.xml
+	// Types definitions converted from file ./dict.xml
 	MXFLIB_TYPE_START(DictData_Types_4)
 		MXFLIB_TYPE_INTERPRETATION("GlobalReferenceDescriptiveMetadataPlugin", "Global Reference to a Descriptive Metadata Plugin", "GlobalRef", "", 0, false)
 	MXFLIB_TYPE_END
 
-	// Class definitions converted from file dict.xml
+	// Class definitions converted from file ./dict.xml
 	MXFLIB_CLASS_START(DictData_Classes_6)
 		MXFLIB_CLASS_SET_EX("DMSegment", "Descriptive Metadata Segment", "StructuralComponent", 2, 2, "06 0e 2b 34 02 53 01 01  0d 01 01 01 01 01 41 00", NULL, ClassFlags_ExtendSubs + ClassFlags_Baseline)
 			MXFLIB_CLASS_ITEM("DescriptiveMetadataPluginID", "ID of this DM Plug-in instance", ClassUsageOptional, "GlobalReferenceDescriptiveMetadataPlugin", 0, 0, 0x0000, "06.0E.2B.34.01.01.01.0C.05.20.07.01.0e.00.00.00", NULL, NULL)
@@ -630,7 +631,7 @@
 		MXFLIB_CLASS_SET_END
 	MXFLIB_CLASS_END
 
-	// Class definitions converted from file dict.xml
+	// Class definitions converted from file ./dict.xml
 	MXFLIB_CLASS_START(DictData_Classes_7)
 		MXFLIB_CLASS_SET("CryptographicFramework", "DCP-Encryption Cryptographic Framework", "DM_Framework", "06 0e 2b 34 02 53 01 01 0d 01 04 01 02 01 00 00")
 			MXFLIB_CLASS_ITEM_REF("ContextSR", "Strong Reference to the associated Cryptographic Context", ClassUsageRequired, "UUID", 16, 16, 0x0000, "06 0e 2b 34 01 01 01 09 06 01 01 04 02 0d 00 00 ", ClassRefStrong, "CryptographicContext", NULL, NULL)
@@ -654,7 +655,7 @@
 		MXFLIB_CLASS_VARIABLEPACK_END
 	MXFLIB_CLASS_END
 
-	// Label definitions converted from file dict.xml
+	// Label definitions converted from file ./dict.xml
 	MXFLIB_TYPE_START(DictData_Types_5)
 		MXFLIB_LABEL("EncryptedContainerLabel", "DCP-Crypto Encrypted Essence Container, frame-wrapped", "06 0e 2b 34 04 01 01 07 0d 01 03 01 02 0b 01 00")
 		MXFLIB_MASKED_LABEL("DMSCrypto", "MXF Cryptographic DM Scheme", "06.0E.2B.34.04.01.01.07.0D.01.04.01.02.00.00.00", "00.00.00.00.00.00.00.ff.00.00.00.00.00.ff.ff.ff")
@@ -663,7 +664,7 @@
 		MXFLIB_LABEL("HMACAlgorithmSHA1128", "Identifes the use of SHA1 128 bit HMAC algorithm", "06 0e 2b 34 04 01 01 07 02 09 02 02 01 00 00 00")
 	MXFLIB_TYPE_END
 
-	// Label definitions converted from file dict.xml
+	// Label definitions converted from file ./dict.xml
 	MXFLIB_TYPE_START(DictData_Types_6)
 		MXFLIB_MASKED_LABEL("MXFOP1x", "MXF OP1x SingleItem", "06.0E.2B.34.04.01.01.01.0D.01.02.01.01.01.01.00", "00.00.00.00.00.00.00.00.00.00.00.00.00.03.ff.ff")
 		MXFLIB_MASKED_LABEL("MXFOP1a", "MXF OP1a SingleItem SinglePackage", "06.0E.2B.34.04.01.01.01.0D.01.02.01.01.01.01.00", "00.00.00.00.00.00.00.00.00.00.00.00.00.00.0e.00")
@@ -712,7 +713,7 @@
 		MXFLIB_LABEL("DCinemaTimedText", "SMPTE ST429-5 D-Cinema Timed Text Stream", "06.0E.2B.34.04.01.01.0A.0D.01.03.01.02.13.01.01")
 	MXFLIB_TYPE_END
 
-	// Class definitions converted from file dict.xml
+	// Class definitions converted from file ./dict.xml
 	MXFLIB_CLASS_START(DictData_Classes_8)
 		MXFLIB_CLASS_EXTEND("Preface", "", "", "")
 			MXFLIB_CLASS_ITEM("Dictionaries", "Link to KXS 377-2 Dictionary", ClassUsageOptional, "StrongReferenceDictionary", 0, 0, 0x3b04, "06 0E 2B 34 01 01 01 02 06 01 01 04 02 02 00 00", NULL, NULL)
@@ -720,12 +721,12 @@
 		MXFLIB_CLASS_EXTEND_END
 	MXFLIB_CLASS_END
 
-	// Types definitions converted from file dict.xml
+	// Types definitions converted from file ./dict.xml
 	MXFLIB_TYPE_START(DictData_Types_7)
 		MXFLIB_TYPE_INTERPRETATION("StringArray", "Unicode UTF-16 coded strings, each zero terminated in a single outer string", "UTF16String", "urn:x-ul:060E2B34.0104.0101.04010500.00000000", 0, false)
 	MXFLIB_TYPE_END
 
-	// Class definitions converted from file dict.xml
+	// Class definitions converted from file ./dict.xml
 	MXFLIB_CLASS_START(DictData_Classes_9)
 		MXFLIB_CLASS_SET("Dictionary", "Dictionary", "InterchangeObject", "06 0e 2b 34 02 53 01 01 0d 01 01 01 01 01 22 00")
 			MXFLIB_CLASS_ITEM("DataDefinitions", "DataDefinitions", ClassUsageOptional, "StrongReferenceSetDataDefinition", 0, 0, 0x2605, "06 0E 2B 34 01 01 01 02 06 01 01 04 05 05 00 00", NULL, NULL)
@@ -746,13 +747,13 @@
 		MXFLIB_CLASS_SET_END
 	MXFLIB_CLASS_END
 
-	// Types definitions converted from file dict.xml
+	// Types definitions converted from file ./dict.xml
 	MXFLIB_TYPE_START(DictData_Types_8)
 		MXFLIB_TYPE_INTERPRETATION_REF("StrongReferenceMetaDictionary", "StrongReference to the MetaDictionary", "StrongRef", "", 0, false, ClassRefUndefined, "MetaDictionary")
 		MXFLIB_TYPE_INTERPRETATION_REF("StrongReferencePreface", "StrongReference to the Preface", "StrongRef", "", 0, false, ClassRefUndefined, "Preface")
 	MXFLIB_TYPE_END
 
-	// Types definitions converted from file dict.xml
+	// Types definitions converted from file ./dict.xml
 	MXFLIB_TYPE_START(DictData_Types_9)
 		MXFLIB_TYPE_INTERPRETATION_REF("StrongReferenceMetaDefinition", "StrongReference to a MetaDefinition", "StrongRef", "", 0, false, ClassRefUndefined, "MetaDefinition")
 		MXFLIB_TYPE_INTERPRETATION_REF("StrongReferencePropertyDefinition", "StrongReference to a PropertyDefinition", "StrongRef", "urn:x-ul:060E2B34.01040101.05021900.00000000", 0, false, ClassRefUndefined, "PropertyDefinition")
@@ -763,7 +764,7 @@
 		MXFLIB_TYPE_MULTIPLE("WeakReferenceArrayTypeDefinition", "Array of WeakReferences to TypeDefinitions", "WeakReferenceTypeDefinition", "urn:x-ul:060e2b34.0104.0101.05040200.00000000", ARRAYEXPLICIT, 0)
 	MXFLIB_TYPE_END
 
-	// Types definitions converted from file dict.xml
+	// Types definitions converted from file ./dict.xml
 	MXFLIB_TYPE_START(DictData_Types_10)
 		MXFLIB_TYPE_INTERPRETATION_REF("MetaReference", "Generic MetaReference", "MetaRef", "", 0, false, ClassRefUndefined, "MetaDefinition")
 		MXFLIB_TYPE_INTERPRETATION("URI", "Uniform Resource Identifier", "UTF16String", "", 0, false)
@@ -782,7 +783,7 @@
 		MXFLIB_TYPE_MULTIPLE("StrongReferenceSetTypeDefinition", "Set of StrongReferences to TypeDefinition sets", "StrongReferenceTypeDefinition", "urn:x-ul:060E2B34.0104.0101.05050c00.00000000", ARRAYEXPLICIT, 0)
 	MXFLIB_TYPE_END
 
-	// Class definitions converted from file dict.xml
+	// Class definitions converted from file ./dict.xml
 	MXFLIB_CLASS_START(DictData_Classes_10)
 		MXFLIB_CLASS_SET("Root", "Defines the Root set", "AbstractObject", "urn:x-ul:060E2B34.0253.0101.0d010101.03000000")
 			MXFLIB_CLASS_ITEM("RootPreface", "References the Preface of the file", ClassUsageRequired, "StrongReferencePreface", 0, 0, 0x0002, "urn:x-ul:060E2B34.0101.010a.06010107.17000000", NULL, NULL)
@@ -837,6 +838,8 @@
 			MXFLIB_CLASS_ITEM("ElementValues", "Specifies the valid enumerated values", ClassUsageRequired, "Int64Batch", 0, 0, 0x0016, "06 0E 2B 34 01 01 01 02 03 01 02 03 05 00 00 00", NULL, NULL)
 		MXFLIB_CLASS_SET_END
 		MXFLIB_CLASS_SET("TypeDefinitionExtendibleEnumeration", "Defines the TypeDefinitionExtendibleEnumeration set", "TypeDefinition", "06 0E 2B 34 02 53 01 01 0D 01 01 01 02 20 00 00")
+			MXFLIB_CLASS_ITEM("ExtElementNames", "ElementNames for Legacy TypeDefinitionExtendibleEnumeration", ClassUsageOptional, "StringArray", 0, 0, 0x001f, "060e2b34.0101.0102.03010203.07000000", NULL, NULL)
+			MXFLIB_CLASS_ITEM("ExtElementValues", "ElementValues for Legacy TypeDefinitionExtendibleEnumeration", ClassUsageOptional, "AUIDArray", 0, 0, 0x0020, "060e2b34.0101.0102.03010203.08000000", NULL, NULL)
 		MXFLIB_CLASS_SET_END
 		MXFLIB_CLASS_SET("TypeDefinitionFixedArray", "Defines the TypeDefinitionFixedArray set", "TypeDefinition", "06 0E 2B 34 02 53 01 01 0D 01 01 01 02 08 00 00")
 			MXFLIB_CLASS_ITEM("FixedArrayElementType", "Specifies the TypeDefinition that defines the type of each element of the array", ClassUsageRequired, "MetaReferenceTypeDefinition", 0, 0, 0x0017, "06 0E 2B 34 01 01 01 02 06 01 01 07 0C 00 00 00", NULL, NULL)

@@ -1,28 +1,27 @@
+# Makefile for utility
 
 include ../build/make/standard.mk
 
-
-INCLUDE+= 
-OBJSDIR=obj
-BINDIR=$(DESTDIR)/bin
-LIBDIR=$(DESTDIR)/lib
-
-
 # Output binary
-TARGETDIR := $(BINDIR)
+TARGETDIR=$(DESTDIR)/lib
 TARGET := $(TARGETDIR)/libutility.a
 
-INCLUDE += -I../include
-
-# List of our object files
 OBJS := \
+	$(OBJSDIR)/CrashRecovery.o \
 	$(OBJSDIR)/osprintf.o \
 	$(OBJSDIR)/oxstream.o \
-	$(OBJSDIR)/timecode.o \
+	$(OBJSDIR)/timecode.o	\
 	$(OBJSDIR)/utf8.o \
+
+INCLUDE += -I$(MXFBASE)/include
+
+CXXFLAGS+= -DTRAITS_HACK -fPIC 
+
+all:$(TARGET)
 
 $(TARGET): $(PREREQDIR)/marker $(OBJSDIR)/marker $(TARGETDIR)/marker  $(OBJS)
 	$(AR) $(ARFLAGS) $(TARGET) $(OBJS)
 	$(RANLIB) $(RANLIBFLAGS) $(TARGET)
 
 include ../build/make/rules.mk
+

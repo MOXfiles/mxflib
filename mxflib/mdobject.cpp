@@ -9,27 +9,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
  
 #include "mxflib/mxflib.h"
@@ -2240,12 +2238,16 @@ DataChunkPtr MDObject::PutData(PrimerPtr UsePrimer /* =NULL */) const
 		// Compounds must be written in the correct order
 		if(ValueType->EffectiveClass() == COMPOUND)
 		{
-			MDOTypeList::const_iterator it = Type->GetChildList().begin();
-			while(it != Type->GetChildList().end())
+			const MDType *EffType = ValueType->EffectiveType();
+			if(EffType)
 			{
-				DataChunkPtr SubItem = Child(*it)->PutData();
-				Ret->Append(SubItem->Size, SubItem->Data);
-				it++;
+				MDTypeList::const_iterator it = EffType->GetChildList().begin();
+				while(it != EffType->GetChildList().end())
+				{
+					DataChunkPtr SubItem = Child(*it)->PutData();
+					Ret->Append(SubItem->Size, SubItem->Data);
+					it++;
+				}
 			}
 		}
 		else
@@ -3862,6 +3864,31 @@ MDOTypePtr MDOType::DefineClass(ClassRecordPtr &ThisClass, SymbolSpacePtr Defaul
 }
 
 
+//! Unload all classes from memory
+/*! \note Classes still in use will remain until they are no longer referenced */
+void MDOType::ClearClasses(void)
+{
+	StaticPrimer = NULL;
+	
+	ULLookup.clear();
+	ULLookupVer1.clear();
+	NameLookup.clear();
+	AllTypes.clear();
+	TopTypes.clear();
+
+	InternalsDefined = false;
+}
+
+
+//! Clear all defined 
+void SymbolSpace::ClearSymbols(void)
+{
+	// Remove all existing sumbols
+	AllSymbolSpaces.clear();
+
+	// Recreate an empty default SymbolSpace
+	MXFLibSymbols = new SymbolSpace("http://www.freemxf.org/MXFLibSymbols");
+}
 
 
 //** Static Instantiations for MDOType class **

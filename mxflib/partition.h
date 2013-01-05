@@ -7,28 +7,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *	Portions Copyright (c) 2003, Metaglue Corporation
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 #ifndef MXFLIB__PARTITION_H
 #define MXFLIB__PARTITION_H
@@ -49,14 +46,15 @@ namespace mxflib
 		 *          This is required to ensure that all metadata objects in the AllMetadata list live at least as long as the 'Metadata' object.
 		 *          This means that this class can never include a smart pointer to the parsed Metadata object as this would be a loop!
 		 */
-		PrimerPtr PartitionPrimer;		//!< The Primer for this partition
-										/*!< Or NULL if no primer pack active (only valid
-										 *   if there is no header metadata in this partition
-										 *   OR it has not yet been written)
-										 */
+		PrimerPtr PartitionPrimer;			//!< The Primer for this partition
+											/*!< Or NULL if no primer pack active (only valid
+											 *   if there is no header metadata in this partition
+											 *   OR it has not yet been written)
+											 */
 
-		MDObjectList AllMetadata;		//!< List of all header metadata sets in the partition
-		MDObjectList TopLevelMetadata;	//!< List of all metadata items in the partition not linked from another
+		MDObjectList AllMetadata;			//!< List of all header metadata sets in the partition
+		MDObjectList TopLevelMetadata;		//!< List of all metadata items in the partition not linked from another
+
 
 	private:
 		std::map<UUID, MDObjectPtr> RefTargets;				//!< Map of UUID of all reference targets to objects
@@ -75,8 +73,8 @@ namespace mxflib
 		Partition(const UL &BaseUL) { Object = new MDObject(BaseUL); Init(); };
 		Partition(ULPtr BaseUL) { Object = new MDObject(*BaseUL); Init(); };
 
-		//! Reload the metadata tree - DRAGONS: not an ideal way of doing this
-		void UpdateMetadata(ObjectInterface *NewObject) { ClearMetadata(); AddMetadata(NewObject->Object); };
+		//! Reload the metadata tree
+		void UpdateMetadata(ObjectInterface *Meta);
 
 		//! Reload the metadata tree - DRAGONS: not an ideal way of doing this
 		void UpdateMetadata(MDObjectPtr NewObject) { ClearMetadata(); AddMetadata(NewObject); };
@@ -87,9 +85,9 @@ namespace mxflib
 		void AddMetadata(MDObjectPtr NewObject, bool ForceFirst = false);
 
 		//! Clear all header metadata for this partition (including the primer)
-		void ClearMetadata(void)
+		void ClearMetadata(bool PreservePrimer = true)
 		{
-			PartitionPrimer = NULL;
+			if(!PreservePrimer) PartitionPrimer = NULL;
 			AllMetadata.clear();
 			TopLevelMetadata.clear();
 			RefTargets.clear();

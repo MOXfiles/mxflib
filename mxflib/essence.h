@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 #ifndef MXFLIB__ESSENCE_H
 #define MXFLIB__ESSENCE_H
@@ -32,6 +30,7 @@
 
 #include <map>
 #include <list>
+#include <vector>
 
 
 // Forward refs
@@ -399,7 +398,7 @@ namespace mxflib
 		 */
 		virtual Position GetRangeStart(void) { return 0; }
 
-		//! Get the range end position
+		//! Get the range end position7
 		/*! \return -1 if not applicable for this source
 		 */
 		virtual Position GetRangeEnd(void) { return 0; }
@@ -496,7 +495,7 @@ namespace mxflib
 		DataChunk KLVData;										//!< A pre-formatted chunk holding the KLV metadata for the Package Item, or an empty chunk if not set
 
 	public:
-		SystemSource(EssenceSource *MasterSource, ULPtr &WrappingUL) : EssenceSource()
+		SystemSource(EssenceSource *MasterSource, const UL &WrappingUL) : EssenceSource()
 		{
 			Master = MasterSource;
 			SMPackID = -1;
@@ -522,7 +521,7 @@ namespace mxflib
 			// TODO: We don't yet set drop-frame for anything!
 			DropFrame = false;
 
-			memcpy(EssenceLabel, WrappingUL->GetValue(), 16);
+			memcpy(EssenceLabel, WrappingUL.GetValue(), 16);
 		}
 
 		//! Did the last call to GetEssenceData() return the end of a wrapping item
@@ -2909,6 +2908,9 @@ namespace mxflib
 // GCReader and associated structures
 namespace mxflib
 {
+	//! Content Units to be counted to evaluate when to stop ReadFromFile
+	typedef enum _ReaderUnit { Unit_KLV, Unit_GC, Unit_Part, Unit_Cont } ReaderUnit;
+
 	//! Base class for GCReader handlers
 	/*! \note Classes derived from this class <b>must not</b> include their own RefCount<> derivation
 	 */
@@ -2935,7 +2937,7 @@ namespace mxflib
 		Position FileOffset;							//!< The offset of the start of the current (or next) KLV within the file. Current KLV during HandleData() and next at other times.
 		Position StreamOffset;							//!< The offset of the start of the current KLV within the data stream
 
-		bool StopNow;									//!< True if no more KLVs should be read - set by StopReading() and ReadFromFile() with SingleKLV=true
+		bool StopNow;									//!< True if no more KLVs should be read - set by StopReading() and ReadFromFile() when Focus,Unit,Count is satisfied
 		bool StopCalled;								//!< True if StopReading() called while processing the current KLV
 		bool PushBackRequested;							//!< True if StopReading() called with PushBackKLV = true
 
@@ -2996,26 +2998,28 @@ namespace mxflib
 
 		//! Read from file - and specify a start location
 		/*! All KLVs are dispatched to handlers
-		 *  Stops reading at the next partition pack unless SingleKLV is true when only one KLV is dispatched
+		 *  Stops reading when Focus,Unit,Count is satisfied (default=false,Unit_KLV,1)
 		 *  \param FilePos Location within the file to start this read
 		 *  \param StreamPos Stream offset of the first KLV to be read
-		 *  \param SingleKLV True if only a single KLV is to be read
+		 *  \param Focus (default false) if reading will Stop after the Unit and Count params are satisfied
+		 *	\param Unit enum (default Unit_KLV) of what Unit of content {Unit_KLV,Unit_GC,Unit_Part,Unit_Cont} is to be Counted
+		 *	\param Count count (default 1) of how many Units are be read prior to stop (0==forever)
 		 *  \return true if all went well, false end-of-file, an error occured or StopReading() was called
 		 */
-		bool ReadFromFile(Position FilePos, Position StreamPos, bool SingleKLV = false)
+		bool ReadFromFile(Position FilePos, Position StreamPos, bool Focus = false, ReaderUnit Unit = Unit_KLV, int Count = 1 )
 		{
 			FileOffset = FilePos;					// Record the file location
 			StreamOffset = StreamPos;				// Record the stream location
 
-			return ReadFromFile(SingleKLV);			// Then do a "continue" read
+			return ReadFromFile(Focus,Unit,Count);			// Then do a "continue" read
 		}
 
 		//! Read from file - continuing from a previous read
 		/*! All KLVs are dispatched to handlers
-		 *  Stops reading at the next partition pack unless SingleKLV is true when only one KLV is dispatched
+		 *  Stops reading when Focus,Unit,Count is satisfied (default=false,Unit_KLV,1)
 		 *  \return true if all went well, false end-of-file, an error occured or StopReading() was called
 		 */
-		bool ReadFromFile(bool SingleKLV = false);
+		bool ReadFromFile(bool Focus = false, ReaderUnit Unit = Unit_KLV, int Count = 1 );
 
 		//! Set the offset of the start of the next KLV in the file
 		/*! Generally this will only be called as a result of parsing a partition pack
@@ -3151,11 +3155,11 @@ namespace mxflib
 
 		//! Read from file
 		/*! All KLVs are dispatched to handlers
-		 *  Stops reading at the next partition pack unless SingleKLV is true when only one KLV is dispatched
+		 *  Stops reading when Focus,Unit,Count is satisfied (default=false,Unit_KLV,1)
 		 *  \return true if all went well, false end-of-file, an error occured or StopReading() 
 		 *          was called on the current GCReader
 		 */
-		bool ReadFromFile(bool SingleKLV = false);
+		bool ReadFromFile(bool Focus = false, ReaderUnit Unit = Unit_KLV, int Count= 1 );
 
 		//! Resync after possible loss or corruption of body data
 		/*! Searches for the next partition pack and moves file pointer to that point
@@ -3206,6 +3210,14 @@ namespace mxflib
 		UInt8	Count;						//!< Element count - byte 14
 		UInt8	ElementType;				//!< Element type - byte 15
 		UInt8	Number;						//!< Element number - byte 16
+
+		bool operator==( const GCElementKind R ) const
+		{
+			if( !IsValid && !R.IsValid ) return true;
+			return (Item==R.Item && Count==R.Count && ElementType==R.ElementType && Number==R.Number);
+		}
+
+		bool operator!=( const GCElementKind R ) const { return !operator==(R); }
 	};
 
 	//! Register an essence key to be treated as a GC essence key
@@ -3235,6 +3247,148 @@ namespace mxflib
 	/*! \return 0 if not a valid GC Key
 	 */
 	UInt32 GetGCTrackNumber(ULPtr TheUL);
+
+	//! GCLayout class maintains a vector of GC elements (both Sys and Essence) discovered while reading
+	class GCLayout
+	{
+	private:
+		std::vector<GCElementKind>	_current;	//!< pre-built or pre-loaded layour, used to compare against
+		std::vector<GCElementKind>	_fresh;		//!< layout building now whilst comparing
+
+		bool	_valid;							//!< validity of _current. false = don't compare
+		bool	_inconsistent;					//!< true = inconsistency found in _fresh relative to _current
+		bool	_autorefresh;					//!< true = automatically replace _current at start of next GC, see below
+		
+		//! normal behaviour is to save _fresh as _current upon starting new GC (i.e. when Offer returns 3)
+
+		Position _pos;							//!< count how many complete GCs
+
+	public:
+		GCLayout( const bool refresh = true )
+		{
+			_valid = false;
+			_inconsistent = false;
+			_autorefresh = refresh;
+
+			_pos = 0;
+
+			_current.reserve( 16 );				// to avoid unnecessary reallocation
+			_fresh.reserve( 16 );
+		};
+
+		~GCLayout()
+		{
+			_current.clear();
+			_fresh.clear();
+		};
+
+		bool IsValid() { return _valid; }
+		bool IsConsistent() { return !_inconsistent; }
+
+		//! return how many since last reset
+		Position Pos() { return _pos; }				
+
+		//! most recent element
+		GCElementKind Which() { return _fresh.back(); }
+
+		size_t Size() { if( _valid ) return _current.size(); else return _fresh.size(); }
+
+		//! reset _current, Where() and set _autorefresh
+		void Reset( const bool refresh = true )
+		{
+			_valid = false;
+			_inconsistent = false;
+			_autorefresh = refresh;
+
+			_pos = 0;
+
+			_current.clear();
+			_fresh.clear();
+		}
+
+		//! Offer an element and report status
+			// -1 = inconsistent
+			//	0 = added OK
+			//	1 = added OK, presume next will be last
+			//	2 = added OK, presumed was last
+			//	3 = starts new GC	note: may also be inconsistent
+		int Offer( const GCElementKind me )
+		{
+			if( !_valid )
+			{
+				if( _fresh.empty() )										// first element
+				{
+					_fresh.push_back( me ); return 3;						// ok
+				}
+				else if( _fresh.size()==1 && me==_fresh.back()				// double element
+					 ||( _fresh.size()>1 && me==_fresh.front() ) )			// repeat cycle
+				{
+					if( _autorefresh ) { _current = _fresh;	_valid = true; _inconsistent = false; }
+					_fresh.clear();	_fresh.push_back( me );	_pos++; return 3;		// start new
+				}
+				else if( (me.Item&0xF) > 4 && (_fresh.back().Item&0xF) == 7	// Pic, Snd, Cpd allowed after Data 
+				     ||( (me.Item&0xF) >= (_fresh.back().Item&0xF)      ) )	// otherwise allowed in seq Sys, Pic, Snd, Data, Cpd
+				{
+					_fresh.push_back( me ); return 0;						// ok
+				}
+				else
+				{
+					if( _autorefresh ) { _current = _fresh;	_valid = true; _inconsistent = false; }
+					_fresh.clear();	_fresh.push_back( me );	_pos++; return 3;		// start new
+				}
+			}
+			else
+			{
+				if( _current.size() >= 1 && me == _current.front() )
+				{
+					_fresh.clear();	_fresh.push_back( me );	_pos++; return 3;		// start new
+				}
+
+				_fresh.push_back( me );
+
+				if( _fresh.size() > _current.size() ) { _inconsistent = true; return -1; }			// just became inconsistently bigger
+
+				if( _fresh.size() == _current.size() )
+				{
+					if( me != _current.back() ) { _inconsistent = true; return -1; } else return 2; // was last
+				}
+				else if( _fresh.size() == (_current.size()-1) )
+				{
+					if( me != _current.back() ) { _inconsistent = true; return -1; } else return 1; // was penultimate
+				}
+
+				if( me != _current.back() ) { _inconsistent = true; return -1; } else return 0;	// OK
+			}
+		};
+
+		//! report where in _current
+			// -1 = no _curr
+			//	0 = in middle
+			//	1 = next will be last
+			//	2 = at end
+			//	3 = just started
+		int Where()
+		{
+			if( !_valid || _current.empty() ) return -1;					// no curr
+			
+			if( _fresh.size() == _current.size() ) return 2;				// at end
+			else if( _fresh.size() == (_current.size()-1) ) return 1;		// penultimate
+			else if( _fresh.size() == 1 ) return 3;							// first
+			
+			return 0;														// somewhere
+		};
+
+		//! force immediate end of _fresh layout
+			// -1 = was not at end
+			//  2 = OK
+		int	ForceEnd()
+		{
+			_current = _fresh; _inconsistent = false; _fresh.clear();
+
+			if( Where()!=2 ) return -1;										// wasn't at end
+			else { _valid = true; return 2;	}								// ok
+		};
+	};
 }
 
 
@@ -3312,6 +3466,7 @@ namespace mxflib
 		IndexManagerPtr IndexMan;									//!< The index manager for this stream
 		
 		Position NextSprinkled;										//!< The location of the first edit-unit to use for the next sprinkled index segment
+		size_t PrevSprinkleSize;									//!< The size of the most recent sprinkled index table
 
 		bool FreeSpaceIndex;										//!< True if the free space at the end of the essenc eis to be indexed
 																	/*!< When an essence stream may be extended during file creation it may be useful to know
@@ -3370,6 +3525,7 @@ namespace mxflib
 			StreamWriter = NULL;
 			SubStreamRestart = true;
 			NextSprinkled = 0;
+			PrevSprinkleSize = 0;
 			EssencePendingData = false;
 			EndOfStream = false;
 			FreeSpaceIndex = false;
@@ -3509,6 +3665,12 @@ namespace mxflib
 		//! Get the first edit unit for the next sprinkled index segment
 		Position GetNextSprinkled(void) { return NextSprinkled; }
 
+		//! Set the size of the previous sprinkled index segment
+		void SetPrevSprinkleSize( size_t Curr ) { PrevSprinkleSize = Curr; }
+
+		//! Get the size of the previous sprinkled index segment
+		size_t GetPrevSprinkleSize(void) { return PrevSprinkleSize; }
+
 		//! Set the KLV Alignment Grid
 		// FIXME: This will break CBR indexing if changed during writing!
 		void SetKAG(UInt32 NewKAG) { KAG = NewKAG; }
@@ -3568,6 +3730,7 @@ namespace mxflib
 		//! Get the count of essence bytes written so far from this stream
 		/*! DRAGONS: This is only the raw bytes, not including keys, lengths or any filler */
 		Length GetOverallEssenceSize(void) { return OverallEssenceSize; };
+
 
 
 		//! Get the position of the stream in edit units since the start of the stream

@@ -1,4 +1,14 @@
-Copyright (c) 2002-2012, Matt Beard, BBC R&D and Metaglue Corporation
+Copyright (c) Metaglue Corporation
+Portions Copyright (c) Matt Beard, BBC R&D
+
+This software is dual-licensed. It is available under an open source license
+without support, detailed below. It is also available under a commercial license
+that includes support with a service level agreement, and additional code.
+
+For full details of the commercial license, please contact sales@metaglue.com
+or visit www.metaglue.com/MXFplus.
+
+The open source license is as follows:
 
 This software is provided 'as-is', without any express or implied warranty.
 In no event will the authors be held liable for any damages arising from
@@ -10,8 +20,8 @@ freely, subject to the following restrictions:
 
   1. The origin of this software must not be misrepresented; you must
      not claim that you wrote the original software. If you use this
-     software in a product, an acknowledgment in the product
-     documentation would be appreciated but is not required.
+     software in a product, you must include an acknowledgment of the
+     authorship in the product documentation.
 
   2. Altered source versions must be plainly marked as such, and must
      not be misrepresented as being the original software.

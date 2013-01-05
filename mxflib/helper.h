@@ -4,27 +4,25 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 #ifndef MXFLIB__HELPER_H
@@ -112,6 +110,30 @@ namespace mxflib
 
 		return std::string(Buffer);
 	}
+
+
+	//! Convert an ISO 8601 Date/Time string (as per TimeStamp) to a struct tm
+	/*! \ret Converted time, or all zero on error - can be detected by tm_mday which is never normally 0 */
+	struct tm StringToTm(std::string String);
+
+	//! Convert an ISO 8601 Date/Time string (as per TimeStamp) to a full_time
+	/*! \ret Converted time, or Ret.msBy4 = -1 on error */
+	inline full_time StringToTime(std::string String)
+	{
+		full_time Ret;
+		struct tm Time = StringToTm(String);
+		if((Time.tm_mday == 0) && (String.length() < 20))
+		{
+			Ret.time = 0;
+			Ret.msBy4 = -1;
+			return Ret;
+		}
+		
+		Ret.time = mktime(&Time);
+		Ret.msBy4 = atoi(&String.c_str()[20]) / 4;
+		return Ret;
+	}
+
 
 	//! Get the current time as an ISO 8601 string
 	/*! \note ISO 8601 suggests "T" as a separator between date and time. 

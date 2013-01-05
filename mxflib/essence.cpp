@@ -4,37 +4,31 @@
  *	\version $Id$
  *
  */
-/*
- *	Copyright (c) 2003, Matt Beard
- *
- *	This software is provided 'as-is', without any express or implied warranty.
- *	In no event will the authors be held liable for any damages arising from
- *	the use of this software.
- *
- *	Permission is granted to anyone to use this software for any purpose,
- *	including commercial applications, and to alter it and redistribute it
- *	freely, subject to the following restrictions:
- *
- *	  1. The origin of this software must not be misrepresented; you must
- *	     not claim that you wrote the original software. If you use this
- *	     software in a product, an acknowledgment in the product
- *	     documentation would be appreciated but is not required.
- *	
- *	  2. Altered source versions must be plainly marked as such, and must
- *	     not be misrepresented as being the original software.
- *	
- *	  3. This notice may not be removed or altered from any source
- *	     distribution.
+/* 
+ *  This software is provided 'as-is', without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *  
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *  
+ *   1. The origin of this software must not be misrepresented; you must
+ *      not claim that you wrote the original software. If you use this
+ *      software in a product, you must include an acknowledgment of the
+ *      authorship in the product documentation.
+ *  
+ *   2. Altered source versions must be plainly marked as such, and must
+ *      not be misrepresented as being the original software.
+ *  
+ *   3. This notice may not be removed or altered from any source
+ *      distribution.
  */
 
 
 #include "mxflib/mxflib.h"
 
 
-//TRACE CODE
-#ifdef ES_TRACE
-#include "trace/JNbasic_Ctrace.h"
-#endif
 
 
 using namespace mxflib;
@@ -791,14 +785,17 @@ UInt64 GCWriter::CalcWriteSize(void)
 		// Add the size of any filler
 		if( KAGSize > 1 && ThisType!=4 ) // exclude GCsys from alignment
 		{
-			if(!LinkedFile->IsBlockAligned())
+			if( (ThisType != LastType) || Feature(FeatureAlignAllStreams) )
 			{
-				Ret += LinkedFile->FillerSize(ForceFillerBER4, KAGSize);
-			}
-			else
-			{
-				// Do nothing when block aligned
-				// DRAGONS: Should we do something here?
+				if(!LinkedFile->IsBlockAligned())
+				{
+					Ret += LinkedFile->FillerSize(ForceFillerBER4, KAGSize);
+				}
+				else
+				{
+					// Do nothing when block aligned
+					// DRAGONS: Should we do something here?
+				}
 			}
 		}
 
@@ -884,22 +881,25 @@ void GCWriter::Flush(void)
 		// Align to the next KAG
 		if( KAGSize > 1 && ThisType!=4 ) // exclude GCsys from alignment
 		{
-			// If we are indexing filler then send this offset to the index manager - even if we write 0 bytes 
-			if((*it).second.IndexFiller)
+			if( (ThisType != LastType) || Feature(FeatureAlignAllStreams) )
 			{
-				// Send this stream offset to index stream -1 to signify filler
-				if((*it).second.IndexMan) (*it).second.IndexMan->OfferOffset(-1, IndexEditUnit, StreamOffset);
-			}
+				// If we are indexing filler then send this offset to the index manager - even if we write 0 bytes 
+				if((*it).second.IndexFiller)
+				{
+					// Send this stream offset to index stream -1 to signify filler
+					if((*it).second.IndexMan) (*it).second.IndexMan->OfferOffset(-1, IndexEditUnit, StreamOffset);
+				}
 
-			if(!LinkedFile->IsBlockAligned())
-			{
-				UInt64 Pos = LinkedFile->Tell();
-				StreamOffset += LinkedFile->Align(ForceFillerBER4, KAGSize) - Pos;
-			}
-			else
-			{
-				// Do nothing when block aligned
-				// DRAGONS: Should we do something here?
+				if(!LinkedFile->IsBlockAligned())
+				{
+					UInt64 Pos = LinkedFile->Tell();
+					StreamOffset += LinkedFile->Align(ForceFillerBER4, KAGSize) - Pos;
+				}
+				else
+				{
+					// Do nothing when block aligned
+					// DRAGONS: Should we do something here?
+				}
 			}
 		}
 
@@ -1013,42 +1013,7 @@ void GCWriter::Flush(void)
 				// Index this item if required (removing the KLSize if doing value-relative indexing)
 				if(IndexThisItem) (*it).second.IndexMan->OfferOffset((*it).second.IndexSubStream, LastEditUnit, StreamOffset - KLSize);
 
-//TRACE CODE
-#ifdef ES_TRACE
-#error "ES_TRACE is defined"
-				bool dowrite=true;
-				char * debug_behavior=getenv("ES_DEBUG");
-				if( debug_behavior && strlen(debug_behavior)>0)
-				{
-					char * pch=debug_behavior;
-					do
-					{
-						if(*pch=='W')
-						{
-							dowrite=false;
-						}
-					}while(*pch++);
-				}
-			
-							// Write the data
-				if(dowrite)
-							StreamOffset += LinkedFile->Write(*Data);
-				else
-					//puts("Aborting write to disc" );
-					JNU_TRACE_0i_0u_0t_0f( "Aborting write to ring buffer" );
-			
-				char msg[ 100];
-				
-				unsigned char * buff=Data->Data;
-				short * ps=(short * )&buff[0x10];
-				int FrameNo=* ps;
-				sprintf(msg, "MXFLIB: Frame Written Number %d Size 0x%08x", FrameNo,(int)Data->Size);
-				//puts(msg);
-				JNU_TRACE_0i_0u_0t_0f( msg );
-#else
 			StreamOffset += LinkedFile->Write(*Data);
-#endif
-
 			}
 
 			// Now correct the length if we are fast clip wrapping
@@ -1461,17 +1426,17 @@ GCReader::GCReader( MXFFilePtr File, GCReadHandlerPtr DefaultHandler /*=NULL*/, 
 
 //! Read from file
 /*! All KLVs are dispatched to handlers
- *  Stops reading at the next partition pack unless SingleKLV is true when only one KLV is dispatched
+ *  Stops reading when Focus,Unit,Count is satisfied (default=false,Unit_KLV,1)
  *  \return true if all went well, false end-of-file, an error occured or StopReading() was called
  */
-bool GCReader::ReadFromFile(bool SingleKLV /*=false*/)
+bool GCReader::ReadFromFile(bool Focus /* = false */, ReaderUnit Unit /* = Unit_KLV */, int Count /* = 1 */)
 {
 	// Seek to the offset of the "next" KLV
 	mxflib_assert(File);
 	File->Seek(FileOffset);
 
-	// Force us to stop as soon as we have read a single KLV if requested
-	StopNow = SingleKLV;
+	// Force us to stop as soon as we have satisfied Focus,Unit,Count if requested
+	StopNow = Focus && Unit==Unit_KLV && Count==1;
 	StopCalled = false;
 
 	// Read and dispatch until requested to stop
@@ -1512,7 +1477,7 @@ bool GCReader::ReadFromFile(bool SingleKLV /*=false*/)
 	} while(!StopNow);
 
 	// We will drop out of the loop on two conditions:
-	//    1) A single shot was requested by setting SingleKLV = true
+	//    1) A termination condition was requested by setting Focus,Unit,Count
 	//    2) StopNow was set by a call to StopReading()
 
 	// Return error status if StopReading() was called
@@ -1840,11 +1805,11 @@ bool BodyReader::MakeGCReader(UInt32 BodySID, GCReadHandlerPtr DefaultHandler /*
 
 //! Read from file
 /*! All KLVs are dispatched to handlers
- *  Stops reading at the next partition pack unless SingleKLV is true when only one KLV is dispatched
+ *  Stops reading at the next partition pack unless Focus,Unit,Count==true,Unit_KLV,1 when only one KLV is dispatched
  *  \return true if all went well, false end-of-file, an error occured or StopReading() 
  *          was called on the current GCReader
  */
-bool BodyReader::ReadFromFile(bool SingleKLV /*=false*/)
+bool BodyReader::ReadFromFile(bool Focus /* = false */, ReaderUnit Unit /* = Unit_KLV */, int Count /* = 1 */)
 {
 	bool Ret = false;
 	GCReaderPtr Reader;
@@ -1889,7 +1854,7 @@ bool BodyReader::ReadFromFile(bool SingleKLV /*=false*/)
 		NewPartition->SeekEssence();
 
 		// Read and handle data
-		Ret = Reader->ReadFromFile(File->Tell(), StreamOffset, SingleKLV);
+		Ret = Reader->ReadFromFile(File->Tell(), StreamOffset, Focus, Unit, Count);
 
 		// We have now initialized the reader
 		NewPos = false;
@@ -1899,7 +1864,7 @@ bool BodyReader::ReadFromFile(bool SingleKLV /*=false*/)
 		// Continue from the previous read 
 		Reader = GetGCReader(CurrentBodySID);
 		if(!Reader) return true;
-		Ret = Reader->ReadFromFile(SingleKLV);
+		Ret = Reader->ReadFromFile(Focus, Unit, Count);
 	}
 
 	CurrentPos = Reader->GetFileOffset();
@@ -2660,7 +2625,7 @@ Length BodyWriter::WriteEssence(StreamInfoPtr &Info, Length Duration /*=0*/, Len
 			Writer->AddEssenceData(EssenceID, (*it), GetFastClipWrap(), Stream);
 
 			// Set the generic stream flag the first time we pass through here
-			if(PartitionBodySID == 0) PendingGeneric = (*it)->IsGStreamItem();
+			if(PartitionBodySID != Stream->GetBodySID()) PendingGeneric = (*it)->IsGStreamItem();
 
 			it++;
 		}
@@ -2817,7 +2782,7 @@ Length BodyWriter::WriteEssence(StreamInfoPtr &Info, Length Duration /*=0*/, Len
 					Stream->GetNextState();
 
 					// If we are requested to add a "free space" index entry do so here
-					if(Stream->GetFreeSpaceIndex())
+					if(IndexMan && Stream->GetFreeSpaceIndex())
 					{
 						Position EditUnit = IndexMan->AcceptProvisional();
 						if(EditUnit == IndexTable::IndexLowest) EditUnit = IndexMan->GetLastNewEditUnit();
@@ -3467,7 +3432,12 @@ Length mxflib::BodyWriter::WritePartition(Length Duration /*=0*/, Length MaxPart
 
 			// Write the index table
 			DataChunkPtr IndexChunk = new DataChunk;
-			Index->WriteIndex(*IndexChunk);
+			size_t CurrSize = Index->WriteIndex(*IndexChunk);
+
+			if(Stream->GetIndexType() & BodyStream::StreamIndexSprinkled)
+			{
+				Stream->SetPrevSprinkleSize( CurrSize );
+			}
 
 			// Isolated index tables live in complete body partitions
 			// DRAGONS: As we don'w know the footer location yet, we cannot flag as closed for 377-1-2009
@@ -3543,8 +3513,8 @@ Length mxflib::BodyWriter::WritePartition(Length Duration /*=0*/, Length MaxPart
 			// Start a new partition if we can't continue the old one
 			if(!ContinuePartition)
 			{
-				// Flush any previously pending partition
-				if(PartitionWritePending) EndPartition();
+				// Flush any previously pending partition pack
+				if(PartitionWritePending) WritePartitionPack();
 
 				// Assume a complete body partition - may be changed by handler if metadata added
 				// DRAGONS: As we don'w know the footer location yet, we cannot flag as closed for 377-1-2009
@@ -3595,7 +3565,12 @@ Length mxflib::BodyWriter::WritePartition(Length Duration /*=0*/, Length MaxPart
 
 					// Write the index table
 					DataChunkPtr IndexChunk = new DataChunk;
-					Index->WriteIndex(*IndexChunk);
+					size_t CurrSize = Index->WriteIndex(*IndexChunk);
+
+					if(Stream->GetIndexType() & BodyStream::StreamIndexSprinkled)
+					{
+						Stream->SetPrevSprinkleSize( CurrSize );
+					}
 
 					// We will be a complete body partition unless the partition handler adds metadata
 					// DRAGONS: As we don'w know the footer location yet, we cannot flag as closed for 377-1-2009
@@ -3667,7 +3642,12 @@ Length mxflib::BodyWriter::WritePartition(Length Duration /*=0*/, Length MaxPart
 
 			// Write the index table
 			DataChunkPtr IndexChunk = new DataChunk;
-			Index->WriteIndex(*IndexChunk);
+			size_t CurrSize = Index->WriteIndex(*IndexChunk);
+
+			if(Stream->GetIndexType() & BodyStream::StreamIndexSprinkled)
+			{
+				Stream->SetPrevSprinkleSize( CurrSize );
+			}
 
 			// Isolated index tables generally live in complete body partitions
 			// DRAGONS: As we don'w know the footer location yet, we cannot flag as closed for 377-1-2009
@@ -3831,7 +3811,7 @@ void mxflib::BodyWriter::WriteFooter(bool WriteMetadata /*=false*/, bool IsCompl
 			IndexFlags = (BodyStream::IndexType) (IndexFlags & BodyStream::StreamIndexCBRFooter);
 
 			// Check we are supposed to be writing a CBR index table
-			mxflib_assert(IndexFlags);
+			mxflib_assert(IndexFlags != BodyStream::StreamIndexNone);
 		}
 		// If the index table is VBR we need to build it
 		else
@@ -3888,7 +3868,63 @@ void mxflib::BodyWriter::WriteFooter(bool WriteMetadata /*=false*/, bool IsCompl
 
 		// Write the index table
 		DataChunkPtr IndexChunk = new DataChunk;
-		Index->WriteIndex(*IndexChunk);
+		size_t CurrSize = Index->WriteIndex(*IndexChunk);
+
+		// if this is a short sprinkled table, add a KLVFill
+		size_t PrevSize = Stream->GetPrevSprinkleSize();
+
+		if( KAG >= 256 )
+		{
+			// calculate previous size including KLVFill
+			size_t PrevFillSize = KAG-(PrevSize%KAG);
+			if( PrevSize != 0 )
+			{
+				PrevSize += PrevFillSize;
+				if( PrevFillSize < 20 ) PrevSize += KAG;
+			}
+
+			size_t CurrFillSize = 0;
+
+			// if current is shorter than the previous one
+			if( CurrSize < PrevSize )
+			{
+				// calculate needed KLVFill
+				CurrFillSize = PrevSize - CurrSize;
+			}
+			else if( PrevSize == 0 )
+			{
+				// align to KAG anyway
+				// since this is a Footer, WriteEssence won't be doing the alignment
+				CurrFillSize = KAG-(CurrSize%KAG);
+			}
+
+			if( CurrFillSize != 0 )
+			{
+				if( CurrFillSize<20 ) CurrFillSize += KAG;
+
+				// append to the current IndexChunk
+				if(Feature(FeatureVersion1KLVFill))
+				{
+					// Write the version 1 filler key
+					IndexChunk->Append( 7, KLVFill_UL.GetValue() );
+					UInt8 One = 1;
+					IndexChunk->Append( 1, &One );
+					IndexChunk->Append( 8, &KLVFill_UL.GetValue()[8] );
+				}
+				else
+				{
+					// Write the filler key
+					IndexChunk->Append( 16, KLVFill_UL.GetValue() );
+				}
+
+				// assume BERsize = 4
+				DataChunkPtr L = MakeBER( CurrFillSize-20, 4 );
+				IndexChunk->Append( L );
+
+				// fill with zero
+				IndexChunk->Append( CurrFillSize-20, (UInt8 const)0 );
+			}
+		}
 
 		// Don't write empty index partitions
 		if(IndexChunk->Size)
@@ -5734,9 +5770,9 @@ namespace mxflib
 			*(pData++) = 0;
 			*(pData++) = 0;
 
-			// Continuity count (little-endian)
+			// Continuity count (big-endian)
+			*(pData++) = static_cast<UInt8>((ContinuityCount & 0xff00) >> 8);
 			*(pData++) = static_cast<UInt8>(ContinuityCount & 0xff);
-			*(pData++) = static_cast<UInt8>((ContinuityCount & 0xff00) >> 8);;
 			ContinuityCount++;
 
 			// SMPTE label
@@ -5903,6 +5939,7 @@ namespace mxflib
 
 		// TODO: What do we do about adjusting at midnight??
 	}
+
 
 
 
