@@ -347,7 +347,23 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\libprocesswrap\extract.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libprocesswrap\process.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\process_metadata.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\process_utils.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\utf8.cpp"
 				>
 			</File>
 		</Filter>
@@ -357,6 +373,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\libprocesswrap\extract.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libprocesswrap\opmap.h"
 				>
 			</File>
@@ -365,7 +385,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libprocesswrap\process_metadata.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\process_utils.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libprocesswrap\productIDs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\utf8.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libprocesswrap\version.h"
 				>
 			</File>
 		</Filter>

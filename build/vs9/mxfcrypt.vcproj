@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..,$(OPENSSL_ROOT)\include"
+				AdditionalIncludeDirectories="..\..,$(OPENSSL_ROOT)\inc32"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE; _CRT_SECURE_NO_DEPRECATE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -69,7 +69,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib $(OPENSSL_ROOT)\lib\libeay32.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib  $(OPENSSL_ROOT)\out32dll\libeay32.lib"
 				OutputFile="$(OutDir)/mxfcrypt.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
