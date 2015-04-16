@@ -756,6 +756,8 @@ namespace mxflib
 	void FileFlush(FileHandle file) ; 
 	bool FileExists(const char *filename);
 	int FileDelete(const char *filename);
+	void FileTruncate(FileHandle file, Int64 newsize =-1 );
+	Int64 FileSize(FileHandle file);
 }
 #endif // MXFLIB_NO_FILE_IO
 
