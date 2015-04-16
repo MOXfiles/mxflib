@@ -514,7 +514,6 @@ void GCWriter::AddEssenceData(GCStreamID ID, UInt64 Size, const UInt8 *Data, Bod
 			}
 
 			Stream->SchemeOrCount = Count;
-			Stream->SubOrNumber = Count+StreamBase;	// Could use Count-1, but this is clearer
 			Stream->CountFixed = true;
 		}
 
@@ -601,7 +600,6 @@ void GCWriter::AddEssenceData(GCStreamID ID, EssenceSourcePtr Source, bool FastC
 			}
 
 			Stream->SchemeOrCount = Count;
-			Stream->SubOrNumber = Count+StreamBase;	// Could use Count-1, but this is clearer
 			Stream->CountFixed = true;
 		}
 
@@ -682,7 +680,6 @@ void GCWriter::AddEssenceData(GCStreamID ID, KLVObjectPtr Source, bool FastClipW
 			}
 
 			Stream->SchemeOrCount = Count;
-			Stream->SubOrNumber = Count+StreamBase;	// Could use Count-1, but this is clearer
 			Stream->CountFixed = true;
 		}
 
@@ -2936,6 +2933,16 @@ Length BodyWriter::WriteEssence(StreamInfoPtr &Info, Length Duration /*=0*/, Len
 
 			// First iteration is done
 			FirstIteration = false;
+			
+			
+			// if limited duration, get out of here
+			if(Duration > 0 && RemainingDuration <= 0)
+			{
+				// PartitionBodySID got wiped out by WritePartitionPack(), but we're not done yet
+				PartitionBodySID = CurrentBodySID;
+				
+				return Ret;
+			}
 		}
 	}
 
