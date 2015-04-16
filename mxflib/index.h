@@ -541,6 +541,12 @@ namespace mxflib
 		//! Accept or decline an offered key-frame offset for a particular edit unit
 		bool OfferKeyOffset(Position EditUnit, int Offset);
 
+		//! Set the flags for a particular edit unit
+		void SetFlags(Position EditUnit, int Flags);
+
+		//! Accept or decline an offered flags for a particular edit unit
+		bool OfferFlags(Position EditUnit, int Flags);
+
 		//! Accept provisional entry
 		/*! \return The edit unit of the entry accepted - or IndexLowest if none available */
 		Position AcceptProvisional(void)

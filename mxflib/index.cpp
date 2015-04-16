@@ -1948,6 +1948,52 @@ bool IndexManager::OfferKeyOffset(Position EditUnit, int Offset)
 }
 
 
+//! Set the flags for a particular edit unit
+/*! DRAGONS: The EditUnit supplied here is the absolute value from stream start, so will not start at 0 if sub-ranged */
+void IndexManager::SetFlags(Position EditUnit, int Flags)
+{
+	// No need for a CBR index table
+	if(DataIsCBR) return;
+
+	// Correct for sub-range offset
+	EditUnit -= SubRangeOffset;
+
+	// Check the provisional entry first (quite likely and an easy test)
+	if((ProvisionalEntry) && (EditUnit == ProvisionalEditUnit))
+	{
+		ProvisionalEntry->Flags = Flags;
+	}
+	else
+	{
+		// Locate the requested edit unit in the managed data map
+		std::map<Position, IndexData*>::iterator it = ManagedData.find(EditUnit);
+
+		// Found - record the offset
+		if(it != ManagedData.end())
+		{
+			(*it).second->Flags = Flags;
+		}
+		else
+		{
+			error("Attempted to set the KeyOffset for an unknown edit unit in IndexManager::SetKeyOffset()\n");
+		}
+	}
+}
+
+
+//! Accept or decline an offered flags for a particular edit unit
+/*! DRAGONS: The EditUnit supplied here is the absolute value from stream start, so will not start at 0 if sub-ranged */
+bool IndexManager::OfferFlags(Position EditUnit, int Flags)
+{
+	// DRAGONS: Currently we accept all offered entries
+
+	SetFlags(EditUnit, Flags);
+
+	return true;
+}
+
+
+
 
 #define ManagedDataArrayGranularity 1024		// Number of extra entries to add when creating or extending-up the array
 
