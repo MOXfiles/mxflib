@@ -66,13 +66,13 @@
 #include <stdarg.h>
 
 
-#ifdef COMPILED_DICT
-#include <mxflib/dict.h>
-#endif
-
 using namespace std;
 using namespace dot;
 using namespace mxflib;
+
+#ifdef COMPILED_DICT
+#include <mxflib/dict.h>
+#endif
 
 
 // Debug flag for KLVLib
