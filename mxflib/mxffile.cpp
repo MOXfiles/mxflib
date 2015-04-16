@@ -145,6 +145,29 @@ bool mxflib::MXFFile::OpenFromHandle(FileHandle Handle)
 }
 
 
+//! Open an MXFFile for an existing, open, file handle to a newly created file
+bool mxflib::MXFFile::OpenNewFromHandle(FileHandle Handle)
+{
+	if(isOpen) Close();
+
+	// Set to be a normal file, but with external handle management
+	isMemoryFile = false;
+	isHandleFile = true;
+
+	// Record the name
+	Name = "Existing Open File";
+
+	// Set up our file handle
+	this->Handle = Handle;
+
+	if(!FileValid(Handle)) return false;
+
+	isOpen = true;
+
+	return true;
+}
+
+
 //! Read the files run-in (if it exists)
 /*! The run-in is placed in property run-in
  *	After this function the file pointer is at the start of the non-run in data
