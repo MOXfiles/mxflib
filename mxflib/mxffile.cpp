@@ -155,7 +155,7 @@ bool mxflib::MXFFile::OpenNewFromHandle(FileHandle Handle)
 	isHandleFile = true;
 
 	// Record the name
-	Name = "Existing Open File";
+	Name = "New Open Handle";
 
 	// Set up our file handle
 	this->Handle = Handle;
@@ -163,6 +163,9 @@ bool mxflib::MXFFile::OpenNewFromHandle(FileHandle Handle)
 	if(!FileValid(Handle)) return false;
 
 	isOpen = true;
+
+	// No run-in yet
+	RunInSize = 0;
 
 	return true;
 }
