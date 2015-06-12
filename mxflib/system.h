@@ -464,6 +464,10 @@ namespace mxflib
 #include <dirent.h>
 #include <unistd.h>
 
+#ifndef HAVE_STDINT_H
+#define HAVE_STDINT_H 1 // should be true for all non-MSC compilers
+#endif
+
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #else
