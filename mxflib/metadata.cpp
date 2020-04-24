@@ -1690,14 +1690,13 @@ Track::TrackType mxflib::Track::ParseTrackTypeText(std::string Text)
 	//! List of track type hex strings
 	const TrackHexType TrackHexList[] =
 	{
-		{ "{060e2b34-0401-0101-0103-020101000000}",		TrackTypeTimecode },
-		{ "{060e2b34-0401-0101-0103-020201000000}",		TrackTypePictureEssence },
-		{ "{060e2b34-0401-0101-0103-020202000000}",		TrackTypeSoundEssence },
-		{ "{060e2b34-0401-0101-0103-020303000000}",		TrackTypeDataEssence },
-		{ "{060e2b34-0401-0101-0103-020210000000}",		TrackTypeDescriptiveMetadata },
-		{ "{060e2b34-0401-0101-0103-020301000000}",		TrackTypeAuxiliary },
-		{ "{060e2b34-0401-0101-0103-020302000000}",		TrackTypeParsedText },
-
+		{ (char*) "{060e2b34-0401-0101-0103-020101000000}",		TrackTypeTimecode },
+		{ (char*) "{060e2b34-0401-0101-0103-020201000000}",		TrackTypePictureEssence },
+		{ (char*) "{060e2b34-0401-0101-0103-020202000000}",		TrackTypeSoundEssence },
+		{ (char*) "{060e2b34-0401-0101-0103-020303000000}",		TrackTypeDataEssence },
+		{ (char*) "{060e2b34-0401-0101-0103-020210000000}",		TrackTypeDescriptiveMetadata },
+		{ (char*) "{060e2b34-0401-0101-0103-020301000000}",		TrackTypeAuxiliary },
+		{ (char*) "{060e2b34-0401-0101-0103-020302000000}",		TrackTypeParsedText },
 	};
 
 	//! The count of entries in the track hex list

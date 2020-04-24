@@ -451,7 +451,7 @@ namespace mxflib
 #endif // _WIN32
 
 
-#ifndef _MSC_VER
+//#ifndef _MSC_VER
 // Support for all platforms with ISO C++ compilers using autoconf environment
 // including the _WIN32 platform with Mingw, Cygwin or Intel compilers.
 
@@ -463,6 +463,10 @@ namespace mxflib
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
+
+#ifndef HAVE_STDINT_H
+#define HAVE_STDINT_H 1 // should be true for all non-MSC compilers
+#endif
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
@@ -692,6 +696,7 @@ namespace mxflib
 
 /** Operating system name for non-windows platforms **/
 
+#ifndef _WIN32
 namespace mxflib
 {
 	inline std::string OSName(void)
@@ -756,6 +761,8 @@ namespace mxflib
 	void FileFlush(FileHandle file) ; 
 	bool FileExists(const char *filename);
 	int FileDelete(const char *filename);
+	void FileTruncate(FileHandle file, Int64 newsize =-1 );
+	Int64 FileSize(FileHandle file);
 }
 #endif // MXFLIB_NO_FILE_IO
 

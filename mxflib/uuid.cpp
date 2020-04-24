@@ -114,11 +114,22 @@ static bool GetMACAddress( MACAddress & MAC)
 
 	//Get the MAC address
 
+#ifdef __APPLE__
+	struct ifconf ifc;
+	ifc.ifc_len = 6;
+	ifc.ifc_ifcu.ifcu_buf = (caddr_t)&MAC[0];
+	
+	result=ioctl(sock,SIOCGIFCONF,&ifc);
+	
+	assert(result == 0);
+#else
 	result=ioctl(sock,SIOCGIFHWADDR,&ifr);
 	for(int i=0;i<6;i++)
 	{
 		MAC[i]=ifr.ifr_ifru.ifru_hwaddr.sa_data[i];
 	}
+#endif
+
 	close(sock);
 	return true;
 }

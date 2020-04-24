@@ -81,6 +81,7 @@ namespace mxflib
 		virtual bool OpenNew(std::string FileName);
 		virtual bool OpenMemory(DataChunkPtr Buff = NULL, Position Offset = 0);
 		virtual bool OpenFromHandle(FileHandle Handle);
+		virtual bool OpenNewFromHandle(FileHandle Handle);
 		virtual bool Close(void);
 		virtual bool Crop(Position NewSize = -1);
 
