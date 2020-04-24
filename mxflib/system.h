@@ -451,7 +451,7 @@ namespace mxflib
 #endif // _WIN32
 
 
-#ifndef _MSC_VER
+//#ifndef _MSC_VER
 // Support for all platforms with ISO C++ compilers using autoconf environment
 // including the _WIN32 platform with Mingw, Cygwin or Intel compilers.
 
@@ -696,6 +696,7 @@ namespace mxflib
 
 /** Operating system name for non-windows platforms **/
 
+#ifndef _WIN32
 namespace mxflib
 {
 	inline std::string OSName(void)
