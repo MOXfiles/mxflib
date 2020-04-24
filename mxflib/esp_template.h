@@ -240,6 +240,9 @@ namespace mxflib
 		//! Work out wrapping sequence
 		bool CalcWrappingSequence(Rational EditRate);
 
+		//! Calculate the current position in SetEditRate() sized edit units from "BytePosition" in bytes
+		Position CalcCurrentPosition(void);
+
 		//! Read the essence information at the specified position in the source file and build an essence descriptor
 		MDObjectPtr BuildDescriptor(FileHandle InFile, UInt64 Start = 0);
 
