@@ -408,17 +408,17 @@ MDObjectPtr MPEG2_VES_EssenceSubParser::BuildMPEG2VideoDescriptor(FileHandle InF
 	switch(Buffer[7] & 0xf0)
 	{
 	default: Aspect = NULL; break;
-	case 0x10: Aspect = "1/1"; break;
-	case 0x20: Aspect = "4/3"; break;
+	case 0x10: Aspect = (char*) "1/1"; break;
+	case 0x20: Aspect = (char*) "4/3"; break;
 	case 0x30:
 //#ifdef AS_PBS
 //		// override Bruce's 16/9 video to say 4/3
-//		Aspect = "4/3"; 
+//		Aspect = (char*) "4/3"; 
 //#else
-		Aspect = "16/9"; 
+		Aspect = (char*) "16/9"; 
 //#endif
 		break;
-	case 0x40: Aspect = "221/100"; break;
+	case 0x40: Aspect = (char*) "221/100"; break;
 	}
 
 	int FrameRate = 0;
